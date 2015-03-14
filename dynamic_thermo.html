@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dynamic thermodynamics</title>
+    <script src="functions.js" type="text/javascript"></script>
+</head>
+<body>
+    <p>
+        [This is an exercise]
+    </p>
+    <canvas id="canvas" width="500" height="400" style="border:1px solid black;"></canvas>
+    <p>
+        Energy = <output id="energy">?</output> (conserved) <br>
+        Momentum = <output id="momentum">?</output> <br>
+        Pressure = <output id="pressure">?</output> <br>
+    </p>
+    <p>
+        Control time: <br>
+        Backwards <input id="simulation_speed" type="range" value="1" min="-1" max="1" step="0.001" style="width: 300px;"> Forwards
+    </p>
+    <p>
+        Reset simulation to 
+        <input type="button" value="Uniform" onclick="init(uniform_position, uniform_velocity, one_color)">
+        <input type="button" value="Grouped" onclick="init(grouped_position, uniform_velocity, one_color)">
+        <input type="button" value="Falling" 
+            onclick="init(grouped_position, identical_velocity, one_color)">
+        <input type="button" value="Two colors" 
+            onclick="init(halves_position, uniform_velocity, two_colors)">
+        <br>
+        <label for="collision">Collision</label><input type="checkbox" id="collision">
+    </p>
+    <p>
+        Wee see that Energy is conserved, which should be true for elastic collisions. [Is momentum conserved? Why/why not?]
+    </p>
+</body>
+
+<script>
+
+// Event handling
+
+
+document.getElementById("simulation_speed").addEventListener("input", function() {
+    simulation_speed = this.value;
+});
+
+document.getElementById("collision").addEventListener("change", function(){
+    collision_checking = this.checked;
+})
+
+document.addEventListener('visibilitychange', function(event) {
+    if (document.hidden) {
+        pause();
+    } else {
+        resume();
+    }
+});
+
+window.addEventListener("blur", function(){
+    pause();
+});
+window.addEventListener("focus", function(){
+    resume();
+});
+
+// Constants
+
+var tau = 2*Math.PI;
+var canvas = document.getElementById("canvas");
+var context = canvas.getContext("2d");
+
+var max_speed = 0.1;
+var ball_count = 1000;
+var ball_radius = 2;
+var running = true;
+var initially_together = true;
+var initially_falling = false;
+var collision_checking = false;
+var pressure_window_size = 1000;
+var frame_duration = 33;
+
+var collision_bounds = RectLeftTopRightBottom(ball_radius, ball_radius, 
+                                              canvas.width - ball_radius, 
+                                              canvas.height - ball_radius);
+                                              
+// Simulation state
+
+var balls;
+var previous_time;
+var simulation_speed = 1;
+var request_frame_id;
+var running_pressure = [];
+var running_time = [];
+
+// Initialization
+
+function grouped_position(ball_index, ball_count)
+{
+    var small_centered_rect = RectCenterWidthHeight(collision_bounds.center, 100, 100);
+    return random_point_in_rectangle(small_centered_rect);
+}
+
+function uniform_position(ball_index, ball_count)
+{
+    return random_point_in_rectangle(collision_bounds);
+}
+
+function halves_position(ball_index, ball_count)
+{
+    var middle_x = collision_bounds.center.x;
+    if (ball_index < ball_count / 2)
+    {
+        var left_rect = RectLeftTopRightBottom(
+                collision_bounds.left, collision_bounds.top, 
+                middle_x, collision_bounds.bottom);
+        return random_point_in_rectangle(left_rect);
+    }
+    else
+    {
+        var right_rect = RectLeftTopRightBottom(
+                middle_x, collision_bounds.top, 
+                collision_bounds.right, collision_bounds.bottom);
+        return random_point_in_rectangle(right_rect);
+    }
+}
+
+function uniform_velocity(ball_index, ball_count)
+{
+    var speed = Math.random() * max_speed;
+    var angle = Math.random() * tau;
+    return V2(Math.cos(angle), Math.sin(angle)).times(speed);
+}
+
+function identical_velocity(ball_index, ball_count) {
+    return V2(0, max_speed);
+}
+
+function one_color(ball_index, ball_count) 
+{
+    return "black";
+}
+
+function two_colors(ball_index, ball_count)
+{
+    if (ball_index < ball_count / 2)
+    {
+        return "blue";
+    }
+    else
+    {
+        return "red";
+    }
+}
+
+
+function init(position_function, velocity_function, color_function) 
+{
+    if (request_frame_id) {
+        window.cancelAnimationFrame(request_frame_id);
+        request_frame_id = undefined;
+    }
+    balls = [];
+    for (var ball_index = 0; ball_index < ball_count; ball_index++) {
+        var ball = {
+            position: position_function(ball_index, ball_count), 
+            velocity: velocity_function(ball_index, ball_count),
+            color: color_function(ball_index, ball_count),
+        };
+        balls.push(ball);
+    }
+    previous_time = performance.now();
+    request_frame_id = window.requestAnimationFrame(update);
+}
+
+function pause() 
+{
+    if (request_frame_id)
+    {
+        window.cancelAnimationFrame(request_frame_id);
+        request_frame_id = undefined;
+    }
+}
+
+function resume()
+{
+    if (!request_frame_id)
+    {
+        previous_time = performance.now();
+        window.requestAnimationFrame(update);
+    }
+}
+                              
+// Simulation
+
+function update(time) 
+{
+    var elapsed = time - previous_time;
+    if (elapsed > 100)
+    {
+        elapsed = frame_duration;
+    }
+    var dt = elapsed * simulation_speed;
+    previous_time = time;
+    
+    clear_canvas();
+    
+    var total_energy = 0;
+    var total_momentum = V2();
+    var total_pressure = 0;
+    
+    for (var ball of balls) 
+    {
+        draw_ball(ball);
+        
+        ball.position = ball.position.plus(ball.velocity.times(dt));
+        
+        total_energy += ball.velocity.squared();
+        total_momentum = total_momentum.plus(ball.velocity);
+    }
+    
+    for (var ball of balls)
+    {
+        // Collision with wall
+        
+        if (! is_point_in_rectangle(ball.position, collision_bounds))
+        {
+            var wall_normal;
+            var overlap;
+
+            if (ball.position.x < collision_bounds.left)
+            {
+                overlap = collision_bounds.left - ball.position.x;
+                wall_normal = V2(1, 0);
+            }
+            else if (ball.position.x > collision_bounds.right)
+            {
+                overlap = ball.position.x - collision_bounds.right;
+                wall_normal = V2(-1, 0);
+            }
+            else if (ball.position.y < collision_bounds.top)
+            {
+                overlap = collision_bounds.top - ball.position.y;
+                wall_normal = V2(0, 1);
+            }
+            else if (ball.position.y > collision_bounds.bottom)
+            {
+                overlap = ball.position.y - collision_bounds.bottom;
+                wall_normal = V2(0, -1);
+            }
+            
+            // Move out of overlap
+            
+            ball.position = ball.position.plus(wall_normal.times(overlap));
+            
+            // Reflect velocity
+            
+            var projection = ball.velocity.project_onto_normal(wall_normal);
+            ball.velocity = ball.velocity.minus(projection.times(2));
+            
+            total_pressure += projection.magnitude()
+        }
+        
+        // Collision with other balls
+        if (collision_checking)
+        {
+            for (var ball2 of balls)
+            {
+                if (ball == ball2)
+                {
+                    break;
+                }
+            
+                var vector_between_centers = ball.position.minus(ball2.position);
+                var quadrance = vector_between_centers.squared();
+                if (quadrance < squared(2*ball_radius)) 
+                {
+                    var distance_between_centers = Math.sqrt(quadrance);
+                    var overlap = 2*ball_radius - distance_between_centers;
+                    var normal = vector_between_centers.times(1 / distance_between_centers);
+                
+                    // Move out of overlap
+                
+                    var half_overlap_vector = normal.times(overlap / 2);
+                    ball.position = ball.position.plus(half_overlap_vector);
+                    ball2.position = ball2.position.minus(half_overlap_vector);
+                
+                    // Elastic collision
+                
+                    var relative_velocity = ball.velocity.minus(ball2.velocity);
+                    var normal_velocity = relative_velocity.project_onto_normal(normal);
+                    ball.velocity = ball.velocity.minus(normal_velocity);
+                    ball2.velocity = ball2.velocity.plus(normal_velocity);
+                }
+            }
+        }
+    }
+    
+    // Measurements
+    
+    running_pressure.push(total_pressure);
+    running_time.push(time)
+    if (running_pressure.length > pressure_window_size)
+    {
+        running_pressure.shift();
+        var initial_time = running_time.shift();
+    }
+    else
+    {
+        var initial_time = running_time[0];
+    }
+
+    var average_pressure = sum(running_pressure) / (time - initial_time);
+    document.getElementById("pressure").value = average_pressure.toExponential(2);
+    document.getElementById("energy").value = total_energy.toExponential(2);
+    document.getElementById("momentum").value = 
+        "(" + total_momentum.x.toExponential(2) + ", " + total_momentum.y.toExponential(2) + ")";
+    
+    if (running) 
+    {
+        request_frame_id = window.requestAnimationFrame(update);
+    }
+}
+
+init(uniform_position, uniform_velocity, one_color)
+
+</script>
+
+</html>
