@@ -1,18 +1,22 @@
 # TODO    
 
 * Bugs
-    * Some weirdness with timesteps when it lags
-* Run backwards
-    * Might have to arrange fixed timestep for this to work
+    * Some weirdness with timesteps when it lags (probably fixed by correct collision detection)
+* Run backwards with collisions
+    * Might have to arrange fixed timestep for this to work with collisions (might not be enough b/c collisions inherently non-reversible)
+    * Discrete version?
 * Controls
+    * Number of particles
     * Move particles around
     * Control velocities
     * Draggable borders of box
 * More than one kind of particle
-    * Different colors
+    * Different energy
+    * Removing wall
 * Measurements
-    * Measure entropy
+    * Measure entropy (mixing of different colors?)
     * Measure temperature
+    * Measure velocity distribution
     * Pressure should be measured over time, not timesteps
 * Figures
     * Graph over quantities

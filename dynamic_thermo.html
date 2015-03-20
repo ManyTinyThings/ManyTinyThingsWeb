@@ -1,18 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Dynamic thermodynamics</title>
+    <title>Dynamic Thermodynamics</title>
     <script src="functions.js" type="text/javascript"></script>
 </head>
 <body>
-    <p>
-        [This is an exercise]
-    </p>
+    <h1>Dynamic Thermodynamics</h1>
+    <h2>a study in static</h2>
     <canvas id="canvas" width="500" height="400" style="border:1px solid black;"></canvas>
     <p>
         Energy = <output id="energy">?</output> (conserved) <br>
         Momentum = <output id="momentum">?</output> <br>
         Pressure = <output id="pressure">?</output> <br>
+        Colors in left half = <output id="color">?</output> <br>
+        Entropy = <output id="entropy">?</output> <br>
     </p>
     <p>
         Control time: <br>
@@ -31,6 +32,18 @@
     </p>
     <p>
         Wee see that Energy is conserved, which should be true for elastic collisions. [Is momentum conserved? Why/why not?]
+    </p>
+    <p>
+        [If something is in brackets, it is meant as an exercise]
+    </p>
+    <p>
+        $$\Delta S = S\{later} - S\sub{at first}$$
+        <label for="new">New to math</label>
+        <input type="radio" name="math_level" id="new">
+        <label for="experienced">Experienced</label>
+        <input type="radio" name="math_level" id="experienced">
+        <br>
+        Math changes when radio button changes
     </p>
 </body>
 
@@ -81,6 +94,14 @@ var frame_duration = 33;
 var collision_bounds = RectLeftTopRightBottom(ball_radius, ball_radius, 
                                               canvas.width - ball_radius, 
                                               canvas.height - ball_radius);
+
+var middle_x = collision_bounds.center.x;
+var right_rect = RectLeftTopRightBottom(
+        middle_x, collision_bounds.top, 
+        collision_bounds.right, collision_bounds.bottom);     
+var left_rect = RectLeftTopRightBottom(
+        collision_bounds.left, collision_bounds.top, 
+        middle_x, collision_bounds.bottom);                                         
                                               
 // Simulation state
 
@@ -106,31 +127,25 @@ function uniform_position(ball_index, ball_count)
 
 function halves_position(ball_index, ball_count)
 {
-    var middle_x = collision_bounds.center.x;
     if (ball_index < ball_count / 2)
     {
-        var left_rect = RectLeftTopRightBottom(
-                collision_bounds.left, collision_bounds.top, 
-                middle_x, collision_bounds.bottom);
         return random_point_in_rectangle(left_rect);
     }
     else
     {
-        var right_rect = RectLeftTopRightBottom(
-                middle_x, collision_bounds.top, 
-                collision_bounds.right, collision_bounds.bottom);
         return random_point_in_rectangle(right_rect);
     }
 }
 
 function uniform_velocity(ball_index, ball_count)
 {
-    var speed = Math.random() * max_speed;
-    var angle = Math.random() * tau;
+    var speed = random_in_interval(0, max_speed);
+    var angle = random_in_interval(0, tau);
     return V2(Math.cos(angle), Math.sin(angle)).times(speed);
 }
 
-function identical_velocity(ball_index, ball_count) {
+function identical_velocity(ball_index, ball_count) 
+{
     return V2(0, max_speed);
 }
 
@@ -158,15 +173,17 @@ function init(position_function, velocity_function, color_function)
         window.cancelAnimationFrame(request_frame_id);
         request_frame_id = undefined;
     }
+    
     balls = [];
     for (var ball_index = 0; ball_index < ball_count; ball_index++) {
         var ball = {
             position: position_function(ball_index, ball_count), 
             velocity: velocity_function(ball_index, ball_count),
-            color: color_function(ball_index, ball_count),
+            color:    color_function(ball_index, ball_count),
         };
         balls.push(ball);
     }
+    
     previous_time = performance.now();
     request_frame_id = window.requestAnimationFrame(update);
 }
@@ -206,6 +223,7 @@ function update(time)
     var total_energy = 0;
     var total_momentum = V2();
     var total_pressure = 0;
+    var color_counts = {};
     
     for (var ball of balls) 
     {
@@ -215,6 +233,11 @@ function update(time)
         
         total_energy += ball.velocity.squared();
         total_momentum = total_momentum.plus(ball.velocity);
+        
+        if(is_point_in_rectangle(ball.position, left_rect))
+        {
+            color_counts[ball.color] = 1 + (color_counts[ball.color] || 0);
+        }
     }
     
     for (var ball of balls)
@@ -313,6 +336,20 @@ function update(time)
     document.getElementById("energy").value = total_energy.toExponential(2);
     document.getElementById("momentum").value = 
         "(" + total_momentum.x.toExponential(2) + ", " + total_momentum.y.toExponential(2) + ")";
+    var color_count_string = "";
+    var entropy = 0;
+    for (var color in color_counts) 
+    {
+        if (color_counts.hasOwnProperty(color)) 
+        {
+            var color_count = color_counts[color];
+            var p = color_count/ball_count;
+            entropy = microstate_entropy(p) + microstate_entropy(1 - p);
+            color_count_string += color + ": " + color_count + " ";
+        }
+    }
+    document.getElementById("color").value = color_count_string;
+    document.getElementById("entropy").value = entropy.toExponential(2);
     
     if (running) 
     {

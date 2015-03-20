@@ -1,6 +1,18 @@
 
 // Random stuff
 
+function microstate_entropy(p)
+{
+    if (p == 0)
+    {
+        return 0;
+    }
+    else
+    {
+        return - p * Math.log2(p);
+    }
+}
+
 function squared(x) 
 { 
     return x * x
