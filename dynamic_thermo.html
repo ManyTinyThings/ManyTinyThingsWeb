@@ -61,7 +61,7 @@
 
 
 document.getElementById("simulation_speed").addEventListener("input", function() {
-    simulation_speed = this.value;
+    simulation_speed = Number(this.value);
 });
 
 document.getElementById("collision").addEventListener("change", function(){
@@ -69,13 +69,14 @@ document.getElementById("collision").addEventListener("change", function(){
 })
 
 document.getElementById("ball_count").addEventListener("input", function(){
-    ball_count = Math.pow(10, this.value);
+    ball_count = Math.pow(10, Number(this.value));
     // TODO: do not reset
     init(uniform_position, uniform_velocity, one_color);
 })
 
 document.getElementById("ball_radius").addEventListener("input", function(){
-    ball_radius = this.value;
+    ball_radius = Number(this.value);
+    update_bounds();
 })
 
 document.addEventListener('visibilitychange', function(event) {
@@ -316,7 +317,7 @@ function update(time)
         
         if (! is_point_in_rectangle(ball.position, collision_bounds))
         {
-            var wall_normal;
+            var wall_normal = V2(0, 0);
             var overlap;
 
             if (ball.position.x < collision_bounds.left)

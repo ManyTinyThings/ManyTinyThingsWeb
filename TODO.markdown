@@ -22,4 +22,6 @@
     * Graph over quantities
     * Show total momentum as vector
 * Optimizations
-    * Quadtree for collisions http://gamedevelopment.tutsplus.com/tutorials/quick-tip-use-quadtrees-to-detect-likely-collisions-in-2d-space--gamedev-374
+    * Quadtree restructure instead of clear+repopulate
+    * Memory management (if even possible!)
+    * GPU accelerated?
