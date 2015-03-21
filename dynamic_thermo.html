@@ -20,6 +20,14 @@
         Backwards <input id="simulation_speed" type="range" value="1" min="-1" max="1" step="0.001" style="width: 300px;"> Forwards
     </p>
     <p>
+        Number of balls: <br>
+        1 <input id="ball_count" type="range" value="2", min="0", max="3", step="0.001"> 1000
+    </p>
+    <p>
+        Ball radius: <br>
+        1 <input id="ball_radius" type="range" value="3", min="1", max="10", step="0.001"> 10
+    </p>
+    <p>
         Reset simulation to 
         <input type="button" value="Uniform" onclick="init(uniform_position, uniform_velocity, one_color)">
         <input type="button" value="Grouped" onclick="init(grouped_position, uniform_velocity, one_color)">
@@ -60,6 +68,16 @@ document.getElementById("collision").addEventListener("change", function(){
     collision_checking = this.checked;
 })
 
+document.getElementById("ball_count").addEventListener("input", function(){
+    ball_count = Math.pow(10, this.value);
+    // TODO: do not reset
+    init(uniform_position, uniform_velocity, one_color);
+})
+
+document.getElementById("ball_radius").addEventListener("input", function(){
+    ball_radius = this.value;
+})
+
 document.addEventListener('visibilitychange', function(event) {
     if (document.hidden) {
         pause();
@@ -82,8 +100,8 @@ var canvas = document.getElementById("canvas");
 var context = canvas.getContext("2d");
 
 var max_speed = 0.1;
-var ball_count = 1000;
-var ball_radius = 2;
+var ball_count = 100;
+var ball_radius = 3;
 var running = true;
 var initially_together = true;
 var initially_falling = false;
@@ -91,17 +109,10 @@ var collision_checking = false;
 var pressure_window_size = 1000;
 var frame_duration = 33;
 
-var collision_bounds = RectLeftTopRightBottom(ball_radius, ball_radius, 
-                                              canvas.width - ball_radius, 
-                                              canvas.height - ball_radius);
-
-var middle_x = collision_bounds.center.x;
-var right_rect = RectLeftTopRightBottom(
-        middle_x, collision_bounds.top, 
-        collision_bounds.right, collision_bounds.bottom);     
-var left_rect = RectLeftTopRightBottom(
-        collision_bounds.left, collision_bounds.top, 
-        middle_x, collision_bounds.bottom);                                         
+var collision_bounds;
+var canvas_bounds;
+var left_rect, right_rect;
+                                    
                                               
 // Simulation state
 
@@ -111,6 +122,7 @@ var simulation_speed = 1;
 var request_frame_id;
 var running_pressure = [];
 var running_time = [];
+var quadtree;
 
 // Initialization
 
@@ -166,6 +178,16 @@ function two_colors(ball_index, ball_count)
     }
 }
 
+var Ball = function(position, velocity, color)
+{
+    this.position = position || V2();
+    this.velocity = velocity || V2();
+    this.color    = color    || "black";
+}
+
+Ball.prototype.bounds = function() {
+    return RectCenterWidthHeight(this.position, ball_radius*2, ball_radius*2);
+}
 
 function init(position_function, velocity_function, color_function) 
 {
@@ -173,14 +195,15 @@ function init(position_function, velocity_function, color_function)
         window.cancelAnimationFrame(request_frame_id);
         request_frame_id = undefined;
     }
-    
+
+    update_bounds();
     balls = [];
     for (var ball_index = 0; ball_index < ball_count; ball_index++) {
-        var ball = {
-            position: position_function(ball_index, ball_count), 
-            velocity: velocity_function(ball_index, ball_count),
-            color:    color_function(ball_index, ball_count),
-        };
+        var ball = new Ball(
+            position_function(ball_index, ball_count), 
+            velocity_function(ball_index, ball_count),
+            color_function(ball_index, ball_count)
+        );
         balls.push(ball);
     }
     
@@ -205,8 +228,55 @@ function resume()
         window.requestAnimationFrame(update);
     }
 }
-                              
+
+function update_bounds() {
+    collision_bounds = RectLeftTopRightBottom(
+        ball_radius, ball_radius, 
+        canvas.width - ball_radius, 
+        canvas.height - ball_radius
+    );
+    
+    canvas_bounds = RectLeftTopWidthHeight(
+        0, 0, canvas.width, canvas.height
+    );
+    
+    right_rect = RectLeftTopRightBottom(
+            canvas_bounds.center.x, canvas_bounds.top, 
+            canvas_bounds.right, canvas_bounds.bottom);     
+    left_rect = RectLeftTopRightBottom(
+            canvas_bounds.left, canvas_bounds.top, 
+            canvas_bounds.center.x, canvas_bounds.bottom);
+    
+    quadtree = new Quadtree(canvas_bounds);  
+}
+                             
 // Simulation
+
+function collide(ball1, ball2)
+{
+    var vector_between_centers = ball1.position.minus(ball2.position);
+    var quadrance = vector_between_centers.squared();
+    if (quadrance < squared(2*ball_radius)) 
+    {
+        var distance_between_centers = Math.sqrt(quadrance);
+        var overlap = 2*ball_radius - distance_between_centers;
+        var normal = vector_between_centers.times(1 / distance_between_centers);
+    
+        // Move out of overlap
+        // TODO: improve to perform correct collision
+    
+        var half_overlap_vector = normal.times(overlap / 2);
+        ball1.position = ball1.position.plus(half_overlap_vector);
+        ball2.position = ball2.position.minus(half_overlap_vector);
+    
+        // Elastic collision
+    
+        var relative_velocity = ball1.velocity.minus(ball2.velocity);
+        var normal_velocity = relative_velocity.project_onto_normal(normal);
+        ball1.velocity = ball1.velocity.minus(normal_velocity);
+        ball2.velocity = ball2.velocity.plus(normal_velocity);
+    }
+}
 
 function update(time) 
 {
@@ -281,40 +351,18 @@ function update(time)
             
             total_pressure += projection.magnitude()
         }
-        
-        // Collision with other balls
-        if (collision_checking)
+    }
+    
+    
+    // Collision with other balls
+    if (collision_checking)
+    {
+        quadtree.clear();
+        for (var ball of balls)
         {
-            for (var ball2 of balls)
-            {
-                if (ball == ball2)
-                {
-                    break;
-                }
-            
-                var vector_between_centers = ball.position.minus(ball2.position);
-                var quadrance = vector_between_centers.squared();
-                if (quadrance < squared(2*ball_radius)) 
-                {
-                    var distance_between_centers = Math.sqrt(quadrance);
-                    var overlap = 2*ball_radius - distance_between_centers;
-                    var normal = vector_between_centers.times(1 / distance_between_centers);
-                
-                    // Move out of overlap
-                
-                    var half_overlap_vector = normal.times(overlap / 2);
-                    ball.position = ball.position.plus(half_overlap_vector);
-                    ball2.position = ball2.position.minus(half_overlap_vector);
-                
-                    // Elastic collision
-                
-                    var relative_velocity = ball.velocity.minus(ball2.velocity);
-                    var normal_velocity = relative_velocity.project_onto_normal(normal);
-                    ball.velocity = ball.velocity.minus(normal_velocity);
-                    ball2.velocity = ball2.velocity.plus(normal_velocity);
-                }
-            }
+            quadtree.add(ball);
         }
+        quadtree.collide_all(collide);
     }
     
     // Measurements

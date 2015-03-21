@@ -105,6 +105,13 @@ function RectCenterWidthHeight(center, width, height)
                          width, height);
 }
 
+function is_rectangle_in_rectangle(inner, outer)
+{
+    var inside_x = (outer.left <= inner.left) && (inner.right <= outer.right);
+    var inside_y = (outer.top  <= inner.top ) && (inner.bottom <= outer.bottom);
+    return inside_x && inside_y;
+}
+
 function is_point_in_rectangle(v, rect)
 {
     var inside_x = (rect.left <= v.x) && (v.x <= rect.right)
@@ -137,4 +144,112 @@ function draw_ball(ball)
 function clear_canvas()
 {
     context.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// Quadtree
+
+Quadtree = function(bounds, max_objects, max_depth)
+{
+    this.objects = [];
+    this.bounds = bounds;
+    this.subtrees = undefined;
+    this.max_objects = max_objects || 4;
+    this.max_depth = max_depth || 10;
+}
+
+Quadtree.prototype.add = function(object)
+{
+    if (this.subtrees)
+    {
+        for (var subtree of this.subtrees)
+        {
+            if (is_rectangle_in_rectangle(object.bounds(), subtree.bounds))
+            {
+                subtree.add(object);
+                return;
+            }
+        }
+        
+        this.objects.push(object);
+        return;
+    }
+    else
+    {
+        this.objects.push(object);
+    
+        if (this.objects.length > this.max_objects)
+        {
+            var top_left = RectLeftTopRightBottom(
+                this.bounds.left, this.bounds.top, 
+                this.bounds.center.x, this.bounds.center.y);
+            var top_right = RectLeftTopRightBottom(
+                this.bounds.center.x, this.bounds.top, 
+                this.bounds.right, this.bounds.center.y);
+            var bottom_left = RectLeftTopRightBottom(
+                this.bounds.left, this.bounds.center.y, 
+                this.bounds.center.x, this.bounds.bottom);
+            var bottom_right = RectLeftTopRightBottom(
+                this.bounds.center.x, this.bounds.center.y, 
+                this.bounds.right, this.bounds.bottom);
+            this.subtrees = [new Quadtree(top_left), new Quadtree(top_right),
+                             new Quadtree(bottom_left), new Quadtree(bottom_right)];
+            
+            for (var object of this.objects)
+            {
+                for (var subtree of this.subtrees)
+                {
+                    if (is_rectangle_in_rectangle(object.bounds(), subtree.bounds))
+                    {
+                        subtree.add(object);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
+}
+
+Quadtree.prototype.collide_all = function(collision_function)
+{
+    for (var object of this.objects)
+    {
+        this.collide_with(object, collision_function);
+    }
+    if (this.subtrees)
+    {
+        for (var subtree of this.subtrees)
+        {
+            subtree.collide_all(collision_function);
+        }
+    }
+}
+
+Quadtree.prototype.collide_with = function(collider, collision_function) 
+{
+    for (var object of this.objects)
+    {
+        if (object != collider)
+        {
+            collision_function(collider, object);
+        }
+    }
+    if (this.subtrees)
+    {
+        for (var subtree of this.subtrees)
+        {
+            subtree.collide_with(collider, collision_function);
+        }
+    }
+}
+
+Quadtree.prototype.clear = function() {
+    this.objects = [];
+    if (this.subtrees)
+    {
+        for (var subtree of this.subtrees)
+        {
+            subtree.clear();
+        }
+    }
 }
