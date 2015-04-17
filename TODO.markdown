@@ -6,7 +6,7 @@
     * Might have to arrange fixed timestep for this to work with collisions (might not be enough b/c collisions inherently non-reversible)
     * Discrete version?
 * Controls
-    * Number of particles
+    * Number of particles by adding or removing individual particles
     * Move particles around
     * Control velocities
     * Draggable borders of box
@@ -25,3 +25,4 @@
     * Quadtree restructure instead of clear+repopulate
     * Memory management (if even possible!)
     * GPU accelerated?
+    

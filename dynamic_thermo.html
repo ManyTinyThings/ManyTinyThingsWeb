@@ -5,8 +5,6 @@
     <script src="functions.js" type="text/javascript"></script>
 </head>
 <body>
-    <h1>Dynamic Thermodynamics</h1>
-    <h2>a study in static</h2>
     <canvas id="canvas" width="500" height="400" style="border:1px solid black;"></canvas>
     <p>
         Energy = <output id="energy">?</output> (conserved) <br>
@@ -37,21 +35,6 @@
             onclick="init(halves_position, uniform_velocity, two_colors)">
         <br>
         <label for="collision">Collision</label><input type="checkbox" id="collision">
-    </p>
-    <p>
-        Wee see that Energy is conserved, which should be true for elastic collisions. [Is momentum conserved? Why/why not?]
-    </p>
-    <p>
-        [If something is in brackets, it is meant as an exercise]
-    </p>
-    <p>
-        $$\Delta S = S\{later} - S\sub{at first}$$
-        <label for="new">New to math</label>
-        <input type="radio" name="math_level" id="new">
-        <label for="experienced">Experienced</label>
-        <input type="radio" name="math_level" id="experienced">
-        <br>
-        Math changes when radio button changes
     </p>
 </body>
 
