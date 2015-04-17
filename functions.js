@@ -131,21 +131,6 @@ function random_in_interval(a, b)
     return (a + (b - a)*Math.random())
 }
 
-// Drawing
-
-function draw_ball(ball) 
-{
-    context.beginPath();
-    context.fillStyle = ball.color;
-    context.arc(ball.position.x, ball.position.y, ball_radius, 0, tau);
-    context.fill();
-}
-
-function clear_canvas()
-{
-    context.clearRect(0, 0, canvas.width, canvas.height);
-}
-
 // Quadtree
 
 Quadtree = function(bounds, max_objects, max_depth)

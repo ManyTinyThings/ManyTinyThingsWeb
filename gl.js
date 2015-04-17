@@ -5,14 +5,12 @@ var vertexBuffer;
 var viewMatrix = mat3.create();
 var screenMatrix = mat3.create();
 var shaderProgram;
-var pointSize = 10;
 
 
 
-function initGraphics() {
+function initGraphics(canvas) {
   
   // init GL
-  var canvas = document.getElementById("glcanvas");
   gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl")
   if (!gl) {
     console.log("Couldn't load WebGL.")
@@ -67,6 +65,7 @@ function initGraphics() {
   // screen-space transform
 
   mat3.identity(screenMatrix);
+  mat3.translate(screenMatrix, screenMatrix, [-1, -1]);
   mat3.scale(screenMatrix, screenMatrix, [2 / gl.viewportWidth, 2 / gl.viewportHeight]);
   gl.uniformMatrix3fv(shaderProgram.screenMatrixUniform, false, screenMatrix);
 
@@ -76,17 +75,14 @@ function initGraphics() {
   gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
   gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, 
                          2, gl.FLOAT, false, 0, 0);
-
-
-  clear_canvas();
-  
-  drawDisc([0, 0], 16);
-  drawDisc([10, 100], 10);
-  drawDisc([100, -50], 3);
 }
 
 function clear_canvas() {
   gl.clear(gl.COLOR_BUFFER_BIT);
+}
+
+function draw_ball(ball) {
+    drawDisc([ball.position.x, ball.position.y], ball_radius);
 }
 
 function drawDisc(center, radius, vertexCount) {
