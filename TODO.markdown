@@ -19,10 +19,10 @@
     * Measure velocity distribution
     * Pressure should be measured over time, not timesteps
 * Figures
+    * Density histogram
     * Graph over quantities
     * Show total momentum as vector
 * Optimizations
     * Quadtree restructure instead of clear+repopulate
-    * Memory management (if even possible!)
-    * GPU accelerated?
+    * Memory management by not allocating anything inside the loop
     
