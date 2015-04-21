@@ -29,6 +29,10 @@
         1 <input id="ball_radius" type="range" value="3", min="1", max="10", step="0.001"> 10
     </p>
     <p>
+        Gravity: <br>
+        None <input id="gravity" type="range" value="0", min="0", max="0.0001", step="0.000001"> Strong
+    </p>
+    <p>
         Reset simulation to 
         <input type="button" value="Uniform" onclick="init(uniform_position, uniform_velocity, one_color)">
         <input type="button" value="Grouped" onclick="init(grouped_position, uniform_velocity, one_color)">
@@ -38,7 +42,6 @@
             onclick="init(halves_position, uniform_velocity, two_colors)">
         <br>
         <label for="collision">Collision</label><input type="checkbox" id="collision">
-        <label for="gravity">Gravity</label><input type="checkbox" id="gravity">
     </p>
 </body>
 
@@ -55,8 +58,8 @@ document.getElementById("collision").addEventListener("change", function(){
     collision_checking = this.checked;
 })
 
-document.getElementById("gravity").addEventListener("change", function(){
-    gravity = this.checked;
+document.getElementById("gravity").addEventListener("input", function(){
+    gravity = Number(this.value);
 })
 
 document.getElementById("ball_count").addEventListener("input", function(){
@@ -97,8 +100,7 @@ var running = true;
 var initially_together = true;
 var initially_falling = false;
 var collision_checking = false;
-var gravity = false;
-var gravity_acceleration = V2(0, -0.00001);
+var gravity = 0;
 var pressure_window_size = 1000;
 var frame_duration = 33;
 
@@ -292,17 +294,11 @@ function update(time)
     {
         draw_ball(ball);
         
-        if(gravity)
-        {
-          var deltaPosition = ball.velocity.times(dt)
-            .plus(gravity_acceleration.times(0.5*squared(dt)));
-          ball.velocity = ball.velocity.plus(gravity_acceleration.times(dt));
-        }
-        else
-        {
-          var deltaPosition = ball.velocity.times(dt);
-        }
+        var gravity_acceleration = V2(0, -gravity)
+        var deltaPosition = ball.velocity.times(dt)
+          .plus( gravity_acceleration.times(0.5*squared(dt)) );
         ball.position = ball.position.plus(deltaPosition);
+        ball.velocity = ball.velocity.plus(gravity_acceleration.times(dt));
         
         total_energy += ball.velocity.squared();
         total_momentum = total_momentum.plus(ball.velocity);
