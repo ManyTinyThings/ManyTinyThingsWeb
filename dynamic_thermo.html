@@ -33,6 +33,10 @@
         None <input id="gravity" type="range" value="0", min="0", max="0.0001", step="0.000001"> Strong
     </p>
     <p>
+        Box size: <br>
+        Tiny <input id="box_size" type="range" value="500", min="20", max="1000", step="0.001"> Huge
+    </p>
+    <p>
         Reset simulation to 
         <input type="button" value="Uniform" onclick="init(uniform_position, uniform_velocity, one_color)">
         <input type="button" value="Grouped" onclick="init(grouped_position, uniform_velocity, one_color)">
@@ -60,6 +64,11 @@ document.getElementById("collision").addEventListener("change", function(){
 
 document.getElementById("gravity").addEventListener("input", function(){
     gravity = Number(this.value);
+})
+
+document.getElementById("box_size").addEventListener("input", function(){
+    canvas.width = Number(this.value);
+    update_bounds();
 })
 
 document.getElementById("ball_count").addEventListener("input", function(){
@@ -243,6 +252,8 @@ function update_bounds() {
             canvas_bounds.center.x, canvas_bounds.bottom);
     
     quadtree = new Quadtree(canvas_bounds);  
+    
+    resize_canvas();
 }
                              
 // Simulation
