@@ -110,7 +110,7 @@ function drawDisc(center, radius, color, vertexCount) {
     mat3.scale(viewMatrix, viewMatrix, [radius, radius]);
     gl.uniformMatrix3fv(shaderProgram.viewMatrixUniform, false, viewMatrix);
     
-    gl.uniform4fv(shaderProgram.colorUniform, color);
+    gl.uniform4fv(shaderProgram.colorUniform, color.rgba);
 
     gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
     gl.drawArrays(gl.TRIANGLE_FAN, 0, vertexCount);

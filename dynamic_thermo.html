@@ -3,9 +3,9 @@
 <head>
     <title>Dynamic Thermodynamics</title>
     <script src="functions.js" type="text/javascript"></script>
-    <!--<script src="gl-matrix.js" type="text/javascript" charset="utf-8"></script>
-    <script src="gl.js" type="text/javascript" charset="utf-8"></script> -->
-    <script src="canvas.js" type="text/javascript" charset="utf-8"></script>
+    <script src="gl-matrix.js" type="text/javascript" charset="utf-8"></script>
+    <script src="gl.js" type="text/javascript" charset="utf-8"></script>
+    <!-- <script src="canvas.js" type="text/javascript" charset="utf-8"></script> -->
 </head>
 <body>
     <canvas id="canvas" width="500" height="400" style="border:1px solid black;"></canvas>
@@ -171,18 +171,18 @@ function identical_velocity(ball_index, ball_count)
 
 function one_color(ball_index, ball_count) 
 {
-    return [0, 0, 0, 1]; // black
+    return {name: "black", rgba: [0, 0, 0, 1]};
 }
 
 function two_colors(ball_index, ball_count)
 {
     if (ball_index < ball_count / 2)
     {
-        return [0, 0, 1, 1]; // blue
+        return {name: "blue", rgba: [0, 0, 1, 1]};
     }
     else
     {
-        return [1, 0, 0, 1]; // red
+        return {name: "red", rgba: [1, 0, 0, 1]};
     }
 }
 
@@ -190,7 +190,7 @@ var Ball = function(position, velocity, color)
 {
     this.position = position || V2();
     this.velocity = velocity || V2();
-    this.color    = color    || [0, 0, 0, 1];
+    this.color    = color    || {name: "black", rgba: [0, 0, 0, 1]};
 }
 
 Ball.prototype.bounds = function() {
@@ -320,7 +320,7 @@ function update(time)
         
         if(is_point_in_rectangle(ball.position, left_rect))
         {
-            color_counts[ball.color] = 1 + (color_counts[ball.color] || 0);
+            color_counts[ball.color.name] = 1 + (color_counts[ball.color.name] || 0);
         }
     }
     
@@ -397,8 +397,9 @@ function update(time)
     document.getElementById("pressure").value = average_pressure.toExponential(2);
     document.getElementById("energy").value = total_energy.toExponential(2);
     document.getElementById("momentum").value = 
-        "(" + total_momentum.x.toExponential(2) + ", " + total_momentum.y.toExponential(2) + ")";
-    var color_count_string = "";
+        ["(", total_momentum.x.toExponential(2), 
+         ", ", total_momentum.y.toExponential(2), ")"].join("");
+    var color_count_string_array = [];
     var entropy = 0;
     for (var color in color_counts) 
     {
@@ -407,10 +408,10 @@ function update(time)
             var color_count = color_counts[color];
             var p = color_count/ball_count;
             entropy = microstate_entropy(p) + microstate_entropy(1 - p);
-            color_count_string += color + ": " + color_count + " ";
+            color_count_string_array.push(color, ": ", color_count, " ");
         }
     }
-    document.getElementById("color").value = color_count_string;
+    document.getElementById("color").value = color_count_string_array.join("");
     document.getElementById("entropy").value = entropy.toExponential(2);
     
     if (running) 
