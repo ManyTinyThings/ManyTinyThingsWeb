@@ -3,9 +3,9 @@
 <head>
     <title>Dynamic Thermodynamics</title>
     <script src="functions.js" type="text/javascript"></script>
-    <script src="gl-matrix.js" type="text/javascript" charset="utf-8"></script>
-    <script src="gl.js" type="text/javascript" charset="utf-8"></script>
-    <!-- <script src="canvas.js" type="text/javascript" charset="utf-8"></script> -->
+    <!--<script src="gl-matrix.js" type="text/javascript" charset="utf-8"></script>
+    <script src="gl.js" type="text/javascript" charset="utf-8"></script> -->
+    <script src="canvas.js" type="text/javascript" charset="utf-8"></script>
 </head>
 <body>
     <canvas id="canvas" width="500" height="400" style="border:1px solid black;"></canvas>
@@ -82,6 +82,8 @@ document.getElementById("ball_radius").addEventListener("input", function(){
     update_bounds();
 })
 
+// Pause when switching tabs, seems reasonable
+
 document.addEventListener('visibilitychange', function(event) {
     if (document.hidden) {
         pause();
@@ -90,12 +92,14 @@ document.addEventListener('visibilitychange', function(event) {
     }
 });
 
-window.addEventListener("blur", function(){
-    pause();
-});
-window.addEventListener("focus", function(){
-    resume();
-});
+// Pause when switching windows, annoying during development
+
+// window.addEventListener("blur", function(){
+//     pause();
+// });
+// window.addEventListener("focus", function(){
+//     resume();
+// });
 
 // Constants
 
@@ -167,18 +171,18 @@ function identical_velocity(ball_index, ball_count)
 
 function one_color(ball_index, ball_count) 
 {
-    return "black";
+    return [0, 0, 0, 1]; // black
 }
 
 function two_colors(ball_index, ball_count)
 {
     if (ball_index < ball_count / 2)
     {
-        return "blue";
+        return [0, 0, 1, 1]; // blue
     }
     else
     {
-        return "red";
+        return [1, 0, 0, 1]; // red
     }
 }
 
@@ -186,7 +190,7 @@ var Ball = function(position, velocity, color)
 {
     this.position = position || V2();
     this.velocity = velocity || V2();
-    this.color    = color    || "black";
+    this.color    = color    || [0, 0, 0, 1];
 }
 
 Ball.prototype.bounds = function() {

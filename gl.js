@@ -25,8 +25,8 @@ function initGraphics(canvas) {
         "uniform mat3 viewMatrix;",
 
         "void main(void) {",
-        "vec2 position = (screenMatrix * viewMatrix * vec3(vertexPosition, 1.0)).xy;",
-        "gl_Position = vec4(position, 0, 1);",
+            "vec2 position = (screenMatrix * viewMatrix * vec3(vertexPosition, 1.0)).xy;",
+            "gl_Position = vec4(position, 0, 1);",
         "}",
     ].join("\n"));
 
@@ -34,9 +34,10 @@ function initGraphics(canvas) {
 
     var fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, [
         "precision mediump float;",
+        "uniform vec4 color;",
 
         "void main(void) {",
-        "gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);",
+            "gl_FragColor = color;",
         "}",
     ].join("\n"));
   
@@ -54,6 +55,7 @@ function initGraphics(canvas) {
 
     shaderProgram.viewMatrixUniform = gl.getUniformLocation(shaderProgram, "viewMatrix");
     shaderProgram.screenMatrixUniform = gl.getUniformLocation(shaderProgram, "screenMatrix");
+    shaderProgram.colorUniform = gl.getUniformLocation(shaderProgram, "color");
 
     // set up screen
 
@@ -87,10 +89,10 @@ function clear_canvas() {
 }
 
 function draw_ball(ball) {
-    drawDisc([ball.position.x, ball.position.y], ball_radius);
+    drawDisc([ball.position.x, ball.position.y], ball_radius, ball.color);
 }
 
-function drawDisc(center, radius, vertexCount) {
+function drawDisc(center, radius, color, vertexCount) {
 
     vertexCount = vertexCount || Math.max(Math.floor(2*radius), 10);
 
@@ -107,6 +109,8 @@ function drawDisc(center, radius, vertexCount) {
     mat3.translate(viewMatrix, viewMatrix, center);
     mat3.scale(viewMatrix, viewMatrix, [radius, radius]);
     gl.uniformMatrix3fv(shaderProgram.viewMatrixUniform, false, viewMatrix);
+    
+    gl.uniform4fv(shaderProgram.colorUniform, color);
 
     gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
     gl.drawArrays(gl.TRIANGLE_FAN, 0, vertexCount);
