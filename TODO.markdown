@@ -25,4 +25,5 @@
 * Optimizations
     * Quadtree restructure instead of clear+repopulate
     * Memory management by not allocating anything inside the loop
+    * SOA instead of AOS -> ball_positions = new Float32Array() etc.
     

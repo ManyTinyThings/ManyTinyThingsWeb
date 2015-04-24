@@ -304,10 +304,11 @@ function update(time)
     var total_momentum = V2();
     var total_pressure = 0;
     var color_counts = {};
+
+    drawBalls(balls, ball_radius);
     
     for (var ball of balls) 
     {
-        draw_ball(ball);
         
         var gravity_acceleration = V2(0, -gravity)
         var deltaPosition = ball.velocity.times(dt)
