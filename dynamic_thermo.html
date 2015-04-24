@@ -261,166 +261,174 @@ function update_bounds() {
 }
                              
 // Simulation
+var collide = function(){
+  
+  var relative_position = vec2.create();
+  var relative_velocity = vec2.create();
+  
+  return function(ball1, ball2)
+  {
+      vec2.subtract(relative_position, ball1.position, ball2.position);
+      var quadrance = vec2.sqrLen(relative_position);
+      if (quadrance < squared(2*ball_radius)) 
+      {
+          var distance_between_centers = Math.sqrt(quadrance);
+          var overlap = 2*ball_radius - distance_between_centers;
+          var normal = vec2.scale(relative_position, relative_position, 1 / distance_between_centers);
+    
+          // Move out of overlap
+          // TODO: improve to perform correct collision
+    
+          vec2.scaleAndAdd(ball1.position, ball1.position, normal, overlap / 2);
+          vec2.scaleAndAdd(ball2.position, ball2.position, normal, - overlap / 2);
+    
+          // Elastic collision
 
-function collide(ball1, ball2)
-{
-    var relative_position = vec2.create();
-    vec2.subtract(relative_position, ball1.position, ball2.position);
-    var quadrance = vec2.sqrLen(relative_position);
-    if (quadrance < squared(2*ball_radius)) 
-    {
-        var distance_between_centers = Math.sqrt(quadrance);
-        var overlap = 2*ball_radius - distance_between_centers;
-        var normal = vec2.scale(relative_position, relative_position, 1 / distance_between_centers);
-    
-        // Move out of overlap
-        // TODO: improve to perform correct collision
-    
-        vec2.scaleAndAdd(ball1.position, ball1.position, normal, overlap / 2);
-        vec2.scaleAndAdd(ball2.position, ball2.position, normal, - overlap / 2);
-    
-        // Elastic collision
-    
-        var relative_velocity = vec2.create();
-        
-        vec2.subtract(relative_velocity, ball1.velocity, ball2.velocity);
-        var delta_velocity = vec2.projectOntoNormal(relative_velocity, relative_velocity, normal);
-        vec2.sub(ball1.velocity, ball1.velocity, delta_velocity);
-        vec2.add(ball2.velocity, ball2.velocity, delta_velocity);
-    }
-}
+          vec2.subtract(relative_velocity, ball1.velocity, ball2.velocity);
+          var delta_velocity = vec2.projectOntoNormal(relative_velocity, relative_velocity, normal);
+          vec2.sub(ball1.velocity, ball1.velocity, delta_velocity);
+          vec2.add(ball2.velocity, ball2.velocity, delta_velocity);
+      }
+  }
+}();
 
-function update(time) 
-{
-    var elapsed = time - previous_time;
-    if (elapsed > 100)
-    {
-        elapsed = frame_duration;
-    }
-    var dt = elapsed * simulation_speed;
-    previous_time = time;
+var update = function(){
+  
+  var total_momentum = vec2.create();
+  var wall_normal = vec2.create();
+  var projection = vec2.create();
+  
+  return function(time) 
+  {
+      var elapsed = time - previous_time;
+      if (elapsed > 100)
+      {
+          elapsed = frame_duration;
+      }
+      var dt = elapsed * simulation_speed;
+      previous_time = time;
     
-    clear_canvas();
+      clear_canvas();
     
-    var total_energy = 0;
-    var total_momentum = vec2.create();
-    var total_pressure = 0;
-    var color_counts = {};
+      var total_energy = 0;
+      var total_pressure = 0;
+      vec2.set(total_momentum, 0, 0);
+      var color_counts = {};
 
-    drawBalls(balls, ball_radius);
+      drawBalls(balls, ball_radius);
     
-    for (var ball of balls) 
-    {
+      for (var ball of balls) 
+      {
       
-        vec2.scaleAndAdd(ball.position, ball.position, ball.velocity, dt);
-        vec2.scaleAndAdd(ball.position, ball.position, gravity_acceleration, 0.5*dt*dt);
-        vec2.scaleAndAdd(ball.velocity, ball.velocity, gravity_acceleration, dt);
+          vec2.scaleAndAdd(ball.position, ball.position, ball.velocity, dt);
+          vec2.scaleAndAdd(ball.position, ball.position, gravity_acceleration, 0.5*dt*dt);
+          vec2.scaleAndAdd(ball.velocity, ball.velocity, gravity_acceleration, dt);
         
-        total_energy += vec2.sqrLen(ball.velocity);
-        vec2.add(total_momentum, total_momentum, ball.velocity);
+          total_energy += vec2.sqrLen(ball.velocity);
+          vec2.add(total_momentum, total_momentum, ball.velocity);
         
-        if(is_point_in_rectangle(ball.position, left_rect))
-        {
-            color_counts[ball.color.name] = 1 + (color_counts[ball.color.name] || 0);
-        }
-    }
+          if(is_point_in_rectangle(ball.position, left_rect))
+          {
+              color_counts[ball.color.name] = 1 + (color_counts[ball.color.name] || 0);
+          }
+      }
     
-    for (var ball of balls)
-    {
-        // Collision with wall
+      for (var ball of balls)
+      {
+          // Collision with wall
         
-        if (! is_point_in_rectangle(ball.position, collision_bounds))
-        {
-            var wall_normal = vec2.create();
-            var overlap;
+          if (! is_point_in_rectangle(ball.position, collision_bounds))
+          {
+              var overlap;
 
-            if (ball.position[0] < collision_bounds.left)
-            {
-                overlap = collision_bounds.left - ball.position[0];
-                vec2.set(wall_normal, 1, 0);
-            }
-            else if (ball.position[0] > collision_bounds.right)
-            {
-                overlap = ball.position[0] - collision_bounds.right;
-                vec2.set(wall_normal, -1, 0);
-            }
-            else if (ball.position[1] < collision_bounds.top)
-            {
-                overlap = collision_bounds.top - ball.position[1];
-                vec2.set(wall_normal, 0, 1);
-            }
-            else if (ball.position[1] > collision_bounds.bottom)
-            {
-                overlap = ball.position[1] - collision_bounds.bottom;
-                vec2.set(wall_normal, 0, -1);
-            }
+              if (ball.position[0] < collision_bounds.left)
+              {
+                  overlap = collision_bounds.left - ball.position[0];
+                  vec2.set(wall_normal, 1, 0);
+              }
+              else if (ball.position[0] > collision_bounds.right)
+              {
+                  overlap = ball.position[0] - collision_bounds.right;
+                  vec2.set(wall_normal, -1, 0);
+              }
+              else if (ball.position[1] < collision_bounds.top)
+              {
+                  overlap = collision_bounds.top - ball.position[1];
+                  vec2.set(wall_normal, 0, 1);
+              }
+              else if (ball.position[1] > collision_bounds.bottom)
+              {
+                  overlap = ball.position[1] - collision_bounds.bottom;
+                  vec2.set(wall_normal, 0, -1);
+              }
             
-            // Move out of overlap
+              // Move out of overlap
             
-            vec2.scaleAndAdd(ball.position, ball.position, wall_normal, overlap);
+              vec2.scaleAndAdd(ball.position, ball.position, wall_normal, overlap);
             
-            // Reflect velocity
+              // Reflect velocity
             
-            var projection = vec2.create();
-            vec2.projectOntoNormal(projection, ball.velocity, wall_normal);
-            vec2.scaleAndAdd(ball.velocity, ball.velocity, projection, -2);
+              vec2.projectOntoNormal(projection, ball.velocity, wall_normal);
+              vec2.scaleAndAdd(ball.velocity, ball.velocity, projection, -2);
             
-            total_pressure += vec2.length(projection);
-        }
-    }
+              total_pressure += vec2.length(projection);
+          }
+      }
     
     
-    // Collision with other balls
-    if (collision_checking)
-    {
-        quadtree.clear();
-        for (var ball of balls)
-        {
-            quadtree.add(ball);
-        }
-        quadtree.collide_all(collide);
-    }
+      // Collision with other balls
+      if (collision_checking)
+      {
+          quadtree.clear();
+          for (var ball of balls)
+          {
+              quadtree.add(ball);
+          }
+          quadtree.collide_all(collide);
+      }
     
-    // Measurements
+      // Measurements
     
-    running_pressure.push(total_pressure);
-    running_time.push(time)
-    if (running_pressure.length > pressure_window_size)
-    {
-        running_pressure.shift();
-        var initial_time = running_time.shift();
-    }
-    else
-    {
-        var initial_time = running_time[0];
-    }
+      running_pressure.push(total_pressure);
+      running_time.push(time)
+      if (running_pressure.length > pressure_window_size)
+      {
+          running_pressure.shift();
+          var initial_time = running_time.shift();
+      }
+      else
+      {
+          var initial_time = running_time[0];
+      }
 
-    var average_pressure = sum(running_pressure) / (time - initial_time);
-    document.getElementById("pressure").value = average_pressure.toExponential(2);
-    document.getElementById("energy").value = total_energy.toExponential(2);
-    document.getElementById("momentum").value = 
-        ["(", total_momentum[0].toExponential(2), 
-         ", ", total_momentum[1].toExponential(2), ")"].join("");
-    var color_count_string_array = [];
-    var entropy = 0;
-    for (var color in color_counts) 
-    {
-        if (color_counts.hasOwnProperty(color)) 
-        {
-            var color_count = color_counts[color];
-            var p = color_count/ball_count;
-            entropy = microstate_entropy(p) + microstate_entropy(1 - p);
-            color_count_string_array.push(color, ": ", color_count, " ");
-        }
-    }
-    document.getElementById("color").value = color_count_string_array.join("");
-    document.getElementById("entropy").value = entropy.toExponential(2);
+      var average_pressure = sum(running_pressure) / (time - initial_time);
+      document.getElementById("pressure").value = average_pressure.toExponential(2);
+      document.getElementById("energy").value = total_energy.toExponential(2);
+      document.getElementById("momentum").value = 
+          ["(", total_momentum[0].toExponential(2), 
+           ", ", total_momentum[1].toExponential(2), ")"].join("");
+      var color_count_string_array = [];
+      var entropy = 0;
+      for (var color in color_counts) 
+      {
+          if (color_counts.hasOwnProperty(color)) 
+          {
+              var color_count = color_counts[color];
+              var p = color_count/ball_count;
+              entropy = microstate_entropy(p) + microstate_entropy(1 - p);
+              color_count_string_array.push(color, ": ", color_count, " ");
+          }
+      }
+      document.getElementById("color").value = color_count_string_array.join("");
+      document.getElementById("entropy").value = entropy.toExponential(2);
     
-    if (running) 
-    {
-        request_frame_id = window.requestAnimationFrame(update);
-    }
-}
+      if (running) 
+      {
+          request_frame_id = window.requestAnimationFrame(update);
+      }
+  }
+}();
+
 
 initGraphics(canvas);
 init(uniform_position, uniform_velocity, one_color)
