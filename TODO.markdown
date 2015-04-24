@@ -25,5 +25,6 @@
 * Optimizations
     * Do not allocate new bound rects all the time
     * Quadtree restructure instead of clear+repopulate?
+    * Do quadtree in local coordinates?
     * SOA instead of AOS -> ball_positions = new Float32Array() etc.
     
