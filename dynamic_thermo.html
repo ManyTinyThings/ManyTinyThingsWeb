@@ -215,7 +215,7 @@ function init(position_function, velocity_function, color_function)
         balls.push(ball);
     }
     
-    previous_time = performance.now();
+    previous_time = 0;
     request_frame_id = window.requestAnimationFrame(update);
 }
 
@@ -232,7 +232,7 @@ function resume()
 {
     if (!request_frame_id)
     {
-        previous_time = performance.now();
+        previous_time = 0;
         window.requestAnimationFrame(update);
     }
 }
@@ -301,7 +301,7 @@ var update = function(){
   return function(time) 
   {
       var elapsed = time - previous_time;
-      if (elapsed > 100)
+      if ((elapsed > 100) || (elapsed <= 0))
       {
           elapsed = frame_duration;
       }
