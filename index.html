@@ -328,8 +328,9 @@ var update = function(){
 
       drawBalls(balls, ball_radius);
     
-      for (var ball of balls) 
+      for (var i = 0; i < balls.length; ++i)
       {
+          var ball = balls[i];
       
           vec2.scaleAndAdd(ball.position, ball.position, ball.velocity, dt);
           vec2.scaleAndAdd(ball.position, ball.position, gravity_acceleration, 0.5*dt*dt);
@@ -344,8 +345,10 @@ var update = function(){
           }
       }
     
-      for (var ball of balls)
+      for (var i = 0; i < balls.length; ++i)
       {
+          var ball = balls[i];
+          
           // Collision with wall
         
           if (! collision_bounds.containsPoint(ball.position))
@@ -393,8 +396,9 @@ var update = function(){
           if (using_quadtree)
           {
               quadtree.clear();
-              for (var ball of balls)
+              for (var i = 0; i < balls.length; ++i)
               {
+                  var ball = balls[i];
                   ball.updateBounds();
                   quadtree.add(ball);
               }
@@ -402,14 +406,11 @@ var update = function(){
           }
           else
           {
-              for (var ball1 of balls)
+              for (var i = 0; i < balls.length; ++i)
               {
-                  for (var ball2 of balls)
+                  for (var j = 0; j < i; ++j)
                   {
-                      if (ball1 != ball2)
-                      {
-                          collide(ball1, ball2);
-                      }
+                      collide(balls[i], balls[j]);
                   }
               }
           }

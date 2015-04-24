@@ -124,8 +124,9 @@ Quadtree.prototype.add = function(object)
 {
     if (this.subtrees)
     {
-        for (var subtree of this.subtrees)
+        for (var i = 0; i < this.subtrees.length; ++i)
         {
+            var subtree = subtrees[i];
             if (subtree.bounds.containsRect(object.bounds))
             {
                 subtree.add(object);
@@ -157,11 +158,12 @@ Quadtree.prototype.add = function(object)
                 this.bounds.right, this.bounds.bottom);
             this.subtrees = [new Quadtree(top_left), new Quadtree(top_right),
                              new Quadtree(bottom_left), new Quadtree(bottom_right)];
-            
-            for (var object of this.objects)
-            {
-                for (var subtree of this.subtrees)
+             for (var i = 0; i < this.objects.length; ++i)
+             {
+                var object = this.objects[i];
+                for (var i = 0; i < this.subtrees.length; ++i)
                 {
+                    var subtree = subtrees[i];
                     if (subtree.bounds.containsRect(object.bounds))
                     {
                         subtree.add(object);
@@ -176,33 +178,33 @@ Quadtree.prototype.add = function(object)
 
 Quadtree.prototype.collide_all = function(collision_function)
 {
-    for (var object of this.objects)
+    for (var i = 0; i < this.objects.length; ++i)
     {
-        this.collide_with(object, collision_function);
+        this.collide_with(this.objects[i], collision_function);
     }
     if (this.subtrees)
     {
-        for (var subtree of this.subtrees)
+        for (var i = 0; i < this.subtrees.length; ++i)
         {
-            subtree.collide_all(collision_function);
+            this.subtrees[i].collide_all(collision_function);
         }
     }
 }
 
 Quadtree.prototype.collide_with = function(collider, collision_function) 
 {
-    for (var object of this.objects)
+    for (var i = 0; i < this.objects.length; ++i)
     {
         if (object != collider)
         {
-            collision_function(collider, object);
+            collision_function(collider, this.objects[i]);
         }
     }
     if (this.subtrees)
     {
-        for (var subtree of this.subtrees)
+        for (var i = 0; i < this.subtrees.length; ++i)
         {
-            subtree.collide_with(collider, collision_function);
+            this.subtrees[i].collide_with(collider, collision_function);
         }
     }
 }
@@ -211,9 +213,9 @@ Quadtree.prototype.clear = function() {
     this.objects = [];
     if (this.subtrees)
     {
-        for (var subtree of this.subtrees)
+        for (var i = 0; i < this.subtrees.length; ++i)
         {
-            subtree.clear();
+            this.subtrees[i].clear();
         }
     }
 }
