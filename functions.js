@@ -27,50 +27,11 @@ function sum(array)
 
 // Vector
 
-function V2(x, y)
+vec2.projectOntoNormal = function(out, a, normal)
 {
-    return new Vector2(x, y);
-}
-
-function Vector2(x, y)
-{
-    this.x = x || 0;
-    this.y = y || 0;
-}
-
-Vector2.prototype = {
-    plus: function(v)
-    {
-        return V2(this.x + v.x, this.y + v.y);
-    },
-    minus: function(v)
-    {
-        return V2(this.x - v.x, this.y - v.y);
-    },
-    times: function(scalar)
-    {
-        return V2(scalar * this.x, scalar * this.y);
-    },
-    dot: function(v)
-    {
-        return (this.x * v.x + this.y * v.y);
-    },
-    squared: function()
-    {
-        return this.dot(this);
-    },
-    magnitude: function()
-    {
-        return Math.sqrt(this.squared());
-    },
-    normalized: function()
-    {
-        return this.times(1 / this.magnitude());
-    },
-    project_onto_normal: function(normal)
-    {
-        return normal.times(this.dot(normal));
-    }
+    var length = vec2.dot(a, normal);
+    vec2.scale(out, normal, length);
+    return out;
 }
 
 // Rectangle
@@ -83,7 +44,7 @@ Rectangle = function(left, top, width, height)
     this.height = height;
     this.right = left + width;
     this.bottom = top + height;
-    this.center = V2(left + width/2, top + height/2);
+    this.center = vec2.fromValues(left + width/2, top + height/2);
 }
 
 function RectLeftTopWidthHeight(left, top, width, height)
@@ -100,8 +61,8 @@ function RectCenterWidthHeight(center, width, height)
 {
     var half_width = width / 2;
     var half_height = height / 2;
-    return new Rectangle(center.x - half_width, 
-                         center.y - half_height,
+    return new Rectangle(center[0] - half_width, 
+                         center[1] - half_height,
                          width, height);
 }
 
@@ -112,17 +73,17 @@ function is_rectangle_in_rectangle(inner, outer)
     return inside_x && inside_y;
 }
 
-function is_point_in_rectangle(v, rect)
+function is_point_in_rectangle(point, rect)
 {
-    var inside_x = (rect.left <= v.x) && (v.x <= rect.right)
-    var inside_y = (rect.top <= v.y)  && (v.y <= rect.bottom)
+    var inside_x = (rect.left <= point[0]) && (point[0] <= rect.right)
+    var inside_y = (rect.top <= point[1])  && (point[1] <= rect.bottom)
     return inside_x && inside_y;
 }
 
 function random_point_in_rectangle(rect)
 {
-    return V2(random_in_interval(rect.left, rect.right),
-              random_in_interval(rect.top, rect.bottom));
+    return vec2.fromValues(random_in_interval(rect.left, rect.right),
+                           random_in_interval(rect.top, rect.bottom));
 }
 
 
@@ -166,15 +127,15 @@ Quadtree.prototype.add = function(object)
         {
             var top_left = RectLeftTopRightBottom(
                 this.bounds.left, this.bounds.top, 
-                this.bounds.center.x, this.bounds.center.y);
+                this.bounds.center[0], this.bounds.center[1]);
             var top_right = RectLeftTopRightBottom(
-                this.bounds.center.x, this.bounds.top, 
-                this.bounds.right, this.bounds.center.y);
+                this.bounds.center[0], this.bounds.top, 
+                this.bounds.right, this.bounds.center[1]);
             var bottom_left = RectLeftTopRightBottom(
-                this.bounds.left, this.bounds.center.y, 
-                this.bounds.center.x, this.bounds.bottom);
+                this.bounds.left, this.bounds.center[1], 
+                this.bounds.center[0], this.bounds.bottom);
             var bottom_right = RectLeftTopRightBottom(
-                this.bounds.center.x, this.bounds.center.y, 
+                this.bounds.center[0], this.bounds.center[1], 
                 this.bounds.right, this.bounds.bottom);
             this.subtrees = [new Quadtree(top_left), new Quadtree(top_right),
                              new Quadtree(bottom_left), new Quadtree(bottom_right)];

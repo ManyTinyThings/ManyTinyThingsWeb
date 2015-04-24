@@ -9,7 +9,7 @@ function draw_ball(ball)
     context.beginPath();
     
     context.fillStyle = rgba_to_css(ball.color.rgba);
-    context.arc(ball.position.x, ball.position.y, ball_radius, 0, tau);
+    context.arc(ball.position[0], ball.position[1], ball_radius, 0, tau);
     context.fill();
 }
 

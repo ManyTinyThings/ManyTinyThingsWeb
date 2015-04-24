@@ -2,8 +2,8 @@
 <html>
 <head>
     <title>Dynamic Thermodynamics</title>
-    <script src="functions.js" type="text/javascript"></script>
     <script src="gl-matrix.js" type="text/javascript" charset="utf-8"></script>
+    <script src="functions.js" type="text/javascript"></script>
     <script src="gl.js" type="text/javascript" charset="utf-8"></script>
     <!-- <script src="canvas.js" type="text/javascript" charset="utf-8"></script> -->
 </head>
@@ -63,7 +63,7 @@ document.getElementById("collision").addEventListener("change", function(){
 })
 
 document.getElementById("gravity").addEventListener("input", function(){
-    gravity = Number(this.value);
+    gravity_acceleration[1] = -Number(this.value);
 })
 
 document.getElementById("box_size").addEventListener("input", function(){
@@ -113,7 +113,7 @@ var running = true;
 var initially_together = true;
 var initially_falling = false;
 var collision_checking = false;
-var gravity = 0;
+var gravity_acceleration = vec2.create();
 var pressure_window_size = 1000;
 var frame_duration = 33;
 
@@ -161,12 +161,12 @@ function uniform_velocity(ball_index, ball_count)
 {
     var speed = random_in_interval(0, max_speed);
     var angle = random_in_interval(0, tau);
-    return V2(Math.cos(angle), Math.sin(angle)).times(speed);
+    return vec2.fromValues(speed * Math.cos(angle), speed * Math.sin(angle));
 }
 
 function identical_velocity(ball_index, ball_count) 
 {
-    return V2(0, max_speed);
+    return vec2.fromValues(0, max_speed);
 }
 
 function one_color(ball_index, ball_count) 
@@ -188,8 +188,8 @@ function two_colors(ball_index, ball_count)
 
 var Ball = function(position, velocity, color)
 {
-    this.position = position || V2();
-    this.velocity = velocity || V2();
+    this.position = position || vec2.create();
+    this.velocity = velocity || vec2.create();
     this.color    = color    || {name: "black", rgba: [0, 0, 0, 1]};
 }
 
@@ -249,11 +249,11 @@ function update_bounds() {
     );
     
     right_rect = RectLeftTopRightBottom(
-            canvas_bounds.center.x, canvas_bounds.top, 
+            canvas_bounds.center[0], canvas_bounds.top, 
             canvas_bounds.right, canvas_bounds.bottom);     
     left_rect = RectLeftTopRightBottom(
             canvas_bounds.left, canvas_bounds.top, 
-            canvas_bounds.center.x, canvas_bounds.bottom);
+            canvas_bounds.center[0], canvas_bounds.bottom);
     
     quadtree = new Quadtree(canvas_bounds);  
     
@@ -264,27 +264,29 @@ function update_bounds() {
 
 function collide(ball1, ball2)
 {
-    var vector_between_centers = ball1.position.minus(ball2.position);
-    var quadrance = vector_between_centers.squared();
+    var relative_position = vec2.create();
+    vec2.subtract(relative_position, ball1.position, ball2.position);
+    var quadrance = vec2.sqrLen(relative_position);
     if (quadrance < squared(2*ball_radius)) 
     {
         var distance_between_centers = Math.sqrt(quadrance);
         var overlap = 2*ball_radius - distance_between_centers;
-        var normal = vector_between_centers.times(1 / distance_between_centers);
+        var normal = vec2.scale(relative_position, relative_position, 1 / distance_between_centers);
     
         // Move out of overlap
         // TODO: improve to perform correct collision
     
-        var half_overlap_vector = normal.times(overlap / 2);
-        ball1.position = ball1.position.plus(half_overlap_vector);
-        ball2.position = ball2.position.minus(half_overlap_vector);
+        vec2.scaleAndAdd(ball1.position, ball1.position, normal, overlap / 2);
+        vec2.scaleAndAdd(ball2.position, ball2.position, normal, - overlap / 2);
     
         // Elastic collision
     
-        var relative_velocity = ball1.velocity.minus(ball2.velocity);
-        var normal_velocity = relative_velocity.project_onto_normal(normal);
-        ball1.velocity = ball1.velocity.minus(normal_velocity);
-        ball2.velocity = ball2.velocity.plus(normal_velocity);
+        var relative_velocity = vec2.create();
+        
+        vec2.subtract(relative_velocity, ball1.velocity, ball2.velocity);
+        var delta_velocity = vec2.projectOntoNormal(relative_velocity, relative_velocity, normal);
+        vec2.sub(ball1.velocity, ball1.velocity, delta_velocity);
+        vec2.add(ball2.velocity, ball2.velocity, delta_velocity);
     }
 }
 
@@ -301,7 +303,7 @@ function update(time)
     clear_canvas();
     
     var total_energy = 0;
-    var total_momentum = V2();
+    var total_momentum = vec2.create();
     var total_pressure = 0;
     var color_counts = {};
 
@@ -309,15 +311,13 @@ function update(time)
     
     for (var ball of balls) 
     {
+      
+        vec2.scaleAndAdd(ball.position, ball.position, ball.velocity, dt);
+        vec2.scaleAndAdd(ball.position, ball.position, gravity_acceleration, 0.5*dt*dt);
+        vec2.scaleAndAdd(ball.velocity, ball.velocity, gravity_acceleration, dt);
         
-        var gravity_acceleration = V2(0, -gravity)
-        var deltaPosition = ball.velocity.times(dt)
-          .plus( gravity_acceleration.times(0.5*squared(dt)) );
-        ball.position = ball.position.plus(deltaPosition);
-        ball.velocity = ball.velocity.plus(gravity_acceleration.times(dt));
-        
-        total_energy += ball.velocity.squared();
-        total_momentum = total_momentum.plus(ball.velocity);
+        total_energy += vec2.sqrLen(ball.velocity);
+        vec2.add(total_momentum, total_momentum, ball.velocity);
         
         if(is_point_in_rectangle(ball.position, left_rect))
         {
@@ -331,40 +331,41 @@ function update(time)
         
         if (! is_point_in_rectangle(ball.position, collision_bounds))
         {
-            var wall_normal = V2(0, 0);
+            var wall_normal = vec2.create();
             var overlap;
 
-            if (ball.position.x < collision_bounds.left)
+            if (ball.position[0] < collision_bounds.left)
             {
-                overlap = collision_bounds.left - ball.position.x;
-                wall_normal = V2(1, 0);
+                overlap = collision_bounds.left - ball.position[0];
+                vec2.set(wall_normal, 1, 0);
             }
-            else if (ball.position.x > collision_bounds.right)
+            else if (ball.position[0] > collision_bounds.right)
             {
-                overlap = ball.position.x - collision_bounds.right;
-                wall_normal = V2(-1, 0);
+                overlap = ball.position[0] - collision_bounds.right;
+                vec2.set(wall_normal, -1, 0);
             }
-            else if (ball.position.y < collision_bounds.top)
+            else if (ball.position[1] < collision_bounds.top)
             {
-                overlap = collision_bounds.top - ball.position.y;
-                wall_normal = V2(0, 1);
+                overlap = collision_bounds.top - ball.position[1];
+                vec2.set(wall_normal, 0, 1);
             }
-            else if (ball.position.y > collision_bounds.bottom)
+            else if (ball.position[1] > collision_bounds.bottom)
             {
-                overlap = ball.position.y - collision_bounds.bottom;
-                wall_normal = V2(0, -1);
+                overlap = ball.position[1] - collision_bounds.bottom;
+                vec2.set(wall_normal, 0, -1);
             }
             
             // Move out of overlap
             
-            ball.position = ball.position.plus(wall_normal.times(overlap));
+            vec2.scaleAndAdd(ball.position, ball.position, wall_normal, overlap);
             
             // Reflect velocity
             
-            var projection = ball.velocity.project_onto_normal(wall_normal);
-            ball.velocity = ball.velocity.minus(projection.times(2));
+            var projection = vec2.create();
+            vec2.projectOntoNormal(projection, ball.velocity, wall_normal);
+            vec2.scaleAndAdd(ball.velocity, ball.velocity, projection, -2);
             
-            total_pressure += projection.magnitude()
+            total_pressure += vec2.length(projection);
         }
     }
     
@@ -398,8 +399,8 @@ function update(time)
     document.getElementById("pressure").value = average_pressure.toExponential(2);
     document.getElementById("energy").value = total_energy.toExponential(2);
     document.getElementById("momentum").value = 
-        ["(", total_momentum.x.toExponential(2), 
-         ", ", total_momentum.y.toExponential(2), ")"].join("");
+        ["(", total_momentum[0].toExponential(2), 
+         ", ", total_momentum[1].toExponential(2), ")"].join("");
     var color_count_string_array = [];
     var entropy = 0;
     for (var color in color_counts) 

@@ -116,10 +116,9 @@ function drawBalls(balls, radius) {
     var offsets = new Float32Array(2 * ballCount);
     var colors = new Float32Array(4 * ballCount);
     for (var i = 0; i < ballCount; i++) {
-        offsets[2*i]     = balls[i].position.x;
-        offsets[2*i + 1] = balls[i].position.y;
+        offsets.set(balls[i].position, 2*i)
         
-        colors.set(balls[i], 4*i);
+        colors.set(balls[i].color, 4*i);
     }
     
     // set attributes
