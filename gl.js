@@ -116,9 +116,8 @@ function drawBalls(balls, radius) {
     var offsets = new Float32Array(2 * ballCount);
     var colors = new Float32Array(4 * ballCount);
     for (var i = 0; i < ballCount; i++) {
-        offsets.set(balls[i].position, 2*i)
-        
-        colors.set(balls[i].color, 4*i);
+        offsets.set(balls[i].position, 2*i);
+        colors.set(balls[i].color.rgba, 4*i);
     }
     
     // set attributes
@@ -139,7 +138,7 @@ function drawBalls(balls, radius) {
     gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
     gl.enableVertexAttribArray(shaderProgram.colorAttribute);
-    gl.vertexAttribPointer(shaderProgram.colorAttribute, 2, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(shaderProgram.colorAttribute, 4, gl.FLOAT, false, 0, 0);
     ext.vertexAttribDivisorANGLE(shaderProgram.colorAttribute, 1);
     
     ext.drawArraysInstancedANGLE(gl.TRIANGLE_FAN, 0, vertexCount, ballCount);

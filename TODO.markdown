@@ -23,7 +23,7 @@
     * Graph over quantities
     * Show total momentum as vector
 * Optimizations
-    * Quadtree restructure instead of clear+repopulate
-    * Memory management by not allocating anything inside the loop
+    * Do not allocate new bound rects all the time
+    * Quadtree restructure instead of clear+repopulate?
     * SOA instead of AOS -> ball_positions = new Float32Array() etc.
     
