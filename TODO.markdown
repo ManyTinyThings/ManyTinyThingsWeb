@@ -3,6 +3,7 @@
 * Bugs
     * Some weirdness with timesteps when it lags (probably fixed by correct collision detection)
 * Run backwards with collisions
+    * Correct collision detection
     * Might have to arrange fixed timestep for this to work with collisions (might not be enough b/c collisions inherently non-reversible)
     * Discrete version?
 * Controls
@@ -11,10 +12,9 @@
     * Control velocities
     * Draggable borders of box
 * More than one kind of particle
-    * Different energy
+    * Different thermal energy
     * Removing wall
 * Measurements
-    * Measure entropy (mixing of different colors?)
     * Measure temperature
     * Measure velocity distribution
     * Pressure should be measured over time, not timesteps
@@ -23,8 +23,7 @@
     * Graph over quantities
     * Show total momentum as vector
 * Optimizations
-    * Do not allocate new bound rects all the time
     * Quadtree restructure instead of clear+repopulate?
-    * Do quadtree in local coordinates?
+    * Do quadtree in local coordinates? So we don't have to regenerate it when the box changes size
     * SOA instead of AOS -> ball_positions = new Float32Array() etc.
     

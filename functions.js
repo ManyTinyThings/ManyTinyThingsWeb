@@ -35,57 +35,74 @@ vec2.projectOntoNormal = function(out, a, normal)
 }
 
 // Rectangle
+// stored as an array of left, top, right, bottom
 
-Rectangle = function(left, top, width, height)
-{
+function Rect() {
+    this.left = 0;
+    this.right = 0;
+    this.top = 0;
+    this.bottom = 0;
+    this.width = 0;
+    this.height = 0;
+    this.center = vec2.create();
+    return this;
+}
+
+Rect.prototype.setLeftTopRightBottom = function(left, top, right, bottom) {
     this.left = left;
     this.top = top;
-    this.width = width;
-    this.height = height;
+    this.right = right;
+    this.bottom = bottom;
+    this.width = right - left;
+    this.height = top - bottom;
+    vec2.set(this.center, (left + right) / 2, (top + bottom) / 2);
+    return this;
+}
+
+Rect.prototype.setLeftTopWidthHeight = function(left, top, width, height) {
+    this.left = left;
+    this.top = top;
     this.right = left + width;
     this.bottom = top + height;
-    this.center = vec2.fromValues(left + width/2, top + height/2);
+    this.width = width;
+    this.height = height;
+    vec2.set(this.center, left + width/2, top + height/2);
+    return this;
 }
 
-function RectLeftTopWidthHeight(left, top, width, height)
-{
-    return new Rectangle(left, top, width, height);
+Rect.prototype.setCenterWidthHeight = function(center, width, height) {
+    var halfWidth = width / 2;
+    var halfHeight = height / 2;
+    this.left = center[0] - halfWidth;
+    this.top = center[1] - halfHeight;
+    this.right = center[0] + halfWidth;
+    this.bottom = center[1] + halfHeight;
+    this.width = width;
+    this.height = height;
+    vec2.copy(this.center, center);
+    return this;
 }
 
-function RectLeftTopRightBottom(left, top, right, bottom)
+Rect.prototype.containsRect = function(inner)
 {
-    return new Rectangle(left, top, right - left, bottom - top);
-}
-
-function RectCenterWidthHeight(center, width, height)
-{
-    var half_width = width / 2;
-    var half_height = height / 2;
-    return new Rectangle(center[0] - half_width, 
-                         center[1] - half_height,
-                         width, height);
-}
-
-function is_rectangle_in_rectangle(inner, outer)
-{
+    var outer = this;
     var inside_x = (outer.left <= inner.left) && (inner.right <= outer.right);
     var inside_y = (outer.top  <= inner.top ) && (inner.bottom <= outer.bottom);
     return inside_x && inside_y;
 }
 
-function is_point_in_rectangle(point, rect)
+Rect.prototype.containsPoint = function(point)
 {
-    var inside_x = (rect.left <= point[0]) && (point[0] <= rect.right)
-    var inside_y = (rect.top <= point[1])  && (point[1] <= rect.bottom)
+    var inside_x = (this.left <= point[0]) && (point[0] <= this.right)
+    var inside_y = (this.top <= point[1])  && (point[1] <= this.bottom)
     return inside_x && inside_y;
 }
 
-function random_point_in_rectangle(rect)
+function randomPointInRect(rect)
 {
     return vec2.fromValues(random_in_interval(rect.left, rect.right),
                            random_in_interval(rect.top, rect.bottom));
 }
-
 
 function random_in_interval(a, b)
 {
@@ -100,7 +117,7 @@ Quadtree = function(bounds, max_objects, max_depth)
     this.bounds = bounds;
     this.subtrees = undefined;
     this.max_objects = max_objects || 4;
-    this.max_depth = max_depth || 10;
+    this.max_depth = max_depth || 7;
 }
 
 Quadtree.prototype.add = function(object)
@@ -109,7 +126,7 @@ Quadtree.prototype.add = function(object)
     {
         for (var subtree of this.subtrees)
         {
-            if (is_rectangle_in_rectangle(object.bounds(), subtree.bounds))
+            if (subtree.bounds.containsRect(object.bounds))
             {
                 subtree.add(object);
                 return;
@@ -125,16 +142,17 @@ Quadtree.prototype.add = function(object)
     
         if (this.objects.length > this.max_objects)
         {
-            var top_left = RectLeftTopRightBottom(
+            // create subtrees
+            var top_left = new Rect().setLeftTopRightBottom(
                 this.bounds.left, this.bounds.top, 
                 this.bounds.center[0], this.bounds.center[1]);
-            var top_right = RectLeftTopRightBottom(
+            var top_right = new Rect().setLeftTopRightBottom(
                 this.bounds.center[0], this.bounds.top, 
                 this.bounds.right, this.bounds.center[1]);
-            var bottom_left = RectLeftTopRightBottom(
+            var bottom_left = new Rect().setLeftTopRightBottom(
                 this.bounds.left, this.bounds.center[1], 
                 this.bounds.center[0], this.bounds.bottom);
-            var bottom_right = RectLeftTopRightBottom(
+            var bottom_right = new Rect().setLeftTopRightBottom(
                 this.bounds.center[0], this.bounds.center[1], 
                 this.bounds.right, this.bounds.bottom);
             this.subtrees = [new Quadtree(top_left), new Quadtree(top_right),
@@ -144,7 +162,7 @@ Quadtree.prototype.add = function(object)
             {
                 for (var subtree of this.subtrees)
                 {
-                    if (is_rectangle_in_rectangle(object.bounds(), subtree.bounds))
+                    if (subtree.bounds.containsRect(object.bounds))
                     {
                         subtree.add(object);
                         break;

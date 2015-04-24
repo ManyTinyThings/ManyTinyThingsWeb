@@ -23,6 +23,7 @@ Thermodynamics is the study of heat. What is heat? That's like temperature, righ
 * Arrow of time
   * Messy initially -> run forwards and backwards
   * Divided (ordered) initially  -> run forwards and backwards
+* Brownian motion
 
 
 #### Small ideas
