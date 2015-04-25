@@ -2,13 +2,26 @@
 <html>
 <head>
     <title>Dynamic Thermodynamics</title>
+    <meta name="viewport" content="width=device-width">
     <script src="gl-matrix.js" type="text/javascript" charset="utf-8"></script>
     <script src="functions.js" type="text/javascript"></script>
     <script src="gl.js" type="text/javascript" charset="utf-8"></script>
     <!-- <script src="canvas.js" type="text/javascript" charset="utf-8"></script> -->
+    <style type="text/css" media="screen">
+        body {
+        }
+        
+        input[type="range"] {
+            width: 300px;
+        }
+        
+        #canvas {
+            border: 1px solid black;
+        }
+    </style>
 </head>
 <body>
-    <canvas id="canvas" width="500" height="400" style="border:1px solid black;"></canvas>
+    <canvas id="canvas" width="500" height="400"></canvas>
     <p>
         Energy = <output id="energy">?</output> (conserved) <br>
         Momentum = <output id="momentum">?</output> <br>
@@ -17,8 +30,17 @@
         Entropy = <output id="entropy">?</output> <br>
     </p>
     <p>
+        Reset simulation to 
+        <input type="button" value="Uniform" onclick="init(uniform_position, uniform_velocity, one_color)">
+        <input type="button" value="Grouped" onclick="init(grouped_position, uniform_velocity, one_color)">
+        <input type="button" value="Falling" 
+            onclick="init(grouped_position, identical_velocity, one_color)">
+        <input type="button" value="Two colors" 
+            onclick="init(halves_position, uniform_velocity, two_colors)">
+    </p>
+    <p>
         Control time: <br>
-        Backwards <input id="simulation_speed" type="range" value="1" min="-1" max="1" step="0.001" style="width: 300px;"> Forwards
+        Backwards <input id="simulation_speed" type="range" value="1" min="-5" max="5" step="0.001"> Forwards
     </p>
     <p>
         Number of particles: <br>
@@ -37,16 +59,7 @@
         Tiny <input id="box_size" type="range" value="500", min="20", max="1000", step="0.001"> Huge
     </p>
     <p>
-        Reset simulation to 
-        <input type="button" value="Uniform" onclick="init(uniform_position, uniform_velocity, one_color)">
-        <input type="button" value="Grouped" onclick="init(grouped_position, uniform_velocity, one_color)">
-        <input type="button" value="Falling" 
-            onclick="init(grouped_position, identical_velocity, one_color)">
-        <input type="button" value="Two colors" 
-            onclick="init(halves_position, uniform_velocity, two_colors)">
-    </p>
-    <p>
-        <label for="collision">Collision</label><input type="checkbox" id="collision">
+        <label for="collision">Collision</label><input type="checkbox" id="collision" checked>
         <label for="quadtree">Quadtree</label><input type="checkbox" id="quadtree" checked>
     </p>
 </body>
@@ -75,7 +88,9 @@ document.getElementById("gravity").addEventListener("input", function(){
 })
 
 document.getElementById("box_size").addEventListener("input", function(){
-    canvas.width = Number(this.value);
+    var width = Number(this.value);
+    canvas.width = width;
+    // canvas.style.marginLeft = ((document.body.clientWidth - width) / 2) + "px";
     update_bounds();
 })
 
@@ -123,7 +138,8 @@ document.addEventListener('visibilitychange', function(event) {
 //     resume();
 // });
 
-// Constants
+
+// Variables
 
 var tau = 2*Math.PI;
 
@@ -133,7 +149,7 @@ var ball_radius = 3;
 var running = true;
 var initially_together = true;
 var initially_falling = false;
-var collision_checking = false;
+var collision_checking = true;
 var gravity_acceleration = vec2.create();
 var pressure_window_size = 1000;
 var using_quadtree = true;

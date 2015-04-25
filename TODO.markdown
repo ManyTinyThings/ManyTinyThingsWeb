@@ -1,7 +1,10 @@
 # TODO    
 
+* Display stuff
+    * Retina support
+        * https://www.khronos.org/webgl/wiki/HandlingHighDPI
+    * Separate world coordinates from screen coords
 * Bugs
-    * Some weirdness with timesteps when it lags (probably fixed by correct collision detection)
 * Run backwards with collisions
     * Correct collision detection
     * Might have to arrange fixed timestep for this to work with collisions (might not be enough b/c collisions inherently non-reversible)
