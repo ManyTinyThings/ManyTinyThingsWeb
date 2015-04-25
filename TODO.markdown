@@ -1,9 +1,9 @@
 # TODO    
 
 * Display stuff
+    * Redraw on resize
     * Retina support
         * https://www.khronos.org/webgl/wiki/HandlingHighDPI
-    * Separate world coordinates from screen coords
 * Bugs
 * Run backwards with collisions
     * Correct collision detection
@@ -30,4 +30,4 @@
     * Quadtree restructure instead of clear+repopulate?
     * Do quadtree in local coordinates? So we don't have to regenerate it when the box changes size
     * SOA instead of AOS -> ball_positions = new Float32Array() etc.
-    
+    * Update velocities and accelerations on GPU?

@@ -89,10 +89,9 @@ document.getElementById("gravity").addEventListener("input", function(){
     vec2.set(gravity_acceleration, strength * Math.sin(angle), - strength * Math.cos(angle));
 })
 
-document.getElementById("box_size").addEventListener("input", function(){
-    var width = Number(this.value);
-    canvas.width = width;
-    canvas.style.marginLeft = ((document.body.clientWidth - width) / 2) + "px";
+document.getElementById("box_size").addEventListener("change", function(){
+    canvasWidth = Number(this.value);
+    canvas.style.marginLeft = ((document.body.clientWidth - canvasWidth) / 2) + "px";
     update_bounds();
 })
 
@@ -109,6 +108,8 @@ document.getElementById("ball_radius").addEventListener("input", function(){
 
 
 var canvas = document.getElementById("canvas");
+var canvasWidth = canvas.width;
+var canvasHeight = canvas.height;
 
 canvas.addEventListener("click", function(){
     if (request_frame_id)
@@ -139,7 +140,6 @@ document.addEventListener('visibilitychange', function(event) {
 // window.addEventListener("focus", function(){
 //     resume();
 // });
-
 
 // Variables
 
@@ -284,6 +284,12 @@ function resume()
 }
 
 function update_bounds() {
+    canvas.style.width = canvasWidth + "px";
+    canvas.style.height = canvasHeight + "px";
+
+    var devicePixelRatio = window.devicePixelRatio || 1;
+    canvas.width = canvasWidth * devicePixelRatio;
+    canvas.height = canvasHeight * devicePixelRatio;
     
     var aspectRatio = canvas.width / canvas.height;
     
@@ -304,7 +310,7 @@ function update_bounds() {
             box_bounds.left, box_bounds.top,
             box_bounds.center[0], box_bounds.bottom);
     
-    quadtree = new Quadtree(box_bounds);  
+    quadtree = new Quadtree(box_bounds);
     
     resize_canvas();
 }
