@@ -90,6 +90,20 @@ document.getElementById("ball_radius").addEventListener("input", function(){
     update_bounds();
 })
 
+
+var canvas = document.getElementById("canvas");
+
+canvas.addEventListener("click", function(){
+    if (request_frame_id)
+    {
+        pause();
+    }
+    else
+    {
+        resume();
+    }
+})
+
 // Pause when switching tabs, seems reasonable
 
 document.addEventListener('visibilitychange', function(event) {
@@ -112,7 +126,6 @@ document.addEventListener('visibilitychange', function(event) {
 // Constants
 
 var tau = 2*Math.PI;
-var canvas = document.getElementById("canvas");
 
 var max_speed = 0.1;
 var ball_count = 100;
