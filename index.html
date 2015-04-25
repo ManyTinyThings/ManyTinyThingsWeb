@@ -115,7 +115,7 @@ document.getElementById("gravity").addEventListener("input", function(){
     vec2.set(gravity_acceleration, strength * Math.sin(angle), - strength * Math.cos(angle));
 })
 
-document.getElementById("box_size").addEventListener("change", function(){
+document.getElementById("box_size").addEventListener("input", function(){
     canvasWidth = Number(this.value);
     canvas.style.marginLeft = ((document.body.clientWidth - canvasWidth) / 2) + "px";
     updateBounds();
@@ -196,7 +196,7 @@ var right_rect = new Rect();
 
 var ballGenerator = uniformBallGenerator;
 var ballCount = 100;
-var balls;
+var balls = [];
 var trajectory = [];
 var trajectory_enabled = false;
 
@@ -340,6 +340,8 @@ function updateBallCount(newBallCount)
         }
     }
     ballCount = newBallCount;
+    
+    draw();
 }
 
 function updateTrajectory()
@@ -353,6 +355,7 @@ function updateTrajectory()
     {
         balls[0].color = ballGenerator(0).color;
     }
+    draw();
 }
 
 function init(newBallGenerator) 
@@ -426,6 +429,8 @@ function updateBounds() {
     quadtree = new Quadtree(box_bounds);
     
     resize_canvas();
+    
+    draw();
 }
                              
 // Simulation
@@ -460,6 +465,20 @@ var collide = function(){
   }
 }();
 
+function draw()
+{
+    clear_canvas();
+    
+    // update trajectory
+    if (trajectory_enabled)
+    {
+        trajectory.push(balls[0].position[0], balls[0].position[1]);
+        drawTrajectory(trajectory);
+    }
+
+    drawBalls(balls, ball_radius);
+}
+
 var update = function(){
   
   var total_momentum = vec2.create();
@@ -476,23 +495,10 @@ var update = function(){
       var dt = elapsed * simulation_speed;
       previous_time = time;
     
-      clear_canvas();
-    
       var total_energy = 0;
       var total_pressure = 0;
       vec2.set(total_momentum, 0, 0);
       var color_counts = {};
-      
-      
-      // update trajectory
-      if (trajectory_enabled)
-      {
-          trajectory.push(balls[0].position[0], balls[0].position[1]);
-          drawTrajectory(trajectory);
-      }
-
-      drawBalls(balls, ball_radius);
-      
     
       for (var ballIndex = 0; 
           ballIndex < balls.length; 
@@ -587,6 +593,10 @@ var update = function(){
               }
           }
       }
+      
+      // Drawing
+      
+      draw();
     
       // Measurements
     
