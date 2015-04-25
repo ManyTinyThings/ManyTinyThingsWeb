@@ -100,7 +100,7 @@ function clear_canvas() {
 function drawBalls(balls, radius) {
     
     var ballCount = balls.length;
-    var vertexCount = Math.max(Math.floor(2*radius), 10);
+    var vertexCount = Math.max(Math.floor(4*radius), 20);
 
     // generate vertices
 

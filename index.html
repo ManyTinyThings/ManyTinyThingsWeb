@@ -65,6 +65,7 @@ document.getElementById("collision").addEventListener("change", function(){
 
 document.getElementById("quadtree").addEventListener("change", function(){
     using_quadtree = this.checked;
+    quadtree.clear();
 });
 
 document.getElementById("gravity").addEventListener("input", function(){
@@ -122,7 +123,7 @@ var initially_falling = false;
 var collision_checking = false;
 var gravity_acceleration = vec2.create();
 var pressure_window_size = 1000;
-var using_quadtree = false;
+var using_quadtree = true;
 var frame_duration = 33;
 
 var collision_bounds = new Rect();
@@ -328,9 +329,11 @@ var update = function(){
 
       drawBalls(balls, ball_radius);
     
-      for (var i = 0; i < balls.length; ++i)
+      for (var ballIndex = 0; 
+          ballIndex < balls.length; 
+          ++ballIndex)
       {
-          var ball = balls[i];
+          var ball = balls[ballIndex];
       
           vec2.scaleAndAdd(ball.position, ball.position, ball.velocity, dt);
           vec2.scaleAndAdd(ball.position, ball.position, gravity_acceleration, 0.5*dt*dt);
@@ -345,9 +348,11 @@ var update = function(){
           }
       }
     
-      for (var i = 0; i < balls.length; ++i)
+      for (var ballIndex = 0; 
+          ballIndex < balls.length; 
+          ++ballIndex)
       {
-          var ball = balls[i];
+          var ball = balls[ballIndex];
           
           // Collision with wall
         
@@ -396,9 +401,11 @@ var update = function(){
           if (using_quadtree)
           {
               quadtree.clear();
-              for (var i = 0; i < balls.length; ++i)
+              for (var ballIndex = 0; 
+                  ballIndex < balls.length; 
+                  ++ballIndex)
               {
-                  var ball = balls[i];
+                  var ball = balls[ballIndex];
                   ball.updateBounds();
                   quadtree.add(ball);
               }

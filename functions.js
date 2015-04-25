@@ -124,16 +124,17 @@ Quadtree.prototype.add = function(object)
 {
     if (this.subtrees)
     {
-        for (var i = 0; i < this.subtrees.length; ++i)
+        for (var subtreeIndex = 0; 
+            subtreeIndex < this.subtrees.length; 
+            ++subtreeIndex)
         {
-            var subtree = subtrees[i];
+            var subtree = this.subtrees[subtreeIndex];
             if (subtree.bounds.containsRect(object.bounds))
             {
                 subtree.add(object);
                 return;
             }
         }
-        
         this.objects.push(object);
         return;
     }
@@ -158,12 +159,16 @@ Quadtree.prototype.add = function(object)
                 this.bounds.right, this.bounds.bottom);
             this.subtrees = [new Quadtree(top_left), new Quadtree(top_right),
                              new Quadtree(bottom_left), new Quadtree(bottom_right)];
-             for (var i = 0; i < this.objects.length; ++i)
+             for (var objectIndex = 0; 
+                 objectIndex < this.objects.length; 
+                 ++objectIndex)
              {
-                var object = this.objects[i];
-                for (var i = 0; i < this.subtrees.length; ++i)
+                var object = this.objects[objectIndex];
+                for (var subtreeIndex = 0; 
+                    subtreeIndex < this.subtrees.length; 
+                    ++subtreeIndex)
                 {
-                    var subtree = subtrees[i];
+                    var subtree = this.subtrees[subtreeIndex];
                     if (subtree.bounds.containsRect(object.bounds))
                     {
                         subtree.add(object);
@@ -178,33 +183,44 @@ Quadtree.prototype.add = function(object)
 
 Quadtree.prototype.collide_all = function(collision_function)
 {
-    for (var i = 0; i < this.objects.length; ++i)
+    for (var objectIndex = 0; 
+        objectIndex < this.objects.length; 
+        ++objectIndex)
     {
-        this.collide_with(this.objects[i], collision_function);
+        this.collide_with(this.objects[objectIndex], collision_function);
     }
     if (this.subtrees)
     {
-        for (var i = 0; i < this.subtrees.length; ++i)
+        for (var subtreeIndex = 0; 
+            subtreeIndex < this.subtrees.length; 
+            ++subtreeIndex)
         {
-            this.subtrees[i].collide_all(collision_function);
+            var subtree = this.subtrees[subtreeIndex];
+            subtree.collide_all(collision_function);
         }
     }
 }
 
 Quadtree.prototype.collide_with = function(collider, collision_function) 
 {
-    for (var i = 0; i < this.objects.length; ++i)
+    for (var objectIndex = 0; 
+        objectIndex < this.objects.length; 
+        ++objectIndex)
     {
+        var object = this.objects[objectIndex];
         if (object != collider)
         {
-            collision_function(collider, this.objects[i]);
+            collision_function(collider, object);
         }
     }
     if (this.subtrees)
     {
-        for (var i = 0; i < this.subtrees.length; ++i)
+        for (var subtreeIndex = 0; 
+            subtreeIndex < this.subtrees.length; 
+            ++subtreeIndex)
         {
-            this.subtrees[i].collide_with(collider, collision_function);
+            var subtree = this.subtrees[subtreeIndex];
+            subtree.collide_with(collider, collision_function);
         }
     }
 }
@@ -213,9 +229,12 @@ Quadtree.prototype.clear = function() {
     this.objects = [];
     if (this.subtrees)
     {
-        for (var i = 0; i < this.subtrees.length; ++i)
+        for (var subtreeIndex = 0; 
+            subtreeIndex < this.subtrees.length; 
+            ++subtreeIndex)
         {
-            this.subtrees[i].clear();
+            var subtree = this.subtrees[subtreeIndex];
+            subtree.clear();
         }
     }
 }
