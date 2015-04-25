@@ -25,6 +25,8 @@ Thermodynamics is the study of heat. What is heat? That's like temperature, righ
   * Divided (ordered) initially  -> run forwards and backwards
 * Brownian motion
     * Draw trajectory of one particle
+* Friction
+    * Bigger ball collides into sea of small balls
 
 
 #### Small ideas

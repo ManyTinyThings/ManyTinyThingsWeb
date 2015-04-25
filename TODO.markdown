@@ -2,6 +2,7 @@
 
 * Display stuff
     * Redraw on resize
+    * Stuttery animation sometimes
 * Bugs
 * Run backwards with collisions
     * Correct collision detection
@@ -22,8 +23,7 @@
     * Measure velocity distribution
     * Pressure should be measured over time, not number of timesteps
 * Figures
-    * Draw trajectory of one particle
-        * that particle gets a pilot hat 8)
+    * Trajectory particle gets a pilot hat 8)
     * Density histogram
     * Graph over quantities
     * Show total momentum as vector

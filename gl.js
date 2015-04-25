@@ -144,6 +144,20 @@ function drawBalls(balls, radius) {
     ext.drawArraysInstancedANGLE(gl.TRIANGLE_FAN, 0, vertexCount, ballCount);
 }
 
+function drawTrajectory(trajectory)
+{
+    var vertexCount = trajectory.length / 2;
+    var vertices = new Float32Array(trajectory);
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, 2, gl.FLOAT, false, 0, 0);
+    
+    gl.disableVertexAttribArray(shaderProgram.offsetAttribute);
+    
+    gl.drawArrays(gl.LINE_STRIP, 0, vertexCount)
+}
+
 function loadShader(gl, type, str) {
     var shader = gl.createShader(type);
   

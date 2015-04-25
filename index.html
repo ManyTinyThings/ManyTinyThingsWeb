@@ -82,6 +82,7 @@
     <p>
         <label for="collision">Collision</label><input type="checkbox" id="collision" checked>
         <label for="quadtree">Quadtree</label><input type="checkbox" id="quadtree" checked>
+        <label for="trajectory">Draw trajectory</label><input type="checkbox" id="trajectory">
     </p>
 </body>
 
@@ -89,17 +90,23 @@
 
 // Event handling
 
-document.getElementById("simulation_speed").addEventListener("input", function() {
-    simulation_speed = Number(this.value);
-});
 
 document.getElementById("collision").addEventListener("change", function(){
-    collision_checking = this.checked;
+    collision_enabled = this.checked;
 });
 
 document.getElementById("quadtree").addEventListener("change", function(){
-    using_quadtree = this.checked;
+    quadtree_enabled = this.checked;
     quadtree.clear();
+});
+
+document.getElementById("trajectory").addEventListener("change", function(){
+    trajectory_enabled = this.checked;
+    updateTrajectory();
+});
+
+document.getElementById("simulation_speed").addEventListener("input", function() {
+    simulation_speed = Number(this.value);
 });
 
 document.getElementById("gravity").addEventListener("input", function(){
@@ -111,7 +118,7 @@ document.getElementById("gravity").addEventListener("input", function(){
 document.getElementById("box_size").addEventListener("change", function(){
     canvasWidth = Number(this.value);
     canvas.style.marginLeft = ((document.body.clientWidth - canvasWidth) / 2) + "px";
-    update_bounds();
+    updateBounds();
 })
 
 document.getElementById("ball_count").addEventListener("input", function(){
@@ -121,7 +128,7 @@ document.getElementById("ball_count").addEventListener("input", function(){
 
 document.getElementById("ball_radius").addEventListener("input", function(){
     ball_radius = Number(this.value);
-    update_bounds();
+    updateBounds();
 })
 
 
@@ -173,10 +180,10 @@ var ball_radius = 0.02;
 var running = true;
 var initially_together = true;
 var initially_falling = false;
-var collision_checking = true;
+var collision_enabled = true;
 var gravity_acceleration = vec2.create();
 var pressure_window_size = 1000;
-var using_quadtree = true;
+var quadtree_enabled = true;
 var frame_duration = 33;
 
 var box_bounds = new Rect();
@@ -190,6 +197,8 @@ var right_rect = new Rect();
 var ballGenerator = uniformBallGenerator;
 var ballCount = 100;
 var balls;
+var trajectory = [];
+var trajectory_enabled = false;
 
 var paused_by_user = false;
 var previous_time;
@@ -264,7 +273,7 @@ function two_colors(ballIndex)
 {
     if (ballIndex % 2 == 0)
     {
-        return {name: "blue", rgba: [0, 0, 1, 1]};
+        return {name: "black", rgba: [0, 0, 0, 1]};
     }
     else
     {
@@ -333,6 +342,19 @@ function updateBallCount(newBallCount)
     ballCount = newBallCount;
 }
 
+function updateTrajectory()
+{
+    trajectory = [];
+    if (trajectory_enabled)
+    {
+        balls[0].color = {name: "blue", rgba: [0, 0, 1, 1]};
+    }
+    else
+    {
+        balls[0].color = ballGenerator(0).color;
+    }
+}
+
 function init(newBallGenerator) 
 {
     if (request_frame_id) {
@@ -340,11 +362,13 @@ function init(newBallGenerator)
         request_frame_id = undefined;
     }
 
-    update_bounds();
+    updateBounds();
     
     ballGenerator = newBallGenerator || ballGenerator;
     balls = [];
     updateBallCount(ballCount);
+    
+    updateTrajectory();
     
     previous_time = 0;
     request_frame_id = window.requestAnimationFrame(update);
@@ -368,7 +392,7 @@ function resume()
     }
 }
 
-function update_bounds() {
+function updateBounds() {
     
     // retina stuff
     
@@ -458,8 +482,17 @@ var update = function(){
       var total_pressure = 0;
       vec2.set(total_momentum, 0, 0);
       var color_counts = {};
+      
+      
+      // update trajectory
+      if (trajectory_enabled)
+      {
+          trajectory.push(balls[0].position[0], balls[0].position[1]);
+          drawTrajectory(trajectory);
+      }
 
       drawBalls(balls, ball_radius);
+      
     
       for (var ballIndex = 0; 
           ballIndex < balls.length; 
@@ -528,9 +561,9 @@ var update = function(){
     
     
       // Collision with other balls
-      if (collision_checking)
+      if (collision_enabled)
       {
-          if (using_quadtree)
+          if (quadtree_enabled)
           {
               quadtree.clear();
               for (var ballIndex = 0; 
