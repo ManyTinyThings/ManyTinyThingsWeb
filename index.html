@@ -104,7 +104,7 @@ document.getElementById("quadtree").addEventListener("change", function(){
 
 document.getElementById("gravity").addEventListener("input", function(){
     var strength = Number(this.value);
-    var angle = 0;
+    var angle = 0; // down
     vec2.set(gravity_acceleration, strength * Math.sin(angle), - strength * Math.cos(angle));
 })
 
@@ -132,10 +132,12 @@ var canvasHeight = canvas.height;
 canvas.addEventListener("click", function(){
     if (request_frame_id)
     {
+        paused_by_user = true;
         pause();
     }
     else
     {
+        paused_by_user = false;
         resume();
     }
 })
@@ -143,9 +145,12 @@ canvas.addEventListener("click", function(){
 // Pause when switching tabs, seems reasonable
 
 document.addEventListener('visibilitychange', function(event) {
-    if (document.hidden) {
+    if (document.hidden)
+    {
         pause();
-    } else {
+    } 
+    else if (!paused_by_user)
+    {
         resume();
     }
 });
@@ -185,6 +190,8 @@ var right_rect = new Rect();
 var ballGenerator = uniformBallGenerator;
 var ballCount = 100;
 var balls;
+
+var paused_by_user = false;
 var previous_time;
 var simulation_speed = 1;
 var request_frame_id;

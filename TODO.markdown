@@ -9,6 +9,8 @@
     * Discrete version?
 * Controls
     * Save settings in cookie
+    * Code to generate sliders
+    * Draggable numbers
     * Move particles around
     * Control velocities
     * Draggable borders of box
@@ -21,6 +23,7 @@
     * Pressure should be measured over time, not number of timesteps
 * Figures
     * Draw trajectory of one particle
+        * that particle gets a pilot hat 8)
     * Density histogram
     * Graph over quantities
     * Show total momentum as vector
