@@ -33,12 +33,10 @@
     </p>
     <p>
         Reset simulation to 
-        <input type="button" value="Uniform" onclick="init(uniform_position, uniform_velocity, one_color)">
-        <input type="button" value="Grouped" onclick="init(grouped_position, uniform_velocity, one_color)">
-        <input type="button" value="Falling" 
-            onclick="init(grouped_position, identical_velocity, one_color)">
-        <input type="button" value="Two colors" 
-            onclick="init(halves_position, uniform_velocity, two_colors)">
+        <input type="button" value="Uniform" onclick="init(uniformBallGenerator)">
+        <input type="button" value="Grouped" onclick="init(groupedBallGenerator)">
+        <input type="button" value="Falling" onclick="init(fallingBallGenerator)">
+        <input type="button" value="Two colors" onclick="init(twoColorBallGenerator)">
     </p>
     <p>
         Control time: <br>
@@ -96,9 +94,8 @@ document.getElementById("box_size").addEventListener("change", function(){
 })
 
 document.getElementById("ball_count").addEventListener("input", function(){
-    ball_count = Math.pow(10, Number(this.value));
-    // TODO: do not reset
-    init(uniform_position, uniform_velocity, one_color);
+    ballCount = Math.round(Math.pow(10, Number(this.value)));
+    updateBallCount(ballCount);
 })
 
 document.getElementById("ball_radius").addEventListener("input", function(){
@@ -146,7 +143,6 @@ document.addEventListener('visibilitychange', function(event) {
 var tau = 2*Math.PI;
 
 var max_speed = 0.001;
-var ball_count = 100;
 var ball_radius = 0.03;
 var running = true;
 var initially_together = true;
@@ -165,6 +161,8 @@ var right_rect = new Rect();
                                               
 // Simulation state
 
+var ballGenerator = uniformBallGenerator;
+var ballCount = 100;
 var balls;
 var previous_time;
 var simulation_speed = 1;
@@ -173,61 +171,8 @@ var running_pressure = [];
 var running_time = [];
 var quadtree;
 
-// Initialization
 
-function grouped_position(ball_index, ball_count)
-{
-    var small_centered_rect = new Rect().setCenterWidthHeight(
-        collision_bounds.center, collision_bounds.width / 5, collision_bounds.height / 5
-    );
-    return randomPointInRect(small_centered_rect);
-}
-
-function uniform_position(ball_index, ball_count)
-{
-    return randomPointInRect(collision_bounds);
-}
-
-function halves_position(ball_index, ball_count)
-{
-    if (ball_index < ball_count / 2)
-    {
-        return randomPointInRect(left_rect);
-    }
-    else
-    {
-        return randomPointInRect(right_rect);
-    }
-}
-
-function uniform_velocity(ball_index, ball_count)
-{
-    var speed = random_in_interval(0, max_speed);
-    var angle = random_in_interval(0, tau);
-    return vec2.fromValues(speed * Math.cos(angle), speed * Math.sin(angle));
-}
-
-function identical_velocity(ball_index, ball_count) 
-{
-    return vec2.fromValues(0, -max_speed);
-}
-
-function one_color(ball_index, ball_count) 
-{
-    return {name: "black", rgba: [0, 0, 0, 1]};
-}
-
-function two_colors(ball_index, ball_count)
-{
-    if (ball_index < ball_count / 2)
-    {
-        return {name: "blue", rgba: [0, 0, 1, 1]};
-    }
-    else
-    {
-        return {name: "red", rgba: [1, 0, 0, 1]};
-    }
-}
+// Ball object
 
 var Ball = function(position, velocity, color)
 {
@@ -243,7 +188,124 @@ Ball.prototype.updateBounds = function()
     return this.bounds;
 }
 
-function init(position_function, velocity_function, color_function) 
+// Initialization
+
+function grouped_position(ballIndex)
+{
+    var small_centered_rect = new Rect().setCenterWidthHeight(
+        collision_bounds.center, collision_bounds.width / 5, collision_bounds.height / 5
+    );
+    return randomPointInRect(small_centered_rect);
+}
+
+function uniform_position(ballIndex)
+{
+    return randomPointInRect(collision_bounds);
+}
+
+function halves_position(ballIndex)
+{
+    if (ballIndex % 2 == 0)
+    {
+        return randomPointInRect(left_rect);
+    }
+    else
+    {
+        return randomPointInRect(right_rect);
+    }
+}
+
+function uniform_velocity(ballIndex)
+{
+    var speed = random_in_interval(0, max_speed);
+    var angle = random_in_interval(0, tau);
+    return vec2.fromValues(speed * Math.cos(angle), speed * Math.sin(angle));
+}
+
+function identical_velocity(ballIndex) 
+{
+    return vec2.fromValues(0, -max_speed);
+}
+
+function one_color(ballIndex) 
+{
+    return {name: "black", rgba: [0, 0, 0, 1]};
+}
+
+function two_colors(ballIndex)
+{
+    if (ballIndex % 2 == 0)
+    {
+        return {name: "blue", rgba: [0, 0, 1, 1]};
+    }
+    else
+    {
+        return {name: "red", rgba: [1, 0, 0, 1]};
+    }
+}
+
+// ball generators
+
+function uniformBallGenerator(ballIndex)
+{
+    return new Ball(
+                uniform_position(ballIndex), 
+                uniform_velocity(ballIndex),
+                one_color(ballIndex)
+            );
+}
+
+function groupedBallGenerator(ballIndex)
+{
+    return new Ball(
+                grouped_position(ballIndex), 
+                uniform_velocity(ballIndex),
+                one_color(ballIndex)
+            );
+}
+
+function fallingBallGenerator(ballIndex)
+{
+    return new Ball(
+                grouped_position(ballIndex), 
+                identical_velocity(ballIndex),
+                one_color(ballIndex)
+            );
+}
+
+function twoColorBallGenerator(ballIndex)
+{
+    return new Ball(
+                halves_position(ballIndex), 
+                uniform_velocity(ballIndex),
+                two_colors(ballIndex)
+            );
+}
+
+function updateBallCount(newBallCount)
+{
+    var ballCount = balls.length;
+    if (newBallCount == ballCount)
+    {
+        return;
+    }
+    else if (newBallCount < ballCount)
+    {
+        balls.splice(newBallCount, Number.MAX_VALUE);
+    }
+    else
+    {
+        for (var ballIndex = ballCount;
+             ballIndex < newBallCount;
+             ++ballIndex)
+        {
+            balls.push(ballGenerator(ballIndex))
+        }
+    }
+    ballCount = newBallCount;
+}
+
+function init(newBallGenerator) 
 {
     if (request_frame_id) {
         window.cancelAnimationFrame(request_frame_id);
@@ -251,15 +313,10 @@ function init(position_function, velocity_function, color_function)
     }
 
     update_bounds();
+    
+    ballGenerator = newBallGenerator || ballGenerator;
     balls = [];
-    for (var ball_index = 0; ball_index < ball_count; ball_index++) {
-        var ball = new Ball(
-            position_function(ball_index, ball_count), 
-            velocity_function(ball_index, ball_count),
-            color_function(ball_index, ball_count)
-        );
-        balls.push(ball);
-    }
+    updateBallCount(ballCount);
     
     previous_time = 0;
     request_frame_id = window.requestAnimationFrame(update);
@@ -284,6 +341,9 @@ function resume()
 }
 
 function update_bounds() {
+    
+    // retina stuff
+    
     canvas.style.width = canvasWidth + "px";
     canvas.style.height = canvasHeight + "px";
 
@@ -291,8 +351,9 @@ function update_bounds() {
     canvas.width = canvasWidth * devicePixelRatio;
     canvas.height = canvasHeight * devicePixelRatio;
     
-    var aspectRatio = canvas.width / canvas.height;
+    // boxes
     
+    var aspectRatio = canvas.width / canvas.height;
     var origin = vec2.fromValues(0, 0);
     
     box_bounds.setCenterWidthHeight(
@@ -493,7 +554,7 @@ var update = function(){
           if (color_counts.hasOwnProperty(color)) 
           {
               var color_count = color_counts[color];
-              var p = color_count/ball_count;
+              var p = color_count/balls.length;
               entropy = microstate_entropy(p) + microstate_entropy(1 - p);
               color_count_string_array.push(color, ": ", color_count, " ");
           }
@@ -510,7 +571,7 @@ var update = function(){
 
 
 initGraphics(canvas);
-init(uniform_position, uniform_velocity, one_color)
+init()
 
 </script>
 

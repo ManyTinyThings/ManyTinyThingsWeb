@@ -37,7 +37,8 @@ vec2.projectOntoNormal = function(out, a, normal)
 // Rectangle
 // stored as an array of left, top, right, bottom
 
-function Rect() {
+function Rect()
+{
     this.left = 0;
     this.right = 0;
     this.top = 0;
@@ -48,7 +49,8 @@ function Rect() {
     return this;
 }
 
-Rect.prototype.setLeftTopRightBottom = function(left, top, right, bottom) {
+Rect.prototype.setLeftTopRightBottom = function(left, top, right, bottom)
+{
     this.left = left;
     this.top = top;
     this.right = right;
@@ -59,7 +61,8 @@ Rect.prototype.setLeftTopRightBottom = function(left, top, right, bottom) {
     return this;
 }
 
-Rect.prototype.setLeftTopWidthHeight = function(left, top, width, height) {
+Rect.prototype.setLeftTopWidthHeight = function(left, top, width, height)
+{
     this.left = left;
     this.top = top;
     this.right = left + width;
@@ -70,7 +73,8 @@ Rect.prototype.setLeftTopWidthHeight = function(left, top, width, height) {
     return this;
 }
 
-Rect.prototype.setCenterWidthHeight = function(center, width, height) {
+Rect.prototype.setCenterWidthHeight = function(center, width, height)
+{
     var halfWidth = width / 2;
     var halfHeight = height / 2;
     this.left = center[0] - halfWidth;
