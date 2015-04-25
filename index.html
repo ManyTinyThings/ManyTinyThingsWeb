@@ -9,6 +9,8 @@
     <!-- <script src="canvas.js" type="text/javascript" charset="utf-8"></script> -->
     <style type="text/css" media="screen">
         body {
+            width: 500px;
+            margin: 10px auto;
         }
         
         input[type="range"] {
@@ -48,7 +50,7 @@
     </p>
     <p>
         Particle radius: <br>
-        1 <input id="ball_radius" type="range" value="3", min="1", max="10", step="0.001"> 10
+        Tiny <input id="ball_radius" type="range" value="0.03", min="0.01", max="0.1", step="0.001"> Huge
     </p>
     <p>
         Gravity: <br>
@@ -90,7 +92,7 @@ document.getElementById("gravity").addEventListener("input", function(){
 document.getElementById("box_size").addEventListener("input", function(){
     var width = Number(this.value);
     canvas.width = width;
-    // canvas.style.marginLeft = ((document.body.clientWidth - width) / 2) + "px";
+    canvas.style.marginLeft = ((document.body.clientWidth - width) / 2) + "px";
     update_bounds();
 })
 
@@ -143,9 +145,9 @@ document.addEventListener('visibilitychange', function(event) {
 
 var tau = 2*Math.PI;
 
-var max_speed = 0.1;
+var max_speed = 0.001;
 var ball_count = 100;
-var ball_radius = 3;
+var ball_radius = 0.03;
 var running = true;
 var initially_together = true;
 var initially_falling = false;
@@ -155,8 +157,8 @@ var pressure_window_size = 1000;
 var using_quadtree = true;
 var frame_duration = 33;
 
+var box_bounds = new Rect();
 var collision_bounds = new Rect();
-var canvas_bounds = new Rect();
 var left_rect = new Rect();
 var right_rect = new Rect();
                                     
@@ -175,7 +177,9 @@ var quadtree;
 
 function grouped_position(ball_index, ball_count)
 {
-    var small_centered_rect = new Rect().setCenterWidthHeight(collision_bounds.center, 100, 100);
+    var small_centered_rect = new Rect().setCenterWidthHeight(
+        collision_bounds.center, collision_bounds.width / 5, collision_bounds.height / 5
+    );
     return randomPointInRect(small_centered_rect);
 }
 
@@ -280,23 +284,27 @@ function resume()
 }
 
 function update_bounds() {
-    collision_bounds.setLeftTopRightBottom(
-        ball_radius, ball_radius, 
-        canvas.width - ball_radius, canvas.height - ball_radius
+    
+    var aspectRatio = canvas.width / canvas.height;
+    
+    var origin = vec2.fromValues(0, 0);
+    
+    box_bounds.setCenterWidthHeight(
+        origin, 2*aspectRatio, 2
     );
     
-    canvas_bounds.setLeftTopWidthHeight(
-        0, 0, canvas.width, canvas.height
+    collision_bounds.setCenterWidthHeight(
+        origin, 2*(aspectRatio - ball_radius), 2*(1 - ball_radius)
     );
     
     right_rect.setLeftTopRightBottom(
-            canvas_bounds.center[0], canvas_bounds.top, 
-            canvas_bounds.right, canvas_bounds.bottom);     
+            box_bounds.center[0], box_bounds.top,
+            box_bounds.right, box_bounds.bottom);
     left_rect.setLeftTopRightBottom(
-            canvas_bounds.left, canvas_bounds.top, 
-            canvas_bounds.center[0], canvas_bounds.bottom);
+            box_bounds.left, box_bounds.top,
+            box_bounds.center[0], box_bounds.bottom);
     
-    quadtree = new Quadtree(canvas_bounds);  
+    quadtree = new Quadtree(box_bounds);  
     
     resize_canvas();
 }

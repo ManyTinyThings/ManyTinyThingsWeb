@@ -88,8 +88,8 @@ function resize_canvas() {
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     
     mat3.identity(screenMatrix);
-    mat3.translate(screenMatrix, screenMatrix, [-1, -1]);
-    mat3.scale(screenMatrix, screenMatrix, [2 / gl.canvas.width, 2 / gl.canvas.height]);
+    var aspectRatio = gl.canvas.width / gl.canvas.height;
+    mat3.scale(screenMatrix, screenMatrix, [1 / aspectRatio, 1]);
     gl.uniformMatrix3fv(shaderProgram.screenMatrixUniform, false, screenMatrix);
 }
 

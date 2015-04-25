@@ -22,6 +22,7 @@
     * Measure velocity distribution
     * Pressure should be measured over time, not timesteps
 * Figures
+    * Draw trajectory of one particle
     * Density histogram
     * Graph over quantities
     * Show total momentum as vector
