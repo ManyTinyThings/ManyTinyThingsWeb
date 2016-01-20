@@ -12,19 +12,19 @@
             width: 500px;
             margin: 10px auto;
         }
-        
+
         input[type="range"] {
             -webkit-appearance: none;
             width: 300px;
         }
-        
+
         input[type="range"]::-webkit-slider-runnable-track {
             height: 10px;
             background: #ddd;
             border: none;
             border-radius: 5px;
         }
-        
+
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             width: 30px;
@@ -33,11 +33,11 @@
             background: black;
             margin-top: -10px;
         }
-        
+
         input[type=range]:focus {
             outline: none;
         }
-        
+
         #canvas {
             border: 1px solid black;
         }
@@ -53,7 +53,7 @@
         Entropy = <output id="entropy">?</output> <br>
     </p>
     <p>
-        Reset simulation to 
+        Reset simulation to
         <input type="button" value="Uniform" onclick="init(uniformBallGenerator)">
         <input type="button" value="Grouped" onclick="init(groupedBallGenerator)">
         <input type="button" value="Falling" onclick="init(fallingBallGenerator)">
@@ -155,7 +155,7 @@ document.addEventListener('visibilitychange', function(event) {
     if (document.hidden)
     {
         pause();
-    } 
+    }
     else if (!paused_by_user)
     {
         resume();
@@ -190,8 +190,8 @@ var box_bounds = new Rect();
 var collision_bounds = new Rect();
 var left_rect = new Rect();
 var right_rect = new Rect();
-                                    
-                                              
+
+
 // Simulation state
 
 var ballGenerator = uniformBallGenerator;
@@ -217,9 +217,10 @@ var Ball = function(position, velocity, color)
     this.velocity = velocity || vec2.create();
     this.color    = color    || {name: "black", rgba: [0, 0, 0, 1]};
     this.bounds   = new Rect();
+    this.radius   = 1;
 }
 
-Ball.prototype.updateBounds = function() 
+Ball.prototype.updateBounds = function()
 {
     this.bounds.setCenterWidthHeight(this.position, ball_radius*2, ball_radius*2);
     return this.bounds;
@@ -259,12 +260,12 @@ function uniform_velocity(ballIndex)
     return vec2.fromValues(speed * Math.cos(angle), speed * Math.sin(angle));
 }
 
-function identical_velocity(ballIndex) 
+function identical_velocity(ballIndex)
 {
     return vec2.fromValues(0, -max_speed);
 }
 
-function one_color(ballIndex) 
+function one_color(ballIndex)
 {
     return {name: "black", rgba: [0, 0, 0, 1]};
 }
@@ -286,7 +287,7 @@ function two_colors(ballIndex)
 function uniformBallGenerator(ballIndex)
 {
     return new Ball(
-                uniform_position(ballIndex), 
+                uniform_position(ballIndex),
                 uniform_velocity(ballIndex),
                 one_color(ballIndex)
             );
@@ -295,7 +296,7 @@ function uniformBallGenerator(ballIndex)
 function groupedBallGenerator(ballIndex)
 {
     return new Ball(
-                grouped_position(ballIndex), 
+                grouped_position(ballIndex),
                 uniform_velocity(ballIndex),
                 one_color(ballIndex)
             );
@@ -304,7 +305,7 @@ function groupedBallGenerator(ballIndex)
 function fallingBallGenerator(ballIndex)
 {
     return new Ball(
-                grouped_position(ballIndex), 
+                grouped_position(ballIndex),
                 identical_velocity(ballIndex),
                 one_color(ballIndex)
             );
@@ -313,7 +314,7 @@ function fallingBallGenerator(ballIndex)
 function twoColorBallGenerator(ballIndex)
 {
     return new Ball(
-                halves_position(ballIndex), 
+                halves_position(ballIndex),
                 uniform_velocity(ballIndex),
                 two_colors(ballIndex)
             );
@@ -340,7 +341,7 @@ function updateBallCount(newBallCount)
         }
     }
     ballCount = newBallCount;
-    
+
     draw();
 }
 
@@ -358,7 +359,7 @@ function updateTrajectory()
     draw();
 }
 
-function init(newBallGenerator) 
+function init(newBallGenerator)
 {
     if (request_frame_id) {
         window.cancelAnimationFrame(request_frame_id);
@@ -366,18 +367,18 @@ function init(newBallGenerator)
     }
 
     updateBounds();
-    
+
     ballGenerator = newBallGenerator || ballGenerator;
     balls = [];
     updateBallCount(ballCount);
-    
+
     updateTrajectory();
-    
+
     previous_time = 0;
     request_frame_id = window.requestAnimationFrame(update);
 }
 
-function pause() 
+function pause()
 {
     if (request_frame_id)
     {
@@ -396,65 +397,65 @@ function resume()
 }
 
 function updateBounds() {
-    
+
     // retina stuff
-    
+
     canvas.style.width = canvasWidth + "px";
     canvas.style.height = canvasHeight + "px";
 
     var devicePixelRatio = window.devicePixelRatio || 1;
     canvas.width = canvasWidth * devicePixelRatio;
     canvas.height = canvasHeight * devicePixelRatio;
-    
+
     // boxes
-    
+
     var aspectRatio = canvas.width / canvas.height;
     var origin = vec2.fromValues(0, 0);
-    
+
     box_bounds.setCenterWidthHeight(
         origin, 2*aspectRatio, 2
     );
-    
+
     collision_bounds.setCenterWidthHeight(
         origin, 2*(aspectRatio - ball_radius), 2*(1 - ball_radius)
     );
-    
+
     right_rect.setLeftTopRightBottom(
             box_bounds.center[0], box_bounds.top,
             box_bounds.right, box_bounds.bottom);
     left_rect.setLeftTopRightBottom(
             box_bounds.left, box_bounds.top,
             box_bounds.center[0], box_bounds.bottom);
-    
+
     quadtree = new Quadtree(box_bounds);
-    
+
     resize_canvas();
-    
+
     draw();
 }
-                             
+
 // Simulation
 var collide = function(){
-  
+
   var relative_position = vec2.create();
   var relative_velocity = vec2.create();
-  
+
   return function(ball1, ball2)
   {
       vec2.subtract(relative_position, ball1.position, ball2.position);
       var quadrance = vec2.sqrLen(relative_position);
-      if (quadrance < squared(2*ball_radius)) 
+      if (quadrance < squared(2*ball_radius))
       {
           var distance_between_centers = Math.sqrt(quadrance);
           var overlap = 2*ball_radius - distance_between_centers;
           var normal = vec2.scale(relative_position, relative_position, 1 / distance_between_centers);
-    
+
           // Move out of overlap
           // TODO: improve to perform correct collision
-    
+
           vec2.scaleAndAdd(ball1.position, ball1.position, normal, overlap / 2);
           vec2.scaleAndAdd(ball2.position, ball2.position, normal, - overlap / 2);
-    
+
           // Elastic collision
 
           vec2.subtract(relative_velocity, ball1.velocity, ball2.velocity);
@@ -468,7 +469,7 @@ var collide = function(){
 function draw()
 {
     clear_canvas();
-    
+
     // update trajectory
     if (trajectory_enabled)
     {
@@ -480,12 +481,12 @@ function draw()
 }
 
 var update = function(){
-  
+
   var total_momentum = vec2.create();
   var wall_normal = vec2.create();
   var projection = vec2.create();
-  
-  return function(time) 
+
+  return function(time)
   {
       var elapsed = time - previous_time;
       if ((elapsed > 100) || (elapsed <= 0))
@@ -494,39 +495,39 @@ var update = function(){
       }
       var dt = elapsed * simulation_speed;
       previous_time = time;
-    
+
       var total_energy = 0;
       var total_pressure = 0;
       vec2.set(total_momentum, 0, 0);
       var color_counts = {};
-    
-      for (var ballIndex = 0; 
-          ballIndex < balls.length; 
+
+      for (var ballIndex = 0;
+          ballIndex < balls.length;
           ++ballIndex)
       {
           var ball = balls[ballIndex];
-      
+
           vec2.scaleAndAdd(ball.position, ball.position, ball.velocity, dt);
           vec2.scaleAndAdd(ball.position, ball.position, gravity_acceleration, 0.5*dt*dt);
           vec2.scaleAndAdd(ball.velocity, ball.velocity, gravity_acceleration, dt);
-        
+
           total_energy += 0.5*vec2.sqrLen(ball.velocity) - vec2.dot(ball.position, gravity_acceleration);
           vec2.add(total_momentum, total_momentum, ball.velocity);
-        
+
           if(left_rect.containsPoint(ball.position))
           {
               color_counts[ball.color.name] = 1 + (color_counts[ball.color.name] || 0);
           }
       }
-    
-      for (var ballIndex = 0; 
-          ballIndex < balls.length; 
+
+      for (var ballIndex = 0;
+          ballIndex < balls.length;
           ++ballIndex)
       {
           var ball = balls[ballIndex];
-          
+
           // Collision with wall
-        
+
           if (! collision_bounds.containsPoint(ball.position))
           {
               var overlap;
@@ -551,29 +552,29 @@ var update = function(){
                   overlap = ball.position[1] - collision_bounds.bottom;
                   vec2.set(wall_normal, 0, -1);
               }
-            
+
               // Move out of overlap
-            
+
               vec2.scaleAndAdd(ball.position, ball.position, wall_normal, overlap);
-            
+
               // Reflect velocity
-            
+
               vec2.projectOntoNormal(projection, ball.velocity, wall_normal);
               vec2.scaleAndAdd(ball.velocity, ball.velocity, projection, -2);
-            
+
               total_pressure += vec2.length(projection);
           }
       }
-    
-    
+
+
       // Collision with other balls
       if (collision_enabled)
       {
           if (quadtree_enabled)
           {
               quadtree.clear();
-              for (var ballIndex = 0; 
-                  ballIndex < balls.length; 
+              for (var ballIndex = 0;
+                  ballIndex < balls.length;
                   ++ballIndex)
               {
                   var ball = balls[ballIndex];
@@ -593,13 +594,13 @@ var update = function(){
               }
           }
       }
-      
+
       // Drawing
-      
+
       draw();
-    
+
       // Measurements
-    
+
       running_pressure.push(total_pressure);
       running_time.push(time)
       if (running_pressure.length > pressure_window_size)
@@ -615,14 +616,14 @@ var update = function(){
       var average_pressure = sum(running_pressure) / (time - initial_time);
       document.getElementById("pressure").value = average_pressure.toExponential(2);
       document.getElementById("energy").value = total_energy.toExponential(2);
-      document.getElementById("momentum").value = 
-          ["(", total_momentum[0].toExponential(2), 
+      document.getElementById("momentum").value =
+          ["(", total_momentum[0].toExponential(2),
            ", ", total_momentum[1].toExponential(2), ")"].join("");
       var color_count_string_array = [];
       var entropy = 0;
-      for (var color in color_counts) 
+      for (var color in color_counts)
       {
-          if (color_counts.hasOwnProperty(color)) 
+          if (color_counts.hasOwnProperty(color))
           {
               var color_count = color_counts[color];
               var p = color_count/balls.length;
@@ -632,8 +633,8 @@ var update = function(){
       }
       document.getElementById("color").value = color_count_string_array.join("");
       document.getElementById("entropy").value = entropy.toExponential(2);
-    
-      if (running) 
+
+      if (running)
       {
           request_frame_id = window.requestAnimationFrame(update);
       }
