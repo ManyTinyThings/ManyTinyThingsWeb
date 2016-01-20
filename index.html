@@ -452,6 +452,7 @@ var collide = function(){
 
           // Move out of overlap
           // TODO: improve to perform correct collision
+          // TODO: use a continuous force instead of hard spheres
 
           vec2.scaleAndAdd(particle1.position, particle1.position, normal, overlap / 2);
           vec2.scaleAndAdd(particle2.position, particle2.position, normal, - overlap / 2);
@@ -506,11 +507,16 @@ var update = function(){
           ++particleIndex)
       {
           var particle = particles[particleIndex];
-
+          
+          // velocity verlet
+          
+          var acceleration = gravity_acceleration;
+          
+          vec2.scaleAndAdd(particle.velocity, particle.velocity, acceleration, 0.5 * dt);
           vec2.scaleAndAdd(particle.position, particle.position, particle.velocity, dt);
-          vec2.scaleAndAdd(particle.position, particle.position, gravity_acceleration, 0.5*dt*dt);
-          vec2.scaleAndAdd(particle.velocity, particle.velocity, gravity_acceleration, dt);
-
+          // calculate forces
+          vec2.scaleAndAdd(particle.velocity, particle.velocity, acceleration, 0.5 * dt);
+          
           total_energy += 0.5*vec2.sqrLen(particle.velocity) - vec2.dot(particle.position, gravity_acceleration);
           vec2.add(total_momentum, total_momentum, particle.velocity);
 
