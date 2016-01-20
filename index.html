@@ -474,7 +474,7 @@ function draw()
     if (trajectory_enabled)
     {
         trajectory.push(particles[0].position[0], particles[0].position[1]);
-        drawTrajectory(trajectory);
+        drawTrajectory(trajectory, particles[0].color);
     }
 
     drawParticles(particles, particle_radius);
