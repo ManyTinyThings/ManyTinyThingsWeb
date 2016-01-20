@@ -99,9 +99,9 @@ function clear_canvas() {
     gl.clear(gl.COLOR_BUFFER_BIT);
 }
 
-function drawBalls(balls, radius) {
+function drawParticles(particles, radius) {
 
-    var ballCount = balls.length;
+    var particleCount = particles.length;
     var vertexCount = Math.max(Math.floor(4*radius), 20);
 
     // generate vertices
@@ -113,15 +113,15 @@ function drawBalls(balls, radius) {
         vertices[2*i + 1] = Math.sin(i * angle);
     }
 
-    // generate per-ball stuff
+    // generate per-particle stuff
 
-    var offsets = new Float32Array(2 * ballCount);
-    var colors = new Float32Array(4 * ballCount);
-    var radii = new Float32Array(ballCount);
-    for (var i = 0; i < ballCount; i++) {
-        offsets.set(balls[i].position, 2*i);
-        colors.set(balls[i].color.rgba, 4*i);
-        radii[i] = ball_radius * balls[i].radius;
+    var offsets = new Float32Array(2 * particleCount);
+    var colors = new Float32Array(4 * particleCount);
+    var radii = new Float32Array(particleCount);
+    for (var i = 0; i < particleCount; i++) {
+        offsets.set(particles[i].position, 2*i);
+        colors.set(particles[i].color.rgba, 4*i);
+        radii[i] = particle_radius * particles[i].radius;
     }
 
     // set attributes
@@ -151,7 +151,7 @@ function drawBalls(balls, radius) {
     gl.vertexAttribPointer(shaderProgram.colorAttribute, 4, gl.FLOAT, false, 0, 0);
     ext.vertexAttribDivisorANGLE(shaderProgram.colorAttribute, 1);
 
-    ext.drawArraysInstancedANGLE(gl.TRIANGLE_FAN, 0, vertexCount, ballCount);
+    ext.drawArraysInstancedANGLE(gl.TRIANGLE_FAN, 0, vertexCount, particleCount);
 }
 
 function drawTrajectory(trajectory)
