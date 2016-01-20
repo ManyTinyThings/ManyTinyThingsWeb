@@ -4,13 +4,22 @@ function initGraphics(canvas) {
     context = canvas.getContext("2d");
 }
 
-function draw_ball(ball) 
+function drawParticles(particles) 
 {
-    context.beginPath();
-    
-    context.fillStyle = rgba_to_css(ball.color.rgba);
-    context.arc(ball.position[0], ball.position[1], ball_radius, 0, tau);
-    context.fill();
+    for (var i = 0; i < particles.length; ++i) {
+        var particle = particles[i];
+        context.beginPath();
+        context.fillStyle = rgba_to_css(particle.color.rgba);
+        var x = (particle.position[0] + 1) * canvas.height / 2;
+        var y = (particle.position[1] + 1) * canvas.height / 2;
+        context.arc(x, y, particle.radius * 10, 0, tau);
+        context.fill();
+    }
+}
+
+function drawTrajectory(trajectory)
+{
+    // Todo
 }
 
 function clear_canvas()
