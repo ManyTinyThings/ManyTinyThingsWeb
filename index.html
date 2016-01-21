@@ -180,7 +180,7 @@ var particle_radius = 0.02;
 var running = true;
 var initially_together = true;
 var initially_falling = false;
-var collision_enabled = true;
+var collision_enabled = false;
 var gravity_acceleration = vec2.create();
 var pressure_window_size = 1000;
 var quadtree_enabled = true;
@@ -215,6 +215,7 @@ var Particle = function(position, velocity, color)
 {
     this.position = position || vec2.create();
     this.velocity = velocity || vec2.create();
+    this.acceleration = vec2.create();
     this.color    = color    || {name: "black", rgba: [0, 0, 0, 1]};
     this.bounds   = new Rect();
     this.radius   = 1;
@@ -434,6 +435,23 @@ function updateBounds() {
     draw();
 }
 
+function lennardJonesEnergy(invDistance, bondEnergy, separation)
+{
+    // TODO: truncate and shift, see wikipedia
+    var a = separation * invDistance;
+    var a6 = Math.pow(a, 6);
+    var shape = a6*a6 - 2*a6;
+    return bondEnergy * shape;
+}
+
+function lennardJonesForce(invDistance, bondEnergy, separation)
+{
+    var a = separation * invDistance;
+    var a6 = Math.pow(a, 6);
+    var shape = 12 * invDistance * (a6 - a6*a6);
+    return bondEnergy * shape;
+}
+
 // Simulation
 var collide = function(){
 
@@ -443,7 +461,7 @@ var collide = function(){
   return function(particle1, particle2)
   {
       vec2.subtract(relative_position, particle1.position, particle2.position);
-      var quadrance = vec2.sqrLen(relative_position);
+      var quadrance = vec2.squaredLength(relative_position);
       if (quadrance < squared(2*particle_radius))
       {
           var distance_between_centers = Math.sqrt(quadrance);
@@ -483,6 +501,8 @@ function draw()
 
 var update = function(){
 
+  var relative_position = vec2.create(); 
+  
   var total_momentum = vec2.create();
   var wall_normal = vec2.create();
   var projection = vec2.create();
@@ -501,6 +521,8 @@ var update = function(){
       var total_pressure = 0;
       vec2.set(total_momentum, 0, 0);
       var color_counts = {};
+      
+      var mass = 1;
 
       for (var particleIndex = 0;
           particleIndex < particles.length;
@@ -508,30 +530,61 @@ var update = function(){
       {
           var particle = particles[particleIndex];
           
+          // set up acceleration before next loop
+          vec2.copy(particle.acceleration, gravity_acceleration);
+          
           // velocity verlet
           
-          var acceleration = gravity_acceleration;
-          
-          vec2.scaleAndAdd(particle.velocity, particle.velocity, acceleration, 0.5 * dt);
+          vec2.scaleAndAdd(particle.velocity, particle.velocity, particle.acceleration, 0.5 * dt);
           vec2.scaleAndAdd(particle.position, particle.position, particle.velocity, dt);
-          // calculate forces
-          vec2.scaleAndAdd(particle.velocity, particle.velocity, acceleration, 0.5 * dt);
-          
-          total_energy += 0.5*vec2.sqrLen(particle.velocity) - vec2.dot(particle.position, gravity_acceleration);
-          vec2.add(total_momentum, total_momentum, particle.velocity);
+      }
 
+      // Calculate forces
+      
+      for (var i = 0; i < particles.length; ++i)
+      {
+          var particle = particles[i];
+          
+          for (var j = 0; j < i; ++j)
+          {
+              var otherParticle = particles[j];
+              // TODO: use quadtree with given cutoff distance the quadtree and a given cutoff distance
+              
+              var bondEnergy = 0.00000001;
+              var separation = particle_radius * (particle.radius + otherParticle.radius);
+              
+              vec2.subtract(relative_position, otherParticle.position, particle.position);
+              var invDistance = 1 / vec2.length(relative_position);
+              var force = lennardJonesForce(invDistance, bondEnergy, separation);
+              total_energy += lennardJonesEnergy(invDistance, bondEnergy, separation);
+              
+              var acceleration_direction = vec2.normalize(relative_position, relative_position);
+              var acceleration_magnitude = force / mass;
+              vec2.scaleAndAdd(particle.acceleration, particle.acceleration, acceleration_direction, acceleration_magnitude);
+              vec2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration, acceleration_direction, - acceleration_magnitude);
+          }
+      }
+      
+      for (var particleIndex = 0;
+          particleIndex < particles.length;
+          ++particleIndex)
+      {
+          var particle = particles[particleIndex];
+          
+          // finish velocity verlet
+          vec2.scaleAndAdd(particle.velocity, particle.velocity, particle.acceleration, 0.5 * dt);
+          
+          // calculate quantities
           if(left_rect.containsPoint(particle.position))
           {
               color_counts[particle.color.name] = 1 + (color_counts[particle.color.name] || 0);
           }
-      }
-
-      for (var particleIndex = 0;
-          particleIndex < particles.length;
-          ++particleIndex)
-      {
-          var particle = particles[particleIndex];
-
+          total_energy += 0.5*vec2.squaredLength(particle.velocity);
+          total_energy += vec2.dot(particle.position, gravity_acceleration);
+          
+          vec2.add(total_momentum, total_momentum, mass * particle.velocity);
+          
+          
           // Collision with wall
 
           if (! collision_bounds.containsPoint(particle.position))
