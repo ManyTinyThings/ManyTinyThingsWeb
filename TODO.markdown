@@ -4,6 +4,11 @@
     * Redraw on resize
     * Stuttery animation sometimes
 * Bugs
+    * Stability
+        * timestep
+        * energy conservation
+    * Gravity's not working
+    * Collision's not on
 * Run backwards with collisions
     * Correct collision detection
     * Might have to arrange fixed timestep for this to work with collisions (might not be enough b/c collisions inherently non-reversible)
@@ -32,3 +37,7 @@
     * Do quadtree in local coordinates? So we don't have to regenerate it when the box changes size
     * SOA instead of AOS -> ball_positions = new Float32Array() etc.
     * Update velocities and positions on GPU?
+* State transitions
+    * Changing temperature by just scaling velocities
+    * Cooling down system to solid form
+        * Needs gravity?
