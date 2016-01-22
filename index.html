@@ -70,7 +70,7 @@
     </p>
     <p>
         Particle radius: <br>
-        Tiny <input id="particle_radius" type="range" value="0.02", min="0.01", max="0.1", step="0.001"> Huge
+        Tiny <input id="particle_radius" type="range" value="0.08", min="0.01", max="0.1", step="0.001"> Huge
     </p>
     <p>
         Gravity: <br>
@@ -177,7 +177,7 @@ document.addEventListener('visibilitychange', function(event) {
 var tau = 2*Math.PI;
 
 var max_speed = 0.001;
-var particle_radius = 0.02;
+var particle_radius = 0.08;
 var running = true;
 var initially_together = true;
 var initially_falling = false;
@@ -196,7 +196,7 @@ var right_rect = new Rect();
 // Simulation state
 
 var particleGenerator = uniformParticleGenerator;
-var particleCount = 100;
+var particleCount = 91;
 var particles = [];
 var trajectory = [];
 var trajectory_enabled = false;
@@ -257,50 +257,57 @@ function halves_position(particleIndex)
     }
 }
 
-vec2.fromPolar = function(radius, angle)
+vec2.setPolar = function(out, radius, angle)
 {
     var x = radius * Math.cos(angle);
     var y = radius * Math.sin(angle);
-    return vec2.fromValues(x, y);
+    return vec2.set(out, x, y);
 }
 
-function triangular_lattice_position(particleIndex)
-{
-    // NOTE: this is the formula for triangular numbers inverted
-    var triangularNumber = Math.floor((Math.sqrt(8*particleIndex + 1) - 1) / 2);
-    var rest = particleIndex - triangularNumber * (triangularNumber + 1) / 2;
-    var integerX = rest;
-    var integerY = triangularNumber - rest;
-    var latticeSpacing = 2 * particle_radius;
-    var latticeX = vec2.fromPolar(latticeSpacing * integerX, 0);
-    var latticeY = vec2.fromPolar(latticeSpacing * integerY, tau / 6);
-    return vec2.add(vec2.create(), latticeX, latticeY);
-}
-
-function hexagonal_lattice_position(particleIndex)
-{
-    if (particleIndex == 0) {
-        return vec2.create(); // zero
+var triangular_lattice_position = function(){
+    
+    var latticeX = vec2.create();
+    var latticeY = vec2.create();
+    
+    return function (particleIndex)
+    {
+        // NOTE: this is the formula for triangular numbers inverted
+        var triangularNumber = Math.floor((Math.sqrt(8*particleIndex + 1) - 1) / 2);
+        var rest = particleIndex - triangularNumber * (triangularNumber + 1) / 2;
+        var integerX = rest;
+        var integerY = triangularNumber - rest;
+        var latticeSpacing = 2 * particle_radius;
+        vec2.setPolar(latticeX, latticeSpacing * integerX, 0);
+        vec2.setPolar(latticeY, latticeSpacing * integerY, tau / 6);
+        return vec2.add(vec2.create(), latticeX, latticeY);
     }
-    var k = particleIndex - 1;
-    var layer = Math.floor((Math.sqrt(8*(k / 6) + 1) - 1) / 2) + 1; // NOTE: 1-indexed
-    var rest = k - 6 * layer * (layer - 1) / 2;
-    var triangleIndex = Math.floor(rest / layer);
-    var integerX = layer;
-    var integerY = layer - 1 - rest % layer;
-    var latticeSpacing = 2 * particle_radius;
-    var latticeX = vec2.fromPolar(latticeSpacing * integerX, 0);
-    var latticeY = vec2.fromPolar(latticeSpacing * integerY, tau / 6);
-    var position = vec2.add(vec2.create(), latticeX, latticeY);
-    
-    var rotationMatrix = mat2.create();
-    rotationMatrix = mat2.rotate(rotationMatrix, rotationMatrix, triangleIndex * tau / 6);
-    
-    vec2.transformMat2(position, position, rotationMatrix);
-    console.log("triangle: ", triangleIndex, "x:", integerX, "y:", integerY);
-    return position;
-    
 }
+
+var hexagonal_lattice_position = function(){
+    
+    var latticeX = vec2.create();
+    var latticeY = vec2.create();
+    
+    return function (particleIndex)
+    {
+        // NOTE: this adds the particles in a spiral by figuring out their coordinates in 
+        // one of 6 triangular lattices
+        if (particleIndex == 0) {
+            return vec2.create();
+        }
+        var k = particleIndex - 1;
+        var layer = Math.floor((Math.sqrt(8*(k / 6) + 1) - 1) / 2) + 1; // NOTE: 1-indexed
+        var rest = k - 6 * layer * (layer - 1) / 2;
+        var triangleIndex = Math.floor(rest / layer);
+        var integerX = layer;
+        var integerY = rest % layer;
+        var latticeSpacing = 2 * particle_radius;
+        var rotationAngle = triangleIndex * tau/6;
+        vec2.setPolar(latticeX, latticeSpacing * integerX, rotationAngle);
+        vec2.setPolar(latticeY, latticeSpacing * integerY, rotationAngle + 2 * tau/6);
+        return vec2.add(vec2.create(), latticeX, latticeY);
+    }
+}();
 
 function no_velocity(particleIndex)
 {
@@ -514,8 +521,8 @@ function lennardJonesForce(invDistance, bondEnergy, separation)
 {
     var a = separation * invDistance;
     var a6 = Math.pow(a, 6);
-    var shape = 12 * invDistance * (a6 - a6*a6);
-    return - bondEnergy * shape;
+    var shape = 12 * invDistance * (a6*a6 - a6);
+    return bondEnergy * shape;
 }
 
 // Simulation
