@@ -58,6 +58,7 @@
         <input type="button" value="Grouped" onclick="init(groupedParticleGenerator)">
         <input type="button" value="Falling" onclick="init(fallingParticleGenerator)">
         <input type="button" value="Two colors" onclick="init(twoColorParticleGenerator)">
+        <input type="button" value="Lattice" onclick="init(latticeParticleGenerator)">
     </p>
     <p>
         Control time: <br>
@@ -227,7 +228,9 @@ Particle.prototype.updateBounds = function()
     return this.bounds;
 }
 
+//
 // Initialization
+//
 
 function grouped_position(particleIndex)
 {
@@ -252,6 +255,56 @@ function halves_position(particleIndex)
     {
         return randomPointInRect(right_rect);
     }
+}
+
+vec2.fromPolar = function(radius, angle)
+{
+    var x = radius * Math.cos(angle);
+    var y = radius * Math.sin(angle);
+    return vec2.fromValues(x, y);
+}
+
+function triangular_lattice_position(particleIndex)
+{
+    // NOTE: this is the formula for triangular numbers inverted
+    var triangularNumber = Math.floor((Math.sqrt(8*particleIndex + 1) - 1) / 2);
+    var rest = particleIndex - triangularNumber * (triangularNumber + 1) / 2;
+    var integerX = rest;
+    var integerY = triangularNumber - rest;
+    var latticeSpacing = 2 * particle_radius;
+    var latticeX = vec2.fromPolar(latticeSpacing * integerX, 0);
+    var latticeY = vec2.fromPolar(latticeSpacing * integerY, tau / 6);
+    return vec2.add(vec2.create(), latticeX, latticeY);
+}
+
+function hexagonal_lattice_position(particleIndex)
+{
+    if (particleIndex == 0) {
+        return vec2.create(); // zero
+    }
+    var k = particleIndex - 1;
+    var layer = Math.floor((Math.sqrt(8*(k / 6) + 1) - 1) / 2) + 1; // NOTE: 1-indexed
+    var rest = k - 6 * layer * (layer - 1) / 2;
+    var triangleIndex = Math.floor(rest / layer);
+    var integerX = layer;
+    var integerY = rest % layer;
+    var latticeSpacing = 2 * particle_radius;
+    var latticeX = vec2.fromPolar(latticeSpacing * integerX, 0);
+    var latticeY = vec2.fromPolar(latticeSpacing * integerY, tau / 6);
+    var position = vec2.add(vec2.create(), latticeX, latticeY);
+    
+    var rotationMatrix = mat2.create();
+    rotationMatrix = mat2.rotate(rotationMatrix, rotationMatrix, triangleIndex * tau / 6);
+    
+    vec2.transformMat2(position, position, rotationMatrix);
+    
+    return position;
+    
+}
+
+function no_velocity(particleIndex)
+{
+    return vec2.create();
 }
 
 function uniform_velocity(particleIndex)
@@ -283,42 +336,53 @@ function two_colors(particleIndex)
     }
 }
 
+//
 // particle generators
+//
 
 function uniformParticleGenerator(particleIndex)
 {
     return new Particle(
-                uniform_position(particleIndex),
-                uniform_velocity(particleIndex),
-                one_color(particleIndex)
-            );
+        uniform_position(particleIndex),
+        uniform_velocity(particleIndex),
+        one_color(particleIndex)
+    );
 }
 
 function groupedParticleGenerator(particleIndex)
 {
     return new Particle(
-                grouped_position(particleIndex),
-                uniform_velocity(particleIndex),
-                one_color(particleIndex)
-            );
+        grouped_position(particleIndex),
+        uniform_velocity(particleIndex),
+        one_color(particleIndex)
+    );
 }
 
 function fallingParticleGenerator(particleIndex)
 {
     return new Particle(
-                grouped_position(particleIndex),
-                identical_velocity(particleIndex),
-                one_color(particleIndex)
-            );
+        grouped_position(particleIndex),
+        identical_velocity(particleIndex),
+        one_color(particleIndex)
+    );
 }
 
 function twoColorParticleGenerator(particleIndex)
 {
     return new Particle(
-                halves_position(particleIndex),
-                uniform_velocity(particleIndex),
-                two_colors(particleIndex)
-            );
+        halves_position(particleIndex),
+        uniform_velocity(particleIndex),
+        two_colors(particleIndex)
+    );
+}
+
+function latticeParticleGenerator(particleIndex)
+{
+    return new Particle(
+        hexagonal_lattice_position(particleIndex),
+        no_velocity(particleIndex),
+        one_color(particleIndex)
+    );
 }
 
 function updateParticleCount(newParticleCount)
