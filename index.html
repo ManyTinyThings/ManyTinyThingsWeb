@@ -74,7 +74,7 @@
     </p>
     <p>
         Gravity: <br>
-        None <input id="gravity" type="range" value="0", min="0", max="2e-6", step="1e-8"> Strong
+        None <input id="gravity" type="range" value="0", min="0", max="2e-4", step="1e-8"> Strong
     </p>
     <p>
         Box size: <br>
@@ -603,13 +603,13 @@ var update = function(){
       {
           var particle = particles[particleIndex];
           
-          // set up acceleration before next loop
-          vec2.copy(particle.acceleration, gravity_acceleration);
-          
           // velocity verlet
           
           vec2.scaleAndAdd(particle.velocity, particle.velocity, particle.acceleration, 0.5 * dt);
           vec2.scaleAndAdd(particle.position, particle.position, particle.velocity, dt);
+          
+          // set up acceleration before next loop
+          vec2.copy(particle.acceleration, gravity_acceleration);
       }
 
       // Calculate forces
@@ -633,10 +633,6 @@ var update = function(){
               
               var acceleration_direction = vec2.normalize(relative_position, relative_position);
               var acceleration_magnitude = force / mass;
-              var acceleration_limit = 1;
-              if (acceleration_magnitude > acceleration_limit) {
-                  acceleration_magnitude = acceleration_limit;
-              }
               vec2.scaleAndAdd(particle.acceleration, particle.acceleration, acceleration_direction, - acceleration_magnitude);
               vec2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration, acceleration_direction, acceleration_magnitude);
           }
