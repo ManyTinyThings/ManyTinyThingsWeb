@@ -287,7 +287,7 @@ function hexagonal_lattice_position(particleIndex)
     var rest = k - 6 * layer * (layer - 1) / 2;
     var triangleIndex = Math.floor(rest / layer);
     var integerX = layer;
-    var integerY = rest % layer;
+    var integerY = layer - 1 - rest % layer;
     var latticeSpacing = 2 * particle_radius;
     var latticeX = vec2.fromPolar(latticeSpacing * integerX, 0);
     var latticeY = vec2.fromPolar(latticeSpacing * integerY, tau / 6);
@@ -297,7 +297,7 @@ function hexagonal_lattice_position(particleIndex)
     rotationMatrix = mat2.rotate(rotationMatrix, rotationMatrix, triangleIndex * tau / 6);
     
     vec2.transformMat2(position, position, rotationMatrix);
-    
+    console.log("triangle: ", triangleIndex, "x:", integerX, "y:", integerY);
     return position;
     
 }
@@ -404,6 +404,8 @@ function updateParticleCount(newParticleCount)
         {
             particles.push(particleGenerator(particleIndex))
         }
+        // TODO: move particles out of each other so that no overlaps occur
+        
     }
     particleCount = newParticleCount;
 
@@ -433,7 +435,7 @@ function init(newParticleGenerator)
 
     updateBounds();
 
-    particleGenerator = newParticleGenerator || particleGenerator;
+    particleGenerator = newParticleGenerator || latticeParticleGenerator;
     particles = [];
     updateParticleCount(particleCount);
 
@@ -513,7 +515,7 @@ function lennardJonesForce(invDistance, bondEnergy, separation)
     var a = separation * invDistance;
     var a6 = Math.pow(a, 6);
     var shape = 12 * invDistance * (a6 - a6*a6);
-    return bondEnergy * shape;
+    return - bondEnergy * shape;
 }
 
 // Simulation
@@ -578,7 +580,7 @@ var update = function(){
       {
           elapsed = frame_duration;
       }
-      var dt = elapsed * simulation_speed;
+      var dt = elapsed * simulation_speed * 0.01;
       previous_time = time;
 
       var total_energy = 0;
@@ -612,9 +614,9 @@ var update = function(){
           for (var j = 0; j < i; ++j)
           {
               var otherParticle = particles[j];
-              // TODO: use quadtree with given cutoff distance the quadtree and a given cutoff distance
+              // TODO: use quadtree with given cutoff distance
               
-              var bondEnergy = 0.00000001;
+              var bondEnergy = 0.0001;
               var separation = particle_radius * (particle.radius + otherParticle.radius);
               
               vec2.subtract(relative_position, otherParticle.position, particle.position);
@@ -624,8 +626,12 @@ var update = function(){
               
               var acceleration_direction = vec2.normalize(relative_position, relative_position);
               var acceleration_magnitude = force / mass;
-              vec2.scaleAndAdd(particle.acceleration, particle.acceleration, acceleration_direction, acceleration_magnitude);
-              vec2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration, acceleration_direction, - acceleration_magnitude);
+              var acceleration_limit = 1;
+              if (acceleration_magnitude > acceleration_limit) {
+                  acceleration_magnitude = acceleration_limit;
+              }
+              vec2.scaleAndAdd(particle.acceleration, particle.acceleration, acceleration_direction, - acceleration_magnitude);
+              vec2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration, acceleration_direction, acceleration_magnitude);
           }
       }
       
@@ -646,7 +652,7 @@ var update = function(){
           total_energy += 0.5*vec2.squaredLength(particle.velocity);
           total_energy += vec2.dot(particle.position, gravity_acceleration);
           
-          vec2.add(total_momentum, total_momentum, mass * particle.velocity);
+          vec2.scaleAndAdd(total_momentum, total_momentum, particle.velocity, mass);
           
           
           // Collision with wall
