@@ -304,7 +304,8 @@ var hexagonal_lattice_position = function(){
         var latticeSpacing = 2 * particle_radius;
         var rotationAngle = triangleIndex * tau/6;
         vec2.setPolar(latticeX, latticeSpacing * integerX, rotationAngle);
-        vec2.setPolar(latticeY, latticeSpacing * integerY, rotationAngle + 2 * tau/6);
+        var shape = 2; // 1: spiral, 2: hexagon
+        vec2.setPolar(latticeY, latticeSpacing * integerY, rotationAngle + shape * tau/6);
         return vec2.add(vec2.create(), latticeX, latticeY);
     }
 }();
