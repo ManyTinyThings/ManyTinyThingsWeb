@@ -60,32 +60,9 @@
         <input type="button" value="Two colors" onclick="init(twoColorParticleGenerator)">
         <input type="button" value="Lattice" onclick="init(latticeParticleGenerator)">
     </p>
-    <p>
-        <label for="collision">Collision</label><input type="checkbox" id="collision" checked>
-        <label for="quadtree">Quadtree</label><input type="checkbox" id="quadtree" checked>
-        <label for="trajectory">Draw trajectory</label><input type="checkbox" id="trajectory">
-    </p>
 </body>
 
 <script>
-
-// Event handling
-
-
-document.getElementById("collision").addEventListener("change", function(){
-    collisionEnabled = this.checked;
-});
-
-document.getElementById("quadtree").addEventListener("change", function(){
-    quadtreeEnabled = this.checked;
-    quadtree.clear();
-});
-
-document.getElementById("trajectory").addEventListener("change", function(){
-    trajectoryEnabled = this.checked;
-    updateTrajectory();
-});
-
 
 
 // Pause when switching tabs, seems reasonable
@@ -126,6 +103,7 @@ function combineWithDefaults(opts, defaults)
 function createSlider(simulation, opts)
 {
     combineWithDefaults(opts, {
+        label: name,
         minLabel: String(opts.min),
         maxLabel: String(opts.max),
         snapBack: false,
@@ -135,6 +113,7 @@ function createSlider(simulation, opts)
     // set up slider element
     
     var slider = document.createElement("input");
+    slider.setAttribute("id", simulation.id + "_" + opts.name)
     slider.setAttribute("type", "range");
     slider.setAttribute("value", opts.initial);
     slider.setAttribute("min", opts.min);
@@ -145,7 +124,7 @@ function createSlider(simulation, opts)
     // set up presentation elements
     
     var p = document.createElement("p");
-    simulation.controlsDiv.appendChild(p);
+    simulation.sliderDiv.appendChild(p);
     p.appendChild(document.createTextNode(opts.label));
     p.appendChild(document.createElement("br"));
     p.appendChild(document.createTextNode(opts.minLabel));
@@ -167,6 +146,31 @@ function createSlider(simulation, opts)
             simulation.parameters[opts.name] = opts.function(opts.initial);
         });
     }
+}
+
+function createCheckbox(simulation, opts)
+{
+    combineWithDefaults(opts, {
+        label: name,
+        initial: false
+    });
+    
+    var checkbox = document.createElement("input");
+    checkbox.setAttribute("type", "checkbox");
+    var checkboxId = simulation.id + "_" + opts.name;
+    checkbox.setAttribute("id", checkboxId)
+    checkbox.setAttribute("name", opts.name);
+    checkbox.checked = opts.initial;
+    var label = document.createElement("label");
+    label.setAttribute("for", checkboxId);
+    label.innerHTML = opts.label;
+    
+    simulation.checkboxDiv.appendChild(label);
+    simulation.checkboxDiv.appendChild(checkbox);
+    
+    checkbox.addEventListener("change", function(){
+        simulation.parameters[opts.name] = this.checked;
+    });
 }
 
 
@@ -360,15 +364,16 @@ function latticeParticleGenerator(simulation, particleIndex)
     );
 }
 
-function updateParticleCount(simulation, newParticleCount)
+function updateParticleCount(simulation)
 {
+    var newParticleCount = simulation.parameters.particleCount;
     if (newParticleCount == simulation.particleCount)
     {
         return;
     }
     else if (newParticleCount < simulation.particleCount)
     {
-        particles.splice(newParticleCount, Number.MAX_VALUE);
+        simulation.particles.splice(newParticleCount, Number.MAX_VALUE);
     }
     else
     {
@@ -381,14 +386,11 @@ function updateParticleCount(simulation, newParticleCount)
         // TODO: move particles out of each other so that no overlaps occur
     }
     simulation.particleCount = newParticleCount;
-
-    draw(simulation);
 }
 
-function updateTrajectory(simulation, trajectoryEnabled)
+function updateTrajectory(simulation)
 {
-    simulation.trajectory = [];
-    if (simulation.trajectoryEnabled)
+    if (simulation.parameters.trajectoryEnabled)
     {
         simulation.particles[0].color = {name: "blue", rgba: [0, 0, 1, 1]};
     }
@@ -396,15 +398,14 @@ function updateTrajectory(simulation, trajectoryEnabled)
     {
         simulation.particles[0].color = simulation.particleGenerator(simulation, 0).color;
     }
-    simulation.trajectoryEnabled = trajectoryEnabled;
-    
-    draw(simulation);
+
 }
 
-function createSimulation(divId, width, height)
+function createSimulation(id, width, height)
 {
     var simulation = {};
     
+    simulation.id = id;
     
     simulation.running = true;
     simulation.pausedByUser = false;
@@ -437,7 +438,7 @@ function createSimulation(divId, width, height)
     
 
     // set up HTML elements
-    simulation.div = document.getElementById(divId);
+    simulation.div = document.getElementById(id);
     
     simulation.canvas = document.createElement("canvas");
     simulation.canvas.setAttribute("width", width);
@@ -447,6 +448,11 @@ function createSimulation(divId, width, height)
     simulation.controlsDiv = document.createElement("div");
     simulation.controlsDiv.setAttribute("class", "controls");
     simulation.div.appendChild(simulation.controlsDiv);
+    
+    simulation.sliderDiv = document.createElement("div");
+    simulation.controlsDiv.appendChild(simulation.sliderDiv);
+    simulation.checkboxDiv = document.createElement("div");
+    simulation.controlsDiv.appendChild(simulation.checkboxDiv);
     
     simulation.canvas.addEventListener("click", function(){
         if (simulation.requestFrameId)
@@ -486,6 +492,7 @@ function createSimulation(divId, width, height)
         initial: 91,
         min: 1, minLabel: "1",
         max: 200, maxLabel: "200",
+        step: 1,
         // TODO: make this exponential?
     });
     
@@ -516,12 +523,21 @@ function createSimulation(divId, width, height)
         max: 1000, maxLabel: "Huge",
     });
     
-    // set up simulation
-    simulation.renderer = createRenderer(simulation.canvas);
+    createCheckbox(simulation, {
+        name: "quadtreeEnabled",
+        label: "Quadtree",
+        initial: false,
+    });
     
-    updateBounds(simulation);
-    updateParticleCount(simulation, simulation.parameters.particleCount);
-    updateTrajectory(simulation);
+    createCheckbox(simulation, {
+        name: "trajectoryEnabled",
+        label: "Draw trajectory",
+        initial: false,
+    });
+    
+    // set up simulation
+    
+    simulation.renderer = createRenderer(simulation.canvas);
     
     simulation.updateFunction = function(time) {
         updateSimulation(simulation.updateFunction, simulation, time);
@@ -551,7 +567,9 @@ function resumeSimulation(simulation)
 }
 
 function updateBounds(simulation) {
-
+    
+    simulation.canvas.width = simulation.parameters.boxSize;
+    
     // retina stuff
     var canvasWidth = simulation.canvas.width;
     var canvasHeight = simulation.canvas.height;
@@ -588,8 +606,6 @@ function updateBounds(simulation) {
     simulation.quadTree = new Quadtree(boxBounds);
 
     resizeRenderer(simulation.renderer);
-
-    draw(simulation);
 }
 
 function lennardJonesEnergy(invDistance, bondEnergy, separation)
@@ -617,10 +633,10 @@ function draw(simulation)
     clearRenderer(simulation.renderer);
 
     // update trajectory
-    if (simulation.trajectoryEnabled)
+    if (simulation.parameters.trajectoryEnabled)
     {
-        trajectory.push(simulation.particles[0].position[0], simulation.particles[0].position[1]);
-        drawTrajectory(simulation.trajectory, simulation.particles[0].color);
+        simulation.trajectory.push(simulation.particles[0].position[0], simulation.particles[0].position[1]);
+        drawTrajectory(simulation.renderer, simulation.trajectory, simulation.particles[0].color);
     }
 
     drawParticles(simulation.renderer, simulation.particles, simulation.parameters.radiusScaling);
@@ -651,6 +667,11 @@ var updateSimulation = function(){
       var colorCounts = {};
       
       var mass = 1;
+      
+
+      updateParticleCount(simulation);
+      updateBounds(simulation);
+      updateTrajectory(simulation);
       
       var particles = simulation.particles;
       var particleCount = simulation.particleCount;
