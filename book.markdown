@@ -32,7 +32,7 @@ Thermodynamics is the study of heat. What is heat? That's like temperature, righ
 #### Small ideas
 
 
-We see that Energy is conserved, which should be true for elastic collisions. [Is momentum conserved? Why/why not?]
+* We see that Energy is conserved, which should be true for elastic collisions. [Is momentum conserved? Why/why not?]
 
 [If something is in brackets, it is meant as an exercise]
 
@@ -43,3 +43,10 @@ $$\Delta S = S\{later} - S\sub{at first}$$
 <input type="radio" name="math_level" id="experienced">
 <br>
 Math changes when radio button changes
+
+* Two cold things coming together become warmer, because of the bond energy released.
+* Warming something up helps it find lower energy state.
+    * Hole in the middle of structure does not get filled with T = 0, but with more energy, the particles wiggle loose.
+* For player: Try to lower the temperature by accelerating individual particles with mouse.
+    * Easy with big, few particles, hard with small, many
+    * Does expend energy, increase enthropy just to know which way to accelerate them!
