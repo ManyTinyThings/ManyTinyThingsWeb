@@ -190,7 +190,7 @@ var Particle = function(position, velocity, color)
 
 Particle.prototype.updateBounds = function()
 {
-    this.bounds.setCenterWidthHeight(this.position, particle_radius*2, particle_radius*2);
+    this.bounds.setCenterWidthHeight(this.position, radiusScaling*2, radiusScaling*2);
     return this.bounds;
 }
 
@@ -243,7 +243,7 @@ var triangular_lattice_position = function(){
         var rest = particleIndex - triangularNumber * (triangularNumber + 1) / 2;
         var integerX = rest;
         var integerY = triangularNumber - rest;
-        var latticeSpacing = 2 * simulation.parameters.particle_radius;
+        var latticeSpacing = 2 * simulation.parameters.radiusScaling;
         vec2.setPolar(latticeX, latticeSpacing * integerX, 0);
         vec2.setPolar(latticeY, latticeSpacing * integerY, tau / 6);
         return vec2.add(vec2.create(), latticeX, latticeY);
@@ -268,7 +268,7 @@ var hexagonal_lattice_position = function(){
         var triangleIndex = Math.floor(rest / layer);
         var integerX = layer;
         var integerY = rest % layer;
-        var latticeSpacing = 2 * simulation.parameters.particle_radius;
+        var latticeSpacing = 2 * simulation.parameters.radiusScaling;
         var rotationAngle = triangleIndex * tau/6;
         vec2.setPolar(latticeX, latticeSpacing * integerX, rotationAngle);
         var shape = 2; // 1: spiral, 2: hexagon
@@ -489,8 +489,8 @@ function createSimulation(divId, width, height)
     });
     
     createSlider(simulation, {
-        name: "particle_radius",
-        label: "Particle radius:",
+        name: "radiusScaling",
+        label: "Particle size:",
         initial: 0.08,
         min: 0.01, minLabel: "Tiny",
         max: 0.1, maxLabel: "Huge",
@@ -572,9 +572,9 @@ function updateBounds(simulation) {
         origin, 2*aspectRatio, 2
     );
     
-    var particle_radius = simulation.parameters.particle_radius;
+    var radiusScaling = simulation.parameters.radiusScaling;
     simulation.collision_bounds.setCenterWidthHeight(
-        origin, 2*(aspectRatio - particle_radius), 2*(1 - particle_radius)
+        origin, 2*(aspectRatio - radiusScaling), 2*(1 - radiusScaling)
     );
 
     simulation.right_rect.setLeftTopRightBottom(
@@ -622,7 +622,7 @@ function draw(simulation)
         drawTrajectory(simulation.trajectory, simulation.particles[0].color);
     }
 
-    drawParticles(simulation.renderer, simulation.particles, simulation.parameters.particle_radius);
+    drawParticles(simulation.renderer, simulation.particles, simulation.parameters.radiusScaling);
 }
 
 var updateSimulation = function(){
@@ -685,7 +685,7 @@ var updateSimulation = function(){
               // TODO: use quadtree with given cutoff distance
               
               var bondEnergy = 0.0001;
-              var separation = simulation.parameters.particle_radius * (particle.radius + otherParticle.radius);
+              var separation = simulation.parameters.radiusScaling * (particle.radius + otherParticle.radius);
               
               vec2.subtract(relative_position, otherParticle.position, particle.position);
               var invDistance = 1 / vec2.length(relative_position);
@@ -846,10 +846,10 @@ var collide = function(){
   {
       vec2.subtract(relative_position, particle1.position, particle2.position);
       var quadrance = vec2.squaredLength(relative_position);
-      if (quadrance < squared(2*particle_radius))
+      if (quadrance < squared(2*radiusScaling))
       {
           var distance_between_centers = Math.sqrt(quadrance);
-          var overlap = 2*particle_radius - distance_between_centers;
+          var overlap = 2*radiusScaling - distance_between_centers;
           var normal = vec2.scale(relative_position, relative_position, 1 / distance_between_centers);
 
           // Move out of overlap

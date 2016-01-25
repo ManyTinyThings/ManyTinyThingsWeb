@@ -141,10 +141,10 @@ function clearRenderer(renderer) {
     renderer.gl.clear(renderer.gl.COLOR_BUFFER_BIT);
 }
 
-function drawParticles(renderer, particles, radius) {
+function drawParticles(renderer, particles, radius_scaling) {
 
     var particleCount = particles.length;
-    var vertexCount = Math.max(Math.floor(4*radius), 20);
+    var vertexCount = Math.max(Math.floor(4*radius_scaling), 20);
 
     // generate vertices
 
@@ -163,7 +163,7 @@ function drawParticles(renderer, particles, radius) {
     for (var i = 0; i < particleCount; i++) {
         offsets.set(particles[i].position, 2*i);
         colors.set(particles[i].color.rgba, 4*i);
-        radii[i] = radius * particles[i].radius;
+        radii[i] = radius_scaling * particles[i].radius;
     }
 
     // set attributes
