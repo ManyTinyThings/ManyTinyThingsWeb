@@ -52,14 +52,6 @@
         Colors in left half = <output id="color">?</output> <br>
         Entropy = <output id="entropy">?</output> <br>
     </p>
-    <p>
-        Reset simulation to
-        <input type="button" value="Uniform" onclick="init(uniformParticleGenerator)">
-        <input type="button" value="Grouped" onclick="init(groupedParticleGenerator)">
-        <input type="button" value="Falling" onclick="init(fallingParticleGenerator)">
-        <input type="button" value="Two colors" onclick="init(twoColorParticleGenerator)">
-        <input type="button" value="Lattice" onclick="init(latticeParticleGenerator)">
-    </p>
 </body>
 
 <script>
@@ -171,6 +163,15 @@ function createCheckbox(simulation, opts)
     checkbox.addEventListener("change", function(){
         simulation.parameters[opts.name] = this.checked;
     });
+}
+
+function createButton(simulation, label, callback)
+{
+    var button = document.createElement("input");
+    button.setAttribute("type", "button");
+    button.setAttribute("value", label);
+    button.addEventListener("click", callback);
+    simulation.buttonDiv.appendChild(button);
 }
 
 
@@ -446,13 +447,14 @@ function createSimulation(id, width, height)
     simulation.div.appendChild(simulation.canvas);
     
     simulation.controlsDiv = document.createElement("div");
-    simulation.controlsDiv.setAttribute("class", "controls");
-    simulation.div.appendChild(simulation.controlsDiv);
-    
     simulation.sliderDiv = document.createElement("div");
-    simulation.controlsDiv.appendChild(simulation.sliderDiv);
     simulation.checkboxDiv = document.createElement("div");
+    simulation.buttonDiv = document.createElement("div");
+    
+    simulation.div.appendChild(simulation.controlsDiv);
+    simulation.controlsDiv.appendChild(simulation.sliderDiv);
     simulation.controlsDiv.appendChild(simulation.checkboxDiv);
+    simulation.controlsDiv.appendChild(simulation.buttonDiv);
     
     simulation.canvas.addEventListener("click", function(){
         if (simulation.requestFrameId)
@@ -535,6 +537,10 @@ function createSimulation(id, width, height)
         initial: false,
     });
     
+    createButton(simulation, "Reset", function(){
+        resetSimulation(simulation);
+    });
+    
     // set up simulation
     
     simulation.renderer = createRenderer(simulation.canvas);
@@ -564,6 +570,15 @@ function resumeSimulation(simulation)
         simulation.previousTime = 0;
         simulation.requestFrameId = window.requestAnimationFrame(simulation.updateFunction);
     }
+}
+
+function resetSimulation(simulation)
+{
+    var tempParticleCount = simulation.parameters.particleCount;
+    simulation.parameters.particleCount = 0;
+    updateParticleCount(simulation);
+    simulation.parameters.particleCount = tempParticleCount;
+    updateParticleCount(simulation);
 }
 
 function updateBounds(simulation) {
