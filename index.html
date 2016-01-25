@@ -146,33 +146,16 @@ document.getElementById("particle_radius").addEventListener("input", function(){
 })
 
 
-var canvas = document.getElementById("canvas");
-var canvasWidth = canvas.width;
-var canvasHeight = canvas.height;
-
-canvas.addEventListener("click", function(){
-    if (request_frame_id)
-    {
-        paused_by_user = true;
-        pause();
-    }
-    else
-    {
-        paused_by_user = false;
-        resume();
-    }
-})
-
 // Pause when switching tabs, seems reasonable
 
 document.addEventListener('visibilitychange', function(event) {
     if (document.hidden)
     {
-        pause();
+        pauseSimulation();
     }
     else if (!paused_by_user)
     {
-        resume();
+        resumeSimulation();
     }
 });
 
@@ -185,43 +168,15 @@ document.addEventListener('visibilitychange', function(event) {
 //     resume();
 // });
 
-// Variables
+// Constants
 
 var tau = 2*Math.PI;
 
-var max_speed = 0.001;
-var particle_radius = 0.08;
-var running = true;
-var initially_together = true;
-var initially_falling = false;
-var collision_enabled = false;
-var gravity_acceleration = vec2.create();
-var pressure_window_size = 1000;
-var quadtree_enabled = true;
-var frame_duration = 33;
-
-var box_bounds = new Rect();
-var collision_bounds = new Rect();
-var left_rect = new Rect();
-var right_rect = new Rect();
 
 
-// Simulation state
 
-var particleGenerator = uniformParticleGenerator;
-var particleCount = 91;
-var particles = [];
-var trajectory = [];
-var trajectory_enabled = false;
 
-var paused_by_user = false;
-var previous_time;
-var simulation_speed = 1;
-var delta_temperature = 1;
-var request_frame_id;
-var running_pressure = [];
-var running_time = [];
-var quadtree;
+
 
 
 // Particle object
@@ -246,28 +201,29 @@ Particle.prototype.updateBounds = function()
 // Initialization
 //
 
-function grouped_position(particleIndex)
+function grouped_position(simulation, particleIndex)
 {
+    var collision_bounds = simulation.collision_bounds;
     var small_centered_rect = new Rect().setCenterWidthHeight(
         collision_bounds.center, collision_bounds.width / 5, collision_bounds.height / 5
     );
     return randomPointInRect(small_centered_rect);
 }
 
-function uniform_position(particleIndex)
+function uniform_position(simulation, particleIndex)
 {
-    return randomPointInRect(collision_bounds);
+    return randomPointInRect(simulation.collision_bounds);
 }
 
-function halves_position(particleIndex)
+function halves_position(simulation, particleIndex)
 {
     if (particleIndex % 2 == 0)
     {
-        return randomPointInRect(left_rect);
+        return randomPointInRect(simulation.left_rect);
     }
     else
     {
-        return randomPointInRect(right_rect);
+        return randomPointInRect(simulation.right_rect);
     }
 }
 
@@ -283,14 +239,14 @@ var triangular_lattice_position = function(){
     var latticeX = vec2.create();
     var latticeY = vec2.create();
     
-    return function (particleIndex)
+    return function (simulation, particleIndex)
     {
         // NOTE: this is the formula for triangular numbers inverted
         var triangularNumber = Math.floor((Math.sqrt(8*particleIndex + 1) - 1) / 2);
         var rest = particleIndex - triangularNumber * (triangularNumber + 1) / 2;
         var integerX = rest;
         var integerY = triangularNumber - rest;
-        var latticeSpacing = 2 * particle_radius;
+        var latticeSpacing = 2 * simulation.parameters.particle_radius;
         vec2.setPolar(latticeX, latticeSpacing * integerX, 0);
         vec2.setPolar(latticeY, latticeSpacing * integerY, tau / 6);
         return vec2.add(vec2.create(), latticeX, latticeY);
@@ -302,7 +258,7 @@ var hexagonal_lattice_position = function(){
     var latticeX = vec2.create();
     var latticeY = vec2.create();
     
-    return function (particleIndex)
+    return function (simulation, particleIndex)
     {
         // NOTE: this adds the particles in a spiral by figuring out their coordinates in 
         // one of 6 triangular lattices
@@ -315,7 +271,7 @@ var hexagonal_lattice_position = function(){
         var triangleIndex = Math.floor(rest / layer);
         var integerX = layer;
         var integerY = rest % layer;
-        var latticeSpacing = 2 * particle_radius;
+        var latticeSpacing = 2 * simulation.parameters.particle_radius;
         var rotationAngle = triangleIndex * tau/6;
         vec2.setPolar(latticeX, latticeSpacing * integerX, rotationAngle);
         var shape = 2; // 1: spiral, 2: hexagon
@@ -324,29 +280,29 @@ var hexagonal_lattice_position = function(){
     }
 }();
 
-function no_velocity(particleIndex)
+function no_velocity(simulation, particleIndex)
 {
     return vec2.create();
 }
 
-function uniform_velocity(particleIndex)
+function uniform_velocity(simulation, particleIndex)
 {
-    var speed = random_in_interval(0, max_speed);
+    var speed = random_in_interval(0, simulation.parameters.max_initial_speed);
     var angle = random_in_interval(0, tau);
     return vec2.fromValues(speed * Math.cos(angle), speed * Math.sin(angle));
 }
 
-function identical_velocity(particleIndex)
+function identical_velocity(simulation, particleIndex)
 {
-    return vec2.fromValues(0, -max_speed);
+    return vec2.fromValues(0, - simulation.parameters.max_initial_speed);
 }
 
-function one_color(particleIndex)
+function one_color(simulation, particleIndex)
 {
     return {name: "black", rgba: [0, 0, 0, 1]};
 }
 
-function two_colors(particleIndex)
+function two_colors(simulation, particleIndex)
 {
     if (particleIndex % 2 == 0)
     {
@@ -362,165 +318,217 @@ function two_colors(particleIndex)
 // particle generators
 //
 
-function uniformParticleGenerator(particleIndex)
+function uniformParticleGenerator(simulation, particleIndex)
 {
     return new Particle(
-        uniform_position(particleIndex),
-        uniform_velocity(particleIndex),
-        one_color(particleIndex)
+        uniform_position(simulation, particleIndex),
+        uniform_velocity(simulation, particleIndex),
+        one_color(simulation, particleIndex)
     );
 }
 
-function groupedParticleGenerator(particleIndex)
+function groupedParticleGenerator(simulation, particleIndex)
 {
     return new Particle(
-        grouped_position(particleIndex),
-        uniform_velocity(particleIndex),
-        one_color(particleIndex)
+        grouped_position(simulation, particleIndex),
+        uniform_velocity(simulation, particleIndex),
+        one_color(simulation, particleIndex)
     );
 }
 
-function fallingParticleGenerator(particleIndex)
+function fallingParticleGenerator(simulation, particleIndex)
 {
     return new Particle(
-        grouped_position(particleIndex),
-        identical_velocity(particleIndex),
-        one_color(particleIndex)
+        grouped_position(simulation, particleIndex),
+        identical_velocity(simulation, particleIndex),
+        one_color(simulation, particleIndex)
     );
 }
 
-function twoColorParticleGenerator(particleIndex)
+function twoColorParticleGenerator(simulation, particleIndex)
 {
     return new Particle(
-        halves_position(particleIndex),
-        uniform_velocity(particleIndex),
-        two_colors(particleIndex)
+        halves_position(simulation, particleIndex),
+        uniform_velocity(simulation, particleIndex),
+        two_colors(simulation, particleIndex)
     );
 }
 
-function latticeParticleGenerator(particleIndex)
+function latticeParticleGenerator(simulation, particleIndex)
 {
     return new Particle(
-        hexagonal_lattice_position(particleIndex),
-        no_velocity(particleIndex),
-        one_color(particleIndex)
+        hexagonal_lattice_position(simulation, particleIndex),
+        no_velocity(simulation, particleIndex),
+        one_color(simulation, particleIndex)
     );
 }
 
-function updateParticleCount(newParticleCount)
+function updateParticleCount(simulation, newParticleCount)
 {
-    var particleCount = particles.length;
-    if (newParticleCount == particleCount)
+    if (newParticleCount == simulation.particleCount)
     {
         return;
     }
-    else if (newParticleCount < particleCount)
+    else if (newParticleCount < simulation.particleCount)
     {
         particles.splice(newParticleCount, Number.MAX_VALUE);
     }
     else
     {
-        for (var particleIndex = particleCount;
+        for (var particleIndex = simulation.particleCount;
              particleIndex < newParticleCount;
              ++particleIndex)
         {
-            particles.push(particleGenerator(particleIndex))
+            simulation.particles.push(simulation.particleGenerator(simulation, particleIndex))
         }
         // TODO: move particles out of each other so that no overlaps occur
-        
     }
-    particleCount = newParticleCount;
+    simulation.particleCount = newParticleCount;
 
-    draw();
+    draw(simulation);
 }
 
-function updateTrajectory()
+function updateTrajectory(simulation, trajectory_enabled)
 {
-    trajectory = [];
-    if (trajectory_enabled)
+    simulation.trajectory = [];
+    if (simulation.trajectory_enabled)
     {
-        particles[0].color = {name: "blue", rgba: [0, 0, 1, 1]};
+        simulation.particles[0].color = {name: "blue", rgba: [0, 0, 1, 1]};
     }
     else
     {
-        particles[0].color = particleGenerator(0).color;
+        simulation.particles[0].color = simulation.particleGenerator(simulation, 0).color;
     }
-    draw();
+    simulation.trajectory_enabled = trajectory_enabled;
+    
+    draw(simulation);
 }
 
-function init(newParticleGenerator)
+function createSimulation(canvasId)
 {
-    if (request_frame_id) {
-        window.cancelAnimationFrame(request_frame_id);
-        request_frame_id = undefined;
-    }
+    var simulation = {};
+    simulation.canvas = document.getElementById(canvasId);
+    simulation.canvas.addEventListener("click", function(){
+        if (simulation.requestFrameId)
+        {
+            simulation.paused_by_user = true;
+            pauseSimulation(simulation);
+        }
+        else
+        {
+            simulation.paused_by_user = false;
+            resumeSimulation(simulation);
+        }
+    });
+    
+    simulation.renderer = createRenderer(simulation.canvas);
+    
+    simulation.running = true;
+    simulation.pausedByUser = false;
+    simulation.previousTime = 0;
+    
+    simulation.particles = [];
+    simulation.particleCount = 0;
+    simulation.particleGenerator = latticeParticleGenerator;
 
-    updateBounds();
+    simulation.quadTree = undefined;
+    
+    simulation.trajectoryEnabled = false;
+    simulation.trajectory = [];
+    
+    simulation.runningPressure = [];
+    simulation.runningTime = [];
+    
+    simulation.box_bounds = new Rect();
+    simulation.collision_bounds = new Rect();
+    simulation.left_rect = new Rect();
+    simulation.right_rect = new Rect();
+    
+    simulation.parameters = {
+        max_initial_speed: 0.001,
+        particle_radius: 0.08,
+        collision_enabled: false,
+        gravity_acceleration: vec2.create(),
+        pressure_window_size: 1000,
+        quadtree_enabled: true,
+        frame_duration: 33,
+        simulation_speed: 1,
+        delta_temperature: 1,
+        particle_count: 91,
+    };
 
-    particleGenerator = newParticleGenerator || latticeParticleGenerator;
-    particles = [];
-    updateParticleCount(particleCount);
-
-    updateTrajectory();
-
-    previous_time = 0;
-    request_frame_id = window.requestAnimationFrame(update);
+    
+    updateBounds(simulation);
+    updateParticleCount(simulation, simulation.parameters.particle_count);
+    updateTrajectory(simulation);
+    
+    simulation.updateFunction = function(time) {
+        updateSimulation(simulation.updateFunction, simulation, time);
+    };
+    
+    simulation.requestFrameId = window.requestAnimationFrame(simulation.updateFunction);
+    
+    return simulation;
 }
 
-function pause()
+function pauseSimulation(simulation)
 {
-    if (request_frame_id)
+    if (simulation.requestFrameId)
     {
-        window.cancelAnimationFrame(request_frame_id);
-        request_frame_id = undefined;
+        window.cancelAnimationFrame(simulation.requestFrameId);
+        simulation.requestFrameId = undefined;
     }
 }
 
-function resume()
+function resumeSimulation(simulation)
 {
-    if (!request_frame_id)
+    if (! simulation.requestFrameId)
     {
         previous_time = 0;
-        window.requestAnimationFrame(update);
+        simulation.requestFrameId = window.requestAnimationFrame(simulation.updateFunction);
     }
 }
 
-function updateBounds() {
+function updateBounds(simulation) {
 
     // retina stuff
+    var canvasWidth = simulation.canvas.width;
+    var canvasHeight = simulation.canvas.height;
 
-    canvas.style.width = canvasWidth + "px";
-    canvas.style.height = canvasHeight + "px";
+    simulation.canvas.style.width = canvasWidth + "px";
+    simulation.canvas.style.height = canvasHeight + "px";
 
     var devicePixelRatio = window.devicePixelRatio || 1;
-    canvas.width = canvasWidth * devicePixelRatio;
-    canvas.height = canvasHeight * devicePixelRatio;
+    simulation.canvas.width = canvasWidth * devicePixelRatio;
+    simulation.canvas.height = canvasHeight * devicePixelRatio;
 
     // boxes
 
-    var aspectRatio = canvas.width / canvas.height;
+    var aspectRatio = simulation.canvas.width / simulation.canvas.height;
     var origin = vec2.fromValues(0, 0);
-
+    
+    var box_bounds = simulation.box_bounds;
     box_bounds.setCenterWidthHeight(
         origin, 2*aspectRatio, 2
     );
-
-    collision_bounds.setCenterWidthHeight(
+    
+    var particle_radius = simulation.parameters.particle_radius;
+    simulation.collision_bounds.setCenterWidthHeight(
         origin, 2*(aspectRatio - particle_radius), 2*(1 - particle_radius)
     );
 
-    right_rect.setLeftTopRightBottom(
+    simulation.right_rect.setLeftTopRightBottom(
             box_bounds.center[0], box_bounds.top,
             box_bounds.right, box_bounds.bottom);
-    left_rect.setLeftTopRightBottom(
+    simulation.left_rect.setLeftTopRightBottom(
             box_bounds.left, box_bounds.top,
             box_bounds.center[0], box_bounds.bottom);
 
-    quadtree = new Quadtree(box_bounds);
+    simulation.quadTree = new Quadtree(box_bounds);
 
-    resize_canvas();
+    resizeRenderer(simulation.renderer);
 
-    draw();
+    draw(simulation);
 }
 
 function lennardJonesEnergy(invDistance, bondEnergy, separation)
@@ -573,21 +581,21 @@ var collide = function(){
   }
 }();
 
-function draw()
+function draw(simulation)
 {
-    clear_canvas();
+    clearRenderer(simulation.renderer);
 
     // update trajectory
-    if (trajectory_enabled)
+    if (simulation.trajectory_enabled)
     {
-        trajectory.push(particles[0].position[0], particles[0].position[1]);
-        drawTrajectory(trajectory, particles[0].color);
+        trajectory.push(simulation.particles[0].position[0], simulation.particles[0].position[1]);
+        drawTrajectory(simulation.trajectory, simulation.particles[0].color);
     }
 
-    drawParticles(particles, particle_radius);
+    drawParticles(simulation.renderer, simulation.particles, simulation.parameters.particle_radius);
 }
 
-var update = function(){
+var updateSimulation = function(){
 
   var relative_position = vec2.create(); 
   
@@ -595,14 +603,15 @@ var update = function(){
   var wall_normal = vec2.create();
   var projection = vec2.create();
 
-  return function(time)
+  return function(updateFunction, simulation, time)
   {
-      var elapsed = time - previous_time;
+      var elapsed = time - simulation.previousTime;
       if ((elapsed > 100) || (elapsed <= 0))
       {
-          elapsed = frame_duration;
+          elapsed = simulation.parameters.frame_duration;
       }
-      var dt = elapsed * simulation_speed * 0.01;
+      var slowingFactor = 0.01;
+      var dt = elapsed * simulation.parameters.simulation_speed * slowingFactor;
       previous_time = time;
 
       var total_energy = 0;
@@ -611,16 +620,19 @@ var update = function(){
       var color_counts = {};
       
       var mass = 1;
+      
+      var particles = simulation.particles;
+      var particleCount = simulation.particleCount;
 
       for (var particleIndex = 0;
-          particleIndex < particles.length;
+          particleIndex < particleCount;
           ++particleIndex)
       {
           var particle = particles[particleIndex];
           
           // Scale velocities with delta temperature
           
-          vec2.scale(particle.velocity, particle.velocity, delta_temperature);
+          vec2.scale(particle.velocity, particle.velocity, simulation.parameters.delta_temperature);
           
           // velocity verlet
           
@@ -628,12 +640,12 @@ var update = function(){
           vec2.scaleAndAdd(particle.position, particle.position, particle.velocity, dt);
           
           // set up acceleration before next loop
-          vec2.copy(particle.acceleration, gravity_acceleration);
+          vec2.copy(particle.acceleration, simulation.parameters.gravity_acceleration);
       }
 
       // Calculate forces
       
-      for (var i = 0; i < particles.length; ++i)
+      for (var i = 0; i < particleCount; ++i)
       {
           var particle = particles[i];
           
@@ -643,7 +655,7 @@ var update = function(){
               // TODO: use quadtree with given cutoff distance
               
               var bondEnergy = 0.0001;
-              var separation = particle_radius * (particle.radius + otherParticle.radius);
+              var separation = simulation.parameters.particle_radius * (particle.radius + otherParticle.radius);
               
               vec2.subtract(relative_position, otherParticle.position, particle.position);
               var invDistance = 1 / vec2.length(relative_position);
@@ -658,7 +670,7 @@ var update = function(){
       }
       
       for (var particleIndex = 0;
-          particleIndex < particles.length;
+          particleIndex < particleCount;
           ++particleIndex)
       {
           var particle = particles[particleIndex];
@@ -667,17 +679,19 @@ var update = function(){
           vec2.scaleAndAdd(particle.velocity, particle.velocity, particle.acceleration, 0.5 * dt);
           
           // calculate quantities
-          if(left_rect.containsPoint(particle.position))
+          if(simulation.left_rect.containsPoint(particle.position))
           {
               color_counts[particle.color.name] = 1 + (color_counts[particle.color.name] || 0);
           }
           total_energy += 0.5*vec2.squaredLength(particle.velocity);
-          total_energy += vec2.dot(particle.position, gravity_acceleration);
+          total_energy += - vec2.dot(particle.position, simulation.parameters.gravity_acceleration);
           
           vec2.scaleAndAdd(total_momentum, total_momentum, particle.velocity, mass);
           
           
           // Collision with wall
+          
+          var collision_bounds = simulation.collision_bounds;
 
           if (! collision_bounds.containsPoint(particle.position))
           {
@@ -719,7 +733,7 @@ var update = function(){
 
 
       // Collision with other particles
-      if (collision_enabled)
+      if (simulation.parameters.collision_enabled)
       {
           if (quadtree_enabled)
           {
@@ -736,7 +750,7 @@ var update = function(){
           }
           else
           {
-              for (var i = 0; i < particles.length; ++i)
+              for (var i = 0; i < particleCount; ++i)
               {
                   for (var j = 0; j < i; ++j)
                   {
@@ -748,23 +762,24 @@ var update = function(){
 
       // Drawing
 
-      draw();
+      draw(simulation);
 
       // Measurements
 
-      running_pressure.push(total_pressure);
-      running_time.push(time)
-      if (running_pressure.length > pressure_window_size)
+      simulation.runningPressure.push(total_pressure);
+      simulation.runningTime.push(time)
+      if (simulation.runningPressure.length > simulation.parameters.pressure_window_size)
       {
-          running_pressure.shift();
-          var initial_time = running_time.shift();
+          simulation.runningPressure.shift();
+          var initial_time = simulation.runningTime.shift();
       }
       else
       {
-          var initial_time = running_time[0];
+          var initial_time = simulation.runningTime[0];
       }
 
-      var average_pressure = sum(running_pressure) / (time - initial_time);
+      var average_pressure = sum(simulation.runningPressure) / (time - initial_time);
+      
       document.getElementById("pressure").value = average_pressure.toExponential(2);
       document.getElementById("energy").value = total_energy.toExponential(2);
       document.getElementById("momentum").value =
@@ -785,16 +800,15 @@ var update = function(){
       document.getElementById("color").value = color_count_string_array.join("");
       document.getElementById("entropy").value = entropy.toExponential(2);
 
-      if (running)
+      if (simulation.running)
       {
-          request_frame_id = window.requestAnimationFrame(update);
+          simulation.requestFrameId = window.requestAnimationFrame(updateFunction);
       }
   }
 }();
 
+createSimulation("canvas");
 
-initGraphics(canvas);
-init()
 
 </script>
 
