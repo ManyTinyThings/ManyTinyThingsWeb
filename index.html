@@ -73,16 +73,16 @@
 
 
 document.getElementById("collision").addEventListener("change", function(){
-    collision_enabled = this.checked;
+    collisionEnabled = this.checked;
 });
 
 document.getElementById("quadtree").addEventListener("change", function(){
-    quadtree_enabled = this.checked;
+    quadtreeEnabled = this.checked;
     quadtree.clear();
 });
 
 document.getElementById("trajectory").addEventListener("change", function(){
-    trajectory_enabled = this.checked;
+    trajectoryEnabled = this.checked;
     updateTrajectory();
 });
 
@@ -97,7 +97,7 @@ document.addEventListener('visibilitychange', function(event) {
     {
         pauseSimulation();
     }
-    else if (!paused_by_user)
+    else if (!pausedByUser)
     {
         resumeSimulation();
     }
@@ -198,29 +198,29 @@ Particle.prototype.updateBounds = function()
 // Initialization
 //
 
-function grouped_position(simulation, particleIndex)
+function groupedPosition(simulation, particleIndex)
 {
-    var collision_bounds = simulation.collision_bounds;
-    var small_centered_rect = new Rect().setCenterWidthHeight(
-        collision_bounds.center, collision_bounds.width / 5, collision_bounds.height / 5
+    var collisionBounds = simulation.collisionBounds;
+    var smallCenteredRect = new Rect().setCenterWidthHeight(
+        collisionBounds.center, collisionBounds.width / 5, collisionBounds.height / 5
     );
-    return randomPointInRect(small_centered_rect);
+    return randomPointInRect(smallCenteredRect);
 }
 
-function uniform_position(simulation, particleIndex)
+function uniformPosition(simulation, particleIndex)
 {
-    return randomPointInRect(simulation.collision_bounds);
+    return randomPointInRect(simulation.collisionBounds);
 }
 
-function halves_position(simulation, particleIndex)
+function halvesPosition(simulation, particleIndex)
 {
     if (particleIndex % 2 == 0)
     {
-        return randomPointInRect(simulation.left_rect);
+        return randomPointInRect(simulation.leftRect);
     }
     else
     {
-        return randomPointInRect(simulation.right_rect);
+        return randomPointInRect(simulation.rightRect);
     }
 }
 
@@ -231,7 +231,7 @@ vec2.setPolar = function(out, radius, angle)
     return vec2.set(out, x, y);
 }
 
-var triangular_lattice_position = function(){
+var triangularLatticePosition = function(){
     
     var latticeX = vec2.create();
     var latticeY = vec2.create();
@@ -250,7 +250,7 @@ var triangular_lattice_position = function(){
     }
 }
 
-var hexagonal_lattice_position = function(){
+var hexagonalLatticePosition = function(){
     
     var latticeX = vec2.create();
     var latticeY = vec2.create();
@@ -277,29 +277,29 @@ var hexagonal_lattice_position = function(){
     }
 }();
 
-function no_velocity(simulation, particleIndex)
+function noVelocity(simulation, particleIndex)
 {
     return vec2.create();
 }
 
-function uniform_velocity(simulation, particleIndex)
+function uniformVelocity(simulation, particleIndex)
 {
-    var speed = random_in_interval(0, simulation.parameters.max_initial_speed);
-    var angle = random_in_interval(0, tau);
+    var speed = randomInInterval(0, simulation.parameters.maxInitialSpeed);
+    var angle = randomInInterval(0, tau);
     return vec2.fromValues(speed * Math.cos(angle), speed * Math.sin(angle));
 }
 
-function identical_velocity(simulation, particleIndex)
+function identicalVelocity(simulation, particleIndex)
 {
-    return vec2.fromValues(0, - simulation.parameters.max_initial_speed);
+    return vec2.fromValues(0, - simulation.parameters.maxInitialSpeed);
 }
 
-function one_color(simulation, particleIndex)
+function oneColor(simulation, particleIndex)
 {
     return {name: "black", rgba: [0, 0, 0, 1]};
 }
 
-function two_colors(simulation, particleIndex)
+function twoColors(simulation, particleIndex)
 {
     if (particleIndex % 2 == 0)
     {
@@ -318,45 +318,45 @@ function two_colors(simulation, particleIndex)
 function uniformParticleGenerator(simulation, particleIndex)
 {
     return new Particle(
-        uniform_position(simulation, particleIndex),
-        uniform_velocity(simulation, particleIndex),
-        one_color(simulation, particleIndex)
+        uniformPosition(simulation, particleIndex),
+        uniformVelocity(simulation, particleIndex),
+        oneColor(simulation, particleIndex)
     );
 }
 
 function groupedParticleGenerator(simulation, particleIndex)
 {
     return new Particle(
-        grouped_position(simulation, particleIndex),
-        uniform_velocity(simulation, particleIndex),
-        one_color(simulation, particleIndex)
+        groupedPosition(simulation, particleIndex),
+        uniformVelocity(simulation, particleIndex),
+        oneColor(simulation, particleIndex)
     );
 }
 
 function fallingParticleGenerator(simulation, particleIndex)
 {
     return new Particle(
-        grouped_position(simulation, particleIndex),
-        identical_velocity(simulation, particleIndex),
-        one_color(simulation, particleIndex)
+        groupedPosition(simulation, particleIndex),
+        identicalVelocity(simulation, particleIndex),
+        oneColor(simulation, particleIndex)
     );
 }
 
 function twoColorParticleGenerator(simulation, particleIndex)
 {
     return new Particle(
-        halves_position(simulation, particleIndex),
-        uniform_velocity(simulation, particleIndex),
-        two_colors(simulation, particleIndex)
+        halvesPosition(simulation, particleIndex),
+        uniformVelocity(simulation, particleIndex),
+        twoColors(simulation, particleIndex)
     );
 }
 
 function latticeParticleGenerator(simulation, particleIndex)
 {
     return new Particle(
-        hexagonal_lattice_position(simulation, particleIndex),
-        no_velocity(simulation, particleIndex),
-        one_color(simulation, particleIndex)
+        hexagonalLatticePosition(simulation, particleIndex),
+        noVelocity(simulation, particleIndex),
+        oneColor(simulation, particleIndex)
     );
 }
 
@@ -385,10 +385,10 @@ function updateParticleCount(simulation, newParticleCount)
     draw(simulation);
 }
 
-function updateTrajectory(simulation, trajectory_enabled)
+function updateTrajectory(simulation, trajectoryEnabled)
 {
     simulation.trajectory = [];
-    if (simulation.trajectory_enabled)
+    if (simulation.trajectoryEnabled)
     {
         simulation.particles[0].color = {name: "blue", rgba: [0, 0, 1, 1]};
     }
@@ -396,7 +396,7 @@ function updateTrajectory(simulation, trajectory_enabled)
     {
         simulation.particles[0].color = simulation.particleGenerator(simulation, 0).color;
     }
-    simulation.trajectory_enabled = trajectory_enabled;
+    simulation.trajectoryEnabled = trajectoryEnabled;
     
     draw(simulation);
 }
@@ -422,17 +422,17 @@ function createSimulation(divId, width, height)
     simulation.runningPressure = [];
     simulation.runningTime = [];
     
-    simulation.box_bounds = new Rect();
-    simulation.collision_bounds = new Rect();
-    simulation.left_rect = new Rect();
-    simulation.right_rect = new Rect();
+    simulation.boxBounds = new Rect();
+    simulation.collisionBounds = new Rect();
+    simulation.leftRect = new Rect();
+    simulation.rightRect = new Rect();
     
     simulation.parameters = {
-        max_initial_speed: 0.001,
-        collision_enabled: false,
-        pressure_window_size: 1000,
-        quadtree_enabled: true,
-        frame_duration: 33,
+        maxInitialSpeed: 0.001,
+        collisionEnabled: false,
+        pressureWindowSize: 1000,
+        quadtreeEnabled: true,
+        frameDuration: 33,
     };
     
 
@@ -451,12 +451,12 @@ function createSimulation(divId, width, height)
     simulation.canvas.addEventListener("click", function(){
         if (simulation.requestFrameId)
         {
-            simulation.paused_by_user = true;
+            simulation.pausedByUser = true;
             pauseSimulation(simulation);
         }
         else
         {
-            simulation.paused_by_user = false;
+            simulation.pausedByUser = false;
             resumeSimulation(simulation);
         }
     });
@@ -464,7 +464,7 @@ function createSimulation(divId, width, height)
     // setup controls and meters
     
     createSlider(simulation, {
-        name: "delta_temperature",
+        name: "deltaTemperature",
         label: "Control temperature:",
         initial: 1,
         min: 0.97, minLabel: "Colder",
@@ -473,7 +473,7 @@ function createSimulation(divId, width, height)
     });
     
     createSlider(simulation, {
-        name: "simulation_speed",
+        name: "simulationSpeed",
         label: "Control time:",
         initial: 1,
         min: -1, minLabel: "Forward",
@@ -481,11 +481,12 @@ function createSimulation(divId, width, height)
     });
     
     createSlider(simulation, {
-        name: "particle_count",
+        name: "particleCount",
         label: "Number of particles:",
         initial: 91,
         min: 1, minLabel: "1",
         max: 200, maxLabel: "200",
+        // TODO: make this exponential?
     });
     
     createSlider(simulation, {
@@ -497,18 +498,18 @@ function createSimulation(divId, width, height)
     });
     
     createSlider(simulation, {
-        name: "gravity_acceleration",
+        name: "gravityAcceleration",
         label: "Gravity:",
         initial: 0,
         min: 0, minLabel: "None",
-        max: 1e-3, maxLabel: "Strong",
+        max: 2e-4, maxLabel: "Strong",
         function: function(g) {
             return vec2.fromValues(0, -g);
         },
     });
     
     createSlider(simulation, {
-        name: "box_size",
+        name: "boxSize",
         label: "Box Size:",
         initial: 500,
         min: 20, minLabel: "Tiny",
@@ -519,7 +520,7 @@ function createSimulation(divId, width, height)
     simulation.renderer = createRenderer(simulation.canvas);
     
     updateBounds(simulation);
-    updateParticleCount(simulation, simulation.parameters.particle_count);
+    updateParticleCount(simulation, simulation.parameters.particleCount);
     updateTrajectory(simulation);
     
     simulation.updateFunction = function(time) {
@@ -544,7 +545,7 @@ function resumeSimulation(simulation)
 {
     if (! simulation.requestFrameId)
     {
-        previous_time = 0;
+        simulation.previousTime = 0;
         simulation.requestFrameId = window.requestAnimationFrame(simulation.updateFunction);
     }
 }
@@ -567,24 +568,24 @@ function updateBounds(simulation) {
     var aspectRatio = simulation.canvas.width / simulation.canvas.height;
     var origin = vec2.fromValues(0, 0);
     
-    var box_bounds = simulation.box_bounds;
-    box_bounds.setCenterWidthHeight(
+    var boxBounds = simulation.boxBounds;
+    boxBounds.setCenterWidthHeight(
         origin, 2*aspectRatio, 2
     );
     
     var radiusScaling = simulation.parameters.radiusScaling;
-    simulation.collision_bounds.setCenterWidthHeight(
+    simulation.collisionBounds.setCenterWidthHeight(
         origin, 2*(aspectRatio - radiusScaling), 2*(1 - radiusScaling)
     );
 
-    simulation.right_rect.setLeftTopRightBottom(
-            box_bounds.center[0], box_bounds.top,
-            box_bounds.right, box_bounds.bottom);
-    simulation.left_rect.setLeftTopRightBottom(
-            box_bounds.left, box_bounds.top,
-            box_bounds.center[0], box_bounds.bottom);
+    simulation.rightRect.setLeftTopRightBottom(
+            boxBounds.center[0], boxBounds.top,
+            boxBounds.right, boxBounds.bottom);
+    simulation.leftRect.setLeftTopRightBottom(
+            boxBounds.left, boxBounds.top,
+            boxBounds.center[0], boxBounds.bottom);
 
-    simulation.quadTree = new Quadtree(box_bounds);
+    simulation.quadTree = new Quadtree(boxBounds);
 
     resizeRenderer(simulation.renderer);
 
@@ -616,7 +617,7 @@ function draw(simulation)
     clearRenderer(simulation.renderer);
 
     // update trajectory
-    if (simulation.trajectory_enabled)
+    if (simulation.trajectoryEnabled)
     {
         trajectory.push(simulation.particles[0].position[0], simulation.particles[0].position[1]);
         drawTrajectory(simulation.trajectory, simulation.particles[0].color);
@@ -627,10 +628,10 @@ function draw(simulation)
 
 var updateSimulation = function(){
 
-  var relative_position = vec2.create(); 
+  var relativePosition = vec2.create(); 
   
-  var total_momentum = vec2.create();
-  var wall_normal = vec2.create();
+  var totalMomentum = vec2.create();
+  var wallNormal = vec2.create();
   var projection = vec2.create();
 
   return function(updateFunction, simulation, time)
@@ -638,16 +639,16 @@ var updateSimulation = function(){
       var elapsed = time - simulation.previousTime;
       if ((elapsed > 100) || (elapsed <= 0))
       {
-          elapsed = simulation.parameters.frame_duration;
+          elapsed = simulation.parameters.frameDuration;
       }
       var slowingFactor = 0.01;
-      var dt = elapsed * simulation.parameters.simulation_speed * slowingFactor;
-      previous_time = time;
+      var dt = elapsed * simulation.parameters.simulationSpeed * slowingFactor;
+      simulation.previousTime = time;
 
-      var total_energy = 0;
-      var total_pressure = 0;
-      vec2.set(total_momentum, 0, 0);
-      var color_counts = {};
+      var totalEnergy = 0;
+      var totalPressure = 0;
+      vec2.set(totalMomentum, 0, 0);
+      var colorCounts = {};
       
       var mass = 1;
       
@@ -662,7 +663,7 @@ var updateSimulation = function(){
           
           // Scale velocities with delta temperature
           
-          vec2.scale(particle.velocity, particle.velocity, simulation.parameters.delta_temperature);
+          vec2.scale(particle.velocity, particle.velocity, simulation.parameters.deltaTemperature);
           
           // velocity verlet
           
@@ -670,7 +671,7 @@ var updateSimulation = function(){
           vec2.scaleAndAdd(particle.position, particle.position, particle.velocity, dt);
           
           // set up acceleration before next loop
-          vec2.copy(particle.acceleration, simulation.parameters.gravity_acceleration);
+          vec2.copy(particle.acceleration, simulation.parameters.gravityAcceleration);
       }
 
       // Calculate forces
@@ -687,15 +688,15 @@ var updateSimulation = function(){
               var bondEnergy = 0.0001;
               var separation = simulation.parameters.radiusScaling * (particle.radius + otherParticle.radius);
               
-              vec2.subtract(relative_position, otherParticle.position, particle.position);
-              var invDistance = 1 / vec2.length(relative_position);
+              vec2.subtract(relativePosition, otherParticle.position, particle.position);
+              var invDistance = 1 / vec2.length(relativePosition);
               var force = lennardJonesForce(invDistance, bondEnergy, separation);
-              total_energy += lennardJonesEnergy(invDistance, bondEnergy, separation);
+              totalEnergy += lennardJonesEnergy(invDistance, bondEnergy, separation);
               
-              var acceleration_direction = vec2.normalize(relative_position, relative_position);
-              var acceleration_magnitude = force / mass;
-              vec2.scaleAndAdd(particle.acceleration, particle.acceleration, acceleration_direction, - acceleration_magnitude);
-              vec2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration, acceleration_direction, acceleration_magnitude);
+              var accelerationDirection = vec2.normalize(relativePosition, relativePosition);
+              var accelerationMagnitude = force / mass;
+              vec2.scaleAndAdd(particle.acceleration, particle.acceleration, accelerationDirection, - accelerationMagnitude);
+              vec2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration, accelerationDirection, accelerationMagnitude);
           }
       }
       
@@ -709,63 +710,63 @@ var updateSimulation = function(){
           vec2.scaleAndAdd(particle.velocity, particle.velocity, particle.acceleration, 0.5 * dt);
           
           // calculate quantities
-          if(simulation.left_rect.containsPoint(particle.position))
+          if(simulation.leftRect.containsPoint(particle.position))
           {
-              color_counts[particle.color.name] = 1 + (color_counts[particle.color.name] || 0);
+              colorCounts[particle.color.name] = 1 + (colorCounts[particle.color.name] || 0);
           }
-          total_energy += 0.5*vec2.squaredLength(particle.velocity);
-          total_energy += - vec2.dot(particle.position, simulation.parameters.gravity_acceleration);
+          totalEnergy += 0.5*vec2.squaredLength(particle.velocity);
+          totalEnergy += - vec2.dot(particle.position, simulation.parameters.gravityAcceleration);
           
-          vec2.scaleAndAdd(total_momentum, total_momentum, particle.velocity, mass);
+          vec2.scaleAndAdd(totalMomentum, totalMomentum, particle.velocity, mass);
           
           
           // Collision with wall
           
-          var collision_bounds = simulation.collision_bounds;
+          var collisionBounds = simulation.collisionBounds;
 
-          if (! collision_bounds.containsPoint(particle.position))
+          if (! collisionBounds.containsPoint(particle.position))
           {
               var overlap;
 
-              if (particle.position[0] < collision_bounds.left)
+              if (particle.position[0] < collisionBounds.left)
               {
-                  overlap = collision_bounds.left - particle.position[0];
-                  vec2.set(wall_normal, 1, 0);
+                  overlap = collisionBounds.left - particle.position[0];
+                  vec2.set(wallNormal, 1, 0);
               }
-              else if (particle.position[0] > collision_bounds.right)
+              else if (particle.position[0] > collisionBounds.right)
               {
-                  overlap = particle.position[0] - collision_bounds.right;
-                  vec2.set(wall_normal, -1, 0);
+                  overlap = particle.position[0] - collisionBounds.right;
+                  vec2.set(wallNormal, -1, 0);
               }
-              else if (particle.position[1] < collision_bounds.top)
+              else if (particle.position[1] < collisionBounds.top)
               {
-                  overlap = collision_bounds.top - particle.position[1];
-                  vec2.set(wall_normal, 0, 1);
+                  overlap = collisionBounds.top - particle.position[1];
+                  vec2.set(wallNormal, 0, 1);
               }
-              else if (particle.position[1] > collision_bounds.bottom)
+              else if (particle.position[1] > collisionBounds.bottom)
               {
-                  overlap = particle.position[1] - collision_bounds.bottom;
-                  vec2.set(wall_normal, 0, -1);
+                  overlap = particle.position[1] - collisionBounds.bottom;
+                  vec2.set(wallNormal, 0, -1);
               }
 
               // Move out of overlap
 
-              vec2.scaleAndAdd(particle.position, particle.position, wall_normal, overlap);
+              vec2.scaleAndAdd(particle.position, particle.position, wallNormal, overlap);
 
               // Reflect velocity
 
-              vec2.projectOntoNormal(projection, particle.velocity, wall_normal);
+              vec2.projectOntoNormal(projection, particle.velocity, wallNormal);
               vec2.scaleAndAdd(particle.velocity, particle.velocity, projection, -2);
 
-              total_pressure += vec2.length(projection);
+              totalPressure += vec2.length(projection);
           }
       }
 
 
       // Collision with other particles
-      if (simulation.parameters.collision_enabled)
+      if (simulation.parameters.collisionEnabled)
       {
-          if (quadtree_enabled)
+          if (quadtreeEnabled)
           {
               quadtree.clear();
               for (var particleIndex = 0;
@@ -776,7 +777,7 @@ var updateSimulation = function(){
                   particle.updateBounds();
                   quadtree.add(particle);
               }
-              quadtree.collide_all(collide);
+              quadtree.collideAll(collide);
           }
           else
           {
@@ -796,38 +797,39 @@ var updateSimulation = function(){
 
       // Measurements
 
-      simulation.runningPressure.push(total_pressure);
+      simulation.runningPressure.push(totalPressure);
       simulation.runningTime.push(time)
-      if (simulation.runningPressure.length > simulation.parameters.pressure_window_size)
+      var initialTime;
+      if (simulation.runningPressure.length > simulation.parameters.pressureWindowSize)
       {
           simulation.runningPressure.shift();
-          var initial_time = simulation.runningTime.shift();
+          initialTime = simulation.runningTime.shift();
       }
       else
       {
-          var initial_time = simulation.runningTime[0];
+          initialTime = simulation.runningTime[0];
       }
 
-      var average_pressure = sum(simulation.runningPressure) / (time - initial_time);
+      var averagePressure = sum(simulation.runningPressure) / (time - initialTime);
       
-      document.getElementById("pressure").value = average_pressure.toExponential(2);
-      document.getElementById("energy").value = total_energy.toExponential(2);
+      document.getElementById("pressure").value = averagePressure.toExponential(2);
+      document.getElementById("energy").value = totalEnergy.toExponential(2);
       document.getElementById("momentum").value =
-          ["(", total_momentum[0].toExponential(2),
-           ", ", total_momentum[1].toExponential(2), ")"].join("");
-      var color_count_string_array = [];
+          ["(", totalMomentum[0].toExponential(2),
+           ", ", totalMomentum[1].toExponential(2), ")"].join("");
+      var colorCountStringArray = [];
       var entropy = 0;
-      for (var color in color_counts)
+      for (var color in colorCounts)
       {
-          if (color_counts.hasOwnProperty(color))
+          if (colorCounts.hasOwnProperty(color))
           {
-              var color_count = color_counts[color];
-              var p = color_count/particles.length;
-              entropy = microstate_entropy(p) + microstate_entropy(1 - p);
-              color_count_string_array.push(color, ": ", color_count, " ");
+              var colorCount = colorCounts[color];
+              var p = colorCount/particles.length;
+              entropy = microstateEntropy(p) + microstateEntropy(1 - p);
+              colorCountStringArray.push(color, ": ", colorCount, " ");
           }
       }
-      document.getElementById("color").value = color_count_string_array.join("");
+      document.getElementById("color").value = colorCountStringArray.join("");
       document.getElementById("entropy").value = entropy.toExponential(2);
 
       if (simulation.running)
@@ -839,18 +841,18 @@ var updateSimulation = function(){
 
 var collide = function(){
 
-  var relative_position = vec2.create();
-  var relative_velocity = vec2.create();
+  var relativePosition = vec2.create();
+  var relativeVelocity = vec2.create();
 
   return function(particle1, particle2)
   {
-      vec2.subtract(relative_position, particle1.position, particle2.position);
-      var quadrance = vec2.squaredLength(relative_position);
+      vec2.subtract(relativePosition, particle1.position, particle2.position);
+      var quadrance = vec2.squaredLength(relativePosition);
       if (quadrance < squared(2*radiusScaling))
       {
-          var distance_between_centers = Math.sqrt(quadrance);
-          var overlap = 2*radiusScaling - distance_between_centers;
-          var normal = vec2.scale(relative_position, relative_position, 1 / distance_between_centers);
+          var distanceBetweenCenters = Math.sqrt(quadrance);
+          var overlap = 2*radiusScaling - distanceBetweenCenters;
+          var normal = vec2.scale(relativePosition, relativePosition, 1 / distanceBetweenCenters);
 
           // Move out of overlap
           // TODO: improve to perform correct collision
@@ -861,10 +863,10 @@ var collide = function(){
 
           // Elastic collision
 
-          vec2.subtract(relative_velocity, particle1.velocity, particle2.velocity);
-          var delta_velocity = vec2.projectOntoNormal(relative_velocity, relative_velocity, normal);
-          vec2.sub(particle1.velocity, particle1.velocity, delta_velocity);
-          vec2.add(particle2.velocity, particle2.velocity, delta_velocity);
+          vec2.subtract(relativeVelocity, particle1.velocity, particle2.velocity);
+          var deltaVelocity = vec2.projectOntoNormal(relativeVelocity, relativeVelocity, normal);
+          vec2.sub(particle1.velocity, particle1.velocity, deltaVelocity);
+          vec2.add(particle2.velocity, particle2.velocity, deltaVelocity);
       }
   }
 }();

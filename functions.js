@@ -1,7 +1,7 @@
 
 // Random stuff
 
-function microstate_entropy(p)
+function microstateEntropy(p)
 {
     if (p == 0)
     {
@@ -90,38 +90,38 @@ Rect.prototype.setCenterWidthHeight = function(center, width, height)
 Rect.prototype.containsRect = function(inner)
 {
     var outer = this;
-    var inside_x = (outer.left <= inner.left) && (inner.right <= outer.right);
-    var inside_y = (outer.top  <= inner.top ) && (inner.bottom <= outer.bottom);
-    return inside_x && inside_y;
+    var insideX = (outer.left <= inner.left) && (inner.right <= outer.right);
+    var insideY = (outer.top  <= inner.top ) && (inner.bottom <= outer.bottom);
+    return insideX && insideY;
 }
 
 Rect.prototype.containsPoint = function(point)
 {
-    var inside_x = (this.left <= point[0]) && (point[0] <= this.right)
-    var inside_y = (this.top <= point[1])  && (point[1] <= this.bottom)
-    return inside_x && inside_y;
+    var insideX = (this.left <= point[0]) && (point[0] <= this.right)
+    var insideY = (this.top <= point[1])  && (point[1] <= this.bottom)
+    return insideX && insideY;
 }
 
 function randomPointInRect(rect)
 {
-    return vec2.fromValues(random_in_interval(rect.left, rect.right),
-                           random_in_interval(rect.top, rect.bottom));
+    return vec2.fromValues(randomInInterval(rect.left, rect.right),
+                           randomInInterval(rect.top, rect.bottom));
 }
 
-function random_in_interval(a, b)
+function randomInInterval(a, b)
 {
     return (a + (b - a)*Math.random())
 }
 
 // Quadtree
 
-Quadtree = function(bounds, max_objects, max_depth)
+Quadtree = function(bounds, maxObjects, maxDepth)
 {
     this.objects = [];
     this.bounds = bounds;
     this.subtrees = undefined;
-    this.max_objects = max_objects || 4;
-    this.max_depth = max_depth || 7;
+    this.maxObjects = maxObjects || 4;
+    this.maxDepth = maxDepth || 7;
 }
 
 Quadtree.prototype.add = function(object)
@@ -146,23 +146,23 @@ Quadtree.prototype.add = function(object)
     {
         this.objects.push(object);
     
-        if (this.objects.length > this.max_objects)
+        if (this.objects.length > this.maxObjects)
         {
             // create subtrees
-            var top_left = new Rect().setLeftTopRightBottom(
+            var topLeft = new Rect().setLeftTopRightBottom(
                 this.bounds.left, this.bounds.top, 
                 this.bounds.center[0], this.bounds.center[1]);
-            var top_right = new Rect().setLeftTopRightBottom(
+            var topRight = new Rect().setLeftTopRightBottom(
                 this.bounds.center[0], this.bounds.top, 
                 this.bounds.right, this.bounds.center[1]);
-            var bottom_left = new Rect().setLeftTopRightBottom(
+            var bottomLeft = new Rect().setLeftTopRightBottom(
                 this.bounds.left, this.bounds.center[1], 
                 this.bounds.center[0], this.bounds.bottom);
-            var bottom_right = new Rect().setLeftTopRightBottom(
+            var bottomRight = new Rect().setLeftTopRightBottom(
                 this.bounds.center[0], this.bounds.center[1], 
                 this.bounds.right, this.bounds.bottom);
-            this.subtrees = [new Quadtree(top_left), new Quadtree(top_right),
-                             new Quadtree(bottom_left), new Quadtree(bottom_right)];
+            this.subtrees = [new Quadtree(topLeft), new Quadtree(topRight),
+                             new Quadtree(bottomLeft), new Quadtree(bottomRight)];
              for (var objectIndex = 0; 
                  objectIndex < this.objects.length; 
                  ++objectIndex)
@@ -185,13 +185,13 @@ Quadtree.prototype.add = function(object)
     
 }
 
-Quadtree.prototype.collide_all = function(collision_function)
+Quadtree.prototype.collideAll = function(collisionFunction)
 {
     for (var objectIndex = 0; 
         objectIndex < this.objects.length; 
         ++objectIndex)
     {
-        this.collide_with(this.objects[objectIndex], collision_function);
+        this.collideWith(this.objects[objectIndex], collisionFunction);
     }
     if (this.subtrees)
     {
@@ -200,12 +200,12 @@ Quadtree.prototype.collide_all = function(collision_function)
             ++subtreeIndex)
         {
             var subtree = this.subtrees[subtreeIndex];
-            subtree.collide_all(collision_function);
+            subtree.collideAll(collisionFunction);
         }
     }
 }
 
-Quadtree.prototype.collide_with = function(collider, collision_function) 
+Quadtree.prototype.collideWith = function(collider, collisionFunction) 
 {
     for (var objectIndex = 0; 
         objectIndex < this.objects.length; 
@@ -214,7 +214,7 @@ Quadtree.prototype.collide_with = function(collider, collision_function)
         var object = this.objects[objectIndex];
         if (object != collider)
         {
-            collision_function(collider, object);
+            collisionFunction(collider, object);
         }
     }
     if (this.subtrees)
@@ -224,7 +224,7 @@ Quadtree.prototype.collide_with = function(collider, collision_function)
             ++subtreeIndex)
         {
             var subtree = this.subtrees[subtreeIndex];
-            subtree.collide_with(collider, collision_function);
+            subtree.collideWith(collider, collisionFunction);
         }
     }
 }

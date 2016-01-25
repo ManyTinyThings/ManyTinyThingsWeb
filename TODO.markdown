@@ -35,7 +35,7 @@
 * Optimizations
     * Quadtree restructure instead of clear+repopulate?
     * Do quadtree in local coordinates? So we don't have to regenerate it when the box changes size
-    * SOA instead of AOS -> ball_positions = new Float32Array() etc.
+    * SOA instead of AOS -> ballPositions = new Float32Array() etc.
     * Update velocities and positions on GPU?
 * State transitions
     * Changing temperature by just scaling velocities
