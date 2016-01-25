@@ -38,13 +38,13 @@
             outline: none;
         }
 
-        #canvas {
+        canvas {
             border: 1px solid black;
         }
     </style>
 </head>
 <body>
-    <canvas id="canvas" width="500" height="400"></canvas>
+    <div id="simulation"></div>
     <p>
         Energy = <output id="energy">?</output> <br>
         Total momentum = <output id="momentum">?</output> <br>
@@ -59,30 +59,6 @@
         <input type="button" value="Falling" onclick="init(fallingParticleGenerator)">
         <input type="button" value="Two colors" onclick="init(twoColorParticleGenerator)">
         <input type="button" value="Lattice" onclick="init(latticeParticleGenerator)">
-    </p>
-    <p>
-        Control temperature: <br>
-        Colder <input id="delta_temperature" type="range" value="1" min="0.97" max="1.03" step="0.001"> Warmer
-    </p>
-    <p>
-        Control time: <br>
-        Backwards <input id="simulation_speed" type="range" value="1" min="-1" max="1" step="0.001"> Forwards
-    </p>
-    <p>
-        Number of particles: <br>
-        1 <input id="particle_count" type="range" value="2", min="0", max="3", step="0.001"> 1000
-    </p>
-    <p>
-        Particle radius: <br>
-        Tiny <input id="particle_radius" type="range" value="0.08", min="0.01", max="0.1", step="0.001"> Huge
-    </p>
-    <p>
-        Gravity: <br>
-        None <input id="gravity" type="range" value="0", min="0", max="2e-4", step="1e-8"> Strong
-    </p>
-    <p>
-        Box size: <br>
-        Tiny <input id="box_size" type="range" value="500", min="20", max="1000", step="0.001"> Huge
     </p>
     <p>
         <label for="collision">Collision</label><input type="checkbox" id="collision" checked>
@@ -110,43 +86,11 @@ document.getElementById("trajectory").addEventListener("change", function(){
     updateTrajectory();
 });
 
-document.getElementById("simulation_speed").addEventListener("input", function() {
-    simulation_speed = Number(this.value);
-});
-
-document.getElementById("delta_temperature").addEventListener("input", function() {
-    delta_temperature = Number(this.value);
-});
-
-document.getElementById("delta_temperature").addEventListener("change", function() {
-    this.value = 1;
-    delta_temperature = 1;
-});
-
-document.getElementById("gravity").addEventListener("input", function(){
-    var strength = Number(this.value);
-    var angle = 0; // down
-    vec2.set(gravity_acceleration, strength * Math.sin(angle), - strength * Math.cos(angle));
-})
-
-document.getElementById("box_size").addEventListener("input", function(){
-    canvasWidth = Number(this.value);
-    canvas.style.marginLeft = ((document.body.clientWidth - canvasWidth) / 2) + "px";
-    updateBounds();
-})
-
-document.getElementById("particle_count").addEventListener("input", function(){
-    particleCount = Math.round(Math.pow(10, Number(this.value)));
-    updateParticleCount(particleCount);
-})
-
-document.getElementById("particle_radius").addEventListener("input", function(){
-    particle_radius = Number(this.value);
-    updateBounds();
-})
 
 
 // Pause when switching tabs, seems reasonable
+
+// TODO: should pause all sims (right now crashes)
 
 document.addEventListener('visibilitychange', function(event) {
     if (document.hidden)
@@ -168,14 +112,67 @@ document.addEventListener('visibilitychange', function(event) {
 //     resume();
 // });
 
+// Creating UI
+
+function combineWithDefaults(opts, defaults)
+{
+    for (var key in defaults) {
+        if (! opts.hasOwnProperty(key)) {
+            opts[key] = defaults[key];
+        }
+    }
+}
+
+function createSlider(simulation, opts)
+{
+    combineWithDefaults(opts, {
+        minLabel: String(opts.min),
+        maxLabel: String(opts.max),
+        snapBack: false,
+        function: function(x){ return x; },
+    });
+    
+    // set up slider element
+    
+    var slider = document.createElement("input");
+    slider.setAttribute("type", "range");
+    slider.setAttribute("value", opts.initial);
+    slider.setAttribute("min", opts.min);
+    slider.setAttribute("max", opts.max);
+    var step = opts.step || (opts.max - opts.min) / 1000;
+    slider.setAttribute("step", step);
+    
+    // set up presentation elements
+    
+    var p = document.createElement("p");
+    simulation.controlsDiv.appendChild(p);
+    p.appendChild(document.createTextNode(opts.label));
+    p.appendChild(document.createElement("br"));
+    p.appendChild(document.createTextNode(opts.minLabel));
+    p.appendChild(slider);
+    p.appendChild(document.createTextNode(opts.maxLabel));
+    
+    // set up callbacks
+    
+    simulation.parameters[opts.name] = opts.function(opts.initial);
+    
+    slider.addEventListener("input", function() {
+        simulation.parameters[opts.name] = opts.function(Number(this.value));
+    });
+    
+    if (opts.snapBack)
+    {
+        slider.addEventListener("change", function() {
+            this.value = opts.initial;
+            simulation.parameters[opts.name] = opts.function(opts.initial);
+        });
+    }
+}
+
+
 // Constants
 
 var tau = 2*Math.PI;
-
-
-
-
-
 
 
 
@@ -404,24 +401,10 @@ function updateTrajectory(simulation, trajectory_enabled)
     draw(simulation);
 }
 
-function createSimulation(canvasId)
+function createSimulation(divId, width, height)
 {
     var simulation = {};
-    simulation.canvas = document.getElementById(canvasId);
-    simulation.canvas.addEventListener("click", function(){
-        if (simulation.requestFrameId)
-        {
-            simulation.paused_by_user = true;
-            pauseSimulation(simulation);
-        }
-        else
-        {
-            simulation.paused_by_user = false;
-            resumeSimulation(simulation);
-        }
-    });
     
-    simulation.renderer = createRenderer(simulation.canvas);
     
     simulation.running = true;
     simulation.pausedByUser = false;
@@ -446,17 +429,94 @@ function createSimulation(canvasId)
     
     simulation.parameters = {
         max_initial_speed: 0.001,
-        particle_radius: 0.08,
         collision_enabled: false,
-        gravity_acceleration: vec2.create(),
         pressure_window_size: 1000,
         quadtree_enabled: true,
         frame_duration: 33,
-        simulation_speed: 1,
-        delta_temperature: 1,
-        particle_count: 91,
     };
+    
 
+    // set up HTML elements
+    simulation.div = document.getElementById(divId);
+    
+    simulation.canvas = document.createElement("canvas");
+    simulation.canvas.setAttribute("width", width);
+    simulation.canvas.setAttribute("height", height);
+    simulation.div.appendChild(simulation.canvas);
+    
+    simulation.controlsDiv = document.createElement("div");
+    simulation.controlsDiv.setAttribute("class", "controls");
+    simulation.div.appendChild(simulation.controlsDiv);
+    
+    simulation.canvas.addEventListener("click", function(){
+        if (simulation.requestFrameId)
+        {
+            simulation.paused_by_user = true;
+            pauseSimulation(simulation);
+        }
+        else
+        {
+            simulation.paused_by_user = false;
+            resumeSimulation(simulation);
+        }
+    });
+    
+    // setup controls and meters
+    
+    createSlider(simulation, {
+        name: "delta_temperature",
+        label: "Control temperature:",
+        initial: 1,
+        min: 0.97, minLabel: "Colder",
+        max: 1.03, maxLabel: "Warmer", 
+        snapBack: true,
+    });
+    
+    createSlider(simulation, {
+        name: "simulation_speed",
+        label: "Control time:",
+        initial: 1,
+        min: -1, minLabel: "Forward",
+        max: 1, maxLabel: "Backward",
+    });
+    
+    createSlider(simulation, {
+        name: "particle_count",
+        label: "Number of particles:",
+        initial: 91,
+        min: 1, minLabel: "1",
+        max: 200, maxLabel: "200",
+    });
+    
+    createSlider(simulation, {
+        name: "particle_radius",
+        label: "Particle radius:",
+        initial: 0.08,
+        min: 0.01, minLabel: "Tiny",
+        max: 0.1, maxLabel: "Huge",
+    });
+    
+    createSlider(simulation, {
+        name: "gravity_acceleration",
+        label: "Gravity:",
+        initial: 0,
+        min: 0, minLabel: "None",
+        max: 1e-3, maxLabel: "Strong",
+        function: function(g) {
+            return vec2.fromValues(0, -g);
+        },
+    });
+    
+    createSlider(simulation, {
+        name: "box_size",
+        label: "Box Size:",
+        initial: 500,
+        min: 20, minLabel: "Tiny",
+        max: 1000, maxLabel: "Huge",
+    });
+    
+    // set up simulation
+    simulation.renderer = createRenderer(simulation.canvas);
     
     updateBounds(simulation);
     updateParticleCount(simulation, simulation.parameters.particle_count);
@@ -549,37 +609,7 @@ function lennardJonesForce(invDistance, bondEnergy, separation)
 }
 
 // Simulation
-var collide = function(){
 
-  var relative_position = vec2.create();
-  var relative_velocity = vec2.create();
-
-  return function(particle1, particle2)
-  {
-      vec2.subtract(relative_position, particle1.position, particle2.position);
-      var quadrance = vec2.squaredLength(relative_position);
-      if (quadrance < squared(2*particle_radius))
-      {
-          var distance_between_centers = Math.sqrt(quadrance);
-          var overlap = 2*particle_radius - distance_between_centers;
-          var normal = vec2.scale(relative_position, relative_position, 1 / distance_between_centers);
-
-          // Move out of overlap
-          // TODO: improve to perform correct collision
-          // TODO: use a continuous force instead of hard spheres
-
-          vec2.scaleAndAdd(particle1.position, particle1.position, normal, overlap / 2);
-          vec2.scaleAndAdd(particle2.position, particle2.position, normal, - overlap / 2);
-
-          // Elastic collision
-
-          vec2.subtract(relative_velocity, particle1.velocity, particle2.velocity);
-          var delta_velocity = vec2.projectOntoNormal(relative_velocity, relative_velocity, normal);
-          vec2.sub(particle1.velocity, particle1.velocity, delta_velocity);
-          vec2.add(particle2.velocity, particle2.velocity, delta_velocity);
-      }
-  }
-}();
 
 function draw(simulation)
 {
@@ -807,7 +837,39 @@ var updateSimulation = function(){
   }
 }();
 
-createSimulation("canvas");
+var collide = function(){
+
+  var relative_position = vec2.create();
+  var relative_velocity = vec2.create();
+
+  return function(particle1, particle2)
+  {
+      vec2.subtract(relative_position, particle1.position, particle2.position);
+      var quadrance = vec2.squaredLength(relative_position);
+      if (quadrance < squared(2*particle_radius))
+      {
+          var distance_between_centers = Math.sqrt(quadrance);
+          var overlap = 2*particle_radius - distance_between_centers;
+          var normal = vec2.scale(relative_position, relative_position, 1 / distance_between_centers);
+
+          // Move out of overlap
+          // TODO: improve to perform correct collision
+          // TODO: use a continuous force instead of hard spheres
+
+          vec2.scaleAndAdd(particle1.position, particle1.position, normal, overlap / 2);
+          vec2.scaleAndAdd(particle2.position, particle2.position, normal, - overlap / 2);
+
+          // Elastic collision
+
+          vec2.subtract(relative_velocity, particle1.velocity, particle2.velocity);
+          var delta_velocity = vec2.projectOntoNormal(relative_velocity, relative_velocity, normal);
+          vec2.sub(particle1.velocity, particle1.velocity, delta_velocity);
+          vec2.add(particle2.velocity, particle2.velocity, delta_velocity);
+      }
+  }
+}();
+
+createSimulation("simulation", 500, 400);
 
 
 </script>
