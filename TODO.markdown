@@ -7,7 +7,6 @@
     * Stability
         * timestep
         * energy conservation
-    * Gravity's not working
     * Collision's not on
 * Run backwards with collisions
     * Correct collision detection
@@ -15,7 +14,6 @@
     * Discrete version?
 * Controls
     * Save settings in cookie
-    * Code to generate sliders
     * Draggable numbers
     * Move particles around
     * Control velocities
@@ -31,7 +29,8 @@
     * Trajectory particle gets a pilot hat 8)
     * Density histogram
     * Graph over quantities
-    * Show total momentum as vector
+    * Show total momentum as vector?
+    * Phase diagram
 * Optimizations
     * Quadtree restructure instead of clear+repopulate?
     * Do quadtree in local coordinates? So we don't have to regenerate it when the box changes size

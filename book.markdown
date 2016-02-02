@@ -47,6 +47,14 @@ Math changes when radio button changes
 * Two cold things coming together become warmer, because of the bond energy released.
 * Warming something up helps it find lower energy state.
     * Hole in the middle of structure does not get filled with T = 0, but with more energy, the particles wiggle loose.
-* For player: Try to lower the temperature by accelerating individual particles with mouse.
-    * Easy with big, few particles, hard with small, many
-    * Does expend energy, increase enthropy just to know which way to accelerate them!
+* Exercises
+    * Try to lower the temperature by accelerating individual particles with mouse.
+        * Easy with big, few particles, hard with small, many
+        * Does expend energy, increase enthropy just to know which way to accelerate them!
+    * Which system has the higher enthropy?
+    * Make this system have higher/lower enthropy than that one
+        * Cannot lower, try as you might
+    * Heat conduction: Move heat from here to there
+        * as fast as possible?
+    * Friction: brake this particle
+    
