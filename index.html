@@ -61,16 +61,16 @@
 
 // TODO: should pause all sims (right now crashes)
 
-document.addEventListener('visibilitychange', function(event) {
-    if (document.hidden)
-    {
-        pauseSimulation();
-    }
-    else if (!pausedByUser)
-    {
-        resumeSimulation();
-    }
-});
+// document.addEventListener('visibilitychange', function(event) {
+//     if (document.hidden)
+//     {
+//         pauseSimulation();
+//     }
+//     else if (!pausedByUser)
+//     {
+//         resumeSimulation();
+//     }
+// });
 
 // Pause when switching windows, annoying during development
 
@@ -389,6 +389,17 @@ function updateParticleCount(simulation)
     simulation.particleCount = newParticleCount;
 }
 
+function addParticle(simulation, position)
+{
+    var particleIndex = simulation.particleCount;
+    var particle = simulation.particleGenerator(simulation, particleIndex);
+    particle.position = position;
+    simulation.particles.push(particle);
+    simulation.particleCount += 1;
+    simulation.parameters.particleCount += 1;
+    drawSimulation(simulation);
+}
+
 function updateTrajectory(simulation)
 {
     if (simulation.parameters.trajectoryEnabled)
@@ -400,6 +411,44 @@ function updateTrajectory(simulation)
         simulation.particles[0].color = simulation.particleGenerator(simulation, 0).color;
     }
 
+}
+
+function worldFromCanvas(simulation, position)
+{
+    var canvas = simulation.canvas;
+    var canvasBounds = canvas.getBoundingClientRect();
+    var canvasX = position[0] - canvasBounds.left;
+    var canvasY = position[1] - canvasBounds.top;
+    var x = ((canvasX / canvas.width) * 2 - 1) * canvas.width / canvas.height;
+    var y = - ((canvasY / canvas.height) * 2 - 1);
+    return vec2.fromValues(x, y);
+}
+
+function square(x)
+{
+    return x * x;
+}
+
+function pickParticle(simulation, pickPosition, extraRadius)
+{
+    if (extraRadius === undefined)
+    {
+        extraRadius = 0;
+    }
+    
+    for (var particleIndex = 0;
+        particleIndex < simulation.particleCount;
+        ++particleIndex)
+    {
+        var particle = simulation.particles[particleIndex];
+        var squaredRadius = square((particle.radius + extraRadius) * simulation.parameters.radiusScaling);
+        var inside = vec2.squaredDistance(pickPosition, particle.position) < squaredRadius;
+        if (inside)
+        {
+            return particleIndex;
+        }
+    }
+    return undefined;
 }
 
 function createSimulation(id, width, height)
@@ -447,26 +496,21 @@ function createSimulation(id, width, height)
     simulation.div.appendChild(simulation.canvas);
     
     simulation.controlsDiv = document.createElement("div");
+    simulation.buttonDiv = document.createElement("div");
     simulation.sliderDiv = document.createElement("div");
     simulation.checkboxDiv = document.createElement("div");
-    simulation.buttonDiv = document.createElement("div");
     
     simulation.div.appendChild(simulation.controlsDiv);
+    simulation.controlsDiv.appendChild(simulation.buttonDiv);
     simulation.controlsDiv.appendChild(simulation.sliderDiv);
     simulation.controlsDiv.appendChild(simulation.checkboxDiv);
-    simulation.controlsDiv.appendChild(simulation.buttonDiv);
     
-    simulation.canvas.addEventListener("click", function(){
-        if (simulation.requestFrameId)
-        {
-            simulation.pausedByUser = true;
-            pauseSimulation(simulation);
+    simulation.canvas.addEventListener("click", function(event){
+        var position = worldFromCanvas(simulation, vec2.fromValues(event.clientX, event.clientY));
+        if (pickParticle(simulation, position, 1) === undefined) {
+            addParticle(simulation, position);
         }
-        else
-        {
-            simulation.pausedByUser = false;
-            resumeSimulation(simulation);
-        }
+        
     });
     
     // setup controls and meters
@@ -484,8 +528,8 @@ function createSimulation(id, width, height)
         name: "simulationSpeed",
         label: "Control time:",
         initial: 1,
-        min: -1, minLabel: "Forward",
-        max: 1, maxLabel: "Backward",
+        min: -1, minLabel: "Backward",
+        max: 1, maxLabel: "Forward",
     });
     
     createSlider(simulation, {
@@ -541,6 +585,19 @@ function createSimulation(id, width, height)
         resetSimulation(simulation);
     });
     
+    createButton(simulation, "Play/Pause", function(){
+        if (simulation.requestFrameId)
+        {
+            simulation.pausedByUser = true;
+            pauseSimulation(simulation);
+        }
+        else
+        {
+            simulation.pausedByUser = false;
+            resumeSimulation(simulation);
+        }
+    })
+    
     // set up simulation
     
     simulation.renderer = createRenderer(simulation.canvas);
@@ -579,6 +636,7 @@ function resetSimulation(simulation)
     updateParticleCount(simulation);
     simulation.parameters.particleCount = tempParticleCount;
     updateParticleCount(simulation);
+    drawSimulation(simulation);
 }
 
 function updateBounds(simulation) {
@@ -643,7 +701,7 @@ function lennardJonesForce(invDistance, bondEnergy, separation)
 // Simulation
 
 
-function draw(simulation)
+function drawSimulation(simulation)
 {
     clearRenderer(simulation.renderer);
 
@@ -829,7 +887,7 @@ var updateSimulation = function(){
 
       // Drawing
 
-      draw(simulation);
+      drawSimulation(simulation);
 
       // Measurements
 
