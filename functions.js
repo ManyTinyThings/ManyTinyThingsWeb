@@ -1,27 +1,3 @@
-// Pause when switching tabs, seems reasonable
-
-// TODO: should pause all sims (right now crashes)
-
-// document.addEventListener('visibilitychange', function(event) {
-//     if (document.hidden)
-//     {
-//         pauseSimulation();
-//     }
-//     else if (!pausedByUser)
-//     {
-//         resumeSimulation();
-//     }
-// });
-
-// Pause when switching windows, annoying during development
-
-// window.addEventListener("blur", function(){
-//     pause();
-// });
-// window.addEventListener("focus", function(){
-//     resume();
-// });
-
 // Creating UI
 
 function combineWithDefaults(opts, defaults)
@@ -490,6 +466,22 @@ function createSimulation(id, opts)
         }
         
     });
+    
+    // Pause when switching tabs
+    
+    document.addEventListener('visibilitychange', function(event) {
+        if (document.hidden)
+        {
+            pauseSimulation(simulation);
+        }
+        else if (! simulation.pausedByUser)
+        {
+            resumeSimulation(simulation);
+        }
+    });
+    
+    // TODO: pause when window loses focus?
+    // TODO: pause when scrolled out of view
     
     // setup controls and meters
     
