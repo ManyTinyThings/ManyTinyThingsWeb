@@ -400,6 +400,14 @@ function addParticle(simulation, position)
     drawSimulation(simulation);
 }
 
+function removeParticle(simulation, particleIndex)
+{
+    simulation.particles.splice(particleIndex, 1);
+    simulation.particleCount -= 1;
+    simulation.parameters.particleCount -= 1;
+    drawSimulation(simulation);
+}
+
 function updateTrajectory(simulation)
 {
     if (simulation.parameters.trajectoryEnabled)
@@ -507,8 +515,18 @@ function createSimulation(id, width, height)
     
     simulation.canvas.addEventListener("click", function(event){
         var position = worldFromCanvas(simulation, vec2.fromValues(event.clientX, event.clientY));
-        if (pickParticle(simulation, position, 1) === undefined) {
+        var extraRadius = 1;
+        if (pickParticle(simulation, position, extraRadius) === undefined) 
+        {
             addParticle(simulation, position);
+        }
+        else
+        {
+            var pickedParticle = pickParticle(simulation, position);
+            if (pickedParticle !== undefined)
+            {
+                removeParticle(simulation, pickedParticle);
+            }
         }
         
     });

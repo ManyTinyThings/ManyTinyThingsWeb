@@ -18,6 +18,11 @@
     * Move particles around
     * Control velocities
     * Draggable borders of box
+    * Controls drawn in GL?
+    * Draw potential?
+* Save config
+    * As URL?
+    * As JSON?
 * More than one kind of particle
     * Different thermal energy
     * Removing wall
