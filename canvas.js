@@ -1,42 +1,52 @@
-var context;
+function createRenderer(canvas) {
+    var renderer = {
+        canvas: canvas,
+        context: canvas.getContext("2d"),
+    };
+    
+    return renderer;
+}
 
 function initGraphics(canvas) {
     context = canvas.getContext("2d");
 }
 
-function drawParticles(particles) 
+function drawParticles(renderer, particles, radiusScaling) 
 {
+    var context = renderer.context;
     for (var i = 0; i < particles.length; ++i) {
         var particle = particles[i];
+        
+        var x = (particle.position[0] + 1) * renderer.canvas.height / 2;
+        var y = (- particle.position[1] + 1) * renderer.canvas.height / 2;
+        
         context.beginPath();
-        context.fillStyle = rgba_to_css(particle.color.rgba);
-        var x = (particle.position[0] + 1) * canvas.height / 2;
-        var y = (particle.position[1] + 1) * canvas.height / 2;
-        context.arc(x, y, particle.radius * 10, 0, tau);
+        context.fillStyle = cssFromRGBA(particle.color.rgba);
+        context.arc(x, y, particle.radius * radiusScaling * renderer.canvas.height / 2, 0, tau);
         context.fill();
     }
 }
 
-function drawTrajectory(trajectory)
+function drawTrajectory(renderer, trajectory, color)
 {
-    // Todo
+    // TODO
 }
 
-function clear_canvas()
+function resizeRenderer(renderer)
 {
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    // TODO
 }
 
-function rgba_to_css(rgba)
+function clearRenderer(renderer)
+{
+    renderer.context.clearRect(0, 0, renderer.canvas.width, renderer.canvas.height);
+}
+
+function cssFromRGBA(rgba)
 {
     return ["rgba(", 
             Math.round(rgba[0] * 255), ",", 
             Math.round(rgba[1] * 255), ",", 
             Math.round(rgba[2] * 255), ",",
             rgba[3], ")"].join("");
-}
-
-function resize_canvas()
-{
-    clear_canvas();
 }
