@@ -206,6 +206,7 @@ function drawParticles(renderer, particles, radiusScaling) {
 function drawTrajectory(renderer, trajectory, color)
 {
     var vertexCount = trajectory.length / 2;
+    // TODO: make sure this works with vec2s in the trajectory array
     var vertices = new Float32Array(trajectory);
     
     var gl = renderer.gl;

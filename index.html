@@ -46,20 +46,10 @@
     <div id="billiards"></div>
     <script type="text/javascript">
         var billiards = createSimulation("billiards", {
-            controls: ["deltaTemperature"],
+            controls: ["deltaTemperature", "trajectoryEnabled", "resetButton", "radiusScaling"],
             graphs: [],
             parameters: {
-                particleCount: 1,
-            },
-        });
-    </script>
-    <div id="test"></div>
-    <script type="text/javascript">
-        var billiards = createSimulation("test", {
-            controls: ["gravityAcceleration"],
-            graphs: [],
-            parameters: {
-                particleCount: 7,
+                particleCount: 91,
             },
         });
     </script>

@@ -332,26 +332,35 @@ function removeParticle(simulation, particleIndex)
 
 function updateTrajectory(simulation)
 {
-    if (simulation.parameters.trajectoryEnabled)
-    {
-        simulation.particles[0].color = {name: "blue", rgba: [0, 0, 1, 1]};
-    }
-    else
-    {
-        simulation.particles[0].color = simulation.particleGenerator(simulation, 0).color;
-    }
-
+    simulation.trajectory.push(vec2.clone(simulation.particles[0].position));
 }
 
-function worldFromCanvas(simulation, position)
+function worldFromPage(canvas, pagePosition)
 {
-    var canvas = simulation.canvas;
     var canvasBounds = canvas.getBoundingClientRect();
-    var canvasX = position[0] - canvasBounds.left;
-    var canvasY = position[1] - canvasBounds.top;
-    var x = ((canvasX / canvas.width) * 2 - 1) * canvas.width / canvas.height;
-    var y = - ((canvasY / canvas.height) * 2 - 1);
-    return vec2.fromValues(x, y);
+    var canvasX = pagePosition[0] - canvasBounds.left;
+    var canvasY = pagePosition[1] - canvasBounds.top;
+    return worldFromCanvas(canvas, vec2.fromValues(canvasX, canvasY));
+}
+
+function worldFromCanvas(canvas, canvasPosition)
+{
+    var w = canvas.width;
+    var h = canvas.height;
+    var worldX = ((canvasPosition[0] / w) * 2 - 1) * w / h;
+    var worldY = - ((canvasPosition[1] / h) * 2 - 1);
+    return vec2.fromValues(worldX, worldY);
+}
+
+function canvasFromWorld(canvas, worldPosition)
+{
+    var w = canvas.width;
+    var h = canvas.height;
+    var worldX = worldPosition[0];
+    var worldY = worldPosition[1];
+    var canvasX = (((worldX * h / w) + 1) / 2) * w;
+    var canvasY = ((- worldY + 1) / 2) * w;
+    return vec2.fromValues(canvasX, canvasY);
 }
 
 function square(x)
@@ -450,7 +459,7 @@ function createSimulation(id, opts)
     simulation.controlsDiv.appendChild(simulation.checkboxDiv);
     
     simulation.canvas.addEventListener("click", function(event){
-        var position = worldFromCanvas(simulation, vec2.fromValues(event.clientX, event.clientY));
+        var position = worldFromPage(simulation.canvas, vec2.fromValues(event.clientX, event.clientY));
         var extraRadius = 1;
         if (pickParticle(simulation, position, extraRadius) === undefined) 
         {
@@ -692,14 +701,12 @@ function drawSimulation(simulation)
 {
     clearRenderer(simulation.renderer);
 
-    // update trajectory
+    drawParticles(simulation.renderer, simulation.particles, simulation.parameters.radiusScaling);
+    
     if (simulation.parameters.trajectoryEnabled)
     {
-        simulation.trajectory.push(simulation.particles[0].position[0], simulation.particles[0].position[1]);
-        drawTrajectory(simulation.renderer, simulation.trajectory, simulation.particles[0].color);
+        drawTrajectory(simulation.renderer, simulation.trajectory, {name: "blue", rgba: [0, 0, 1, 1]});
     }
-
-    drawParticles(simulation.renderer, simulation.particles, simulation.parameters.radiusScaling);
 }
 
 var updateSimulation = function(){

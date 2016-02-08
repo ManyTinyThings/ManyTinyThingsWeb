@@ -29,7 +29,17 @@ function drawParticles(renderer, particles, radiusScaling)
 
 function drawTrajectory(renderer, trajectory, color)
 {
-    // TODO
+    var context = renderer.context;
+    context.strokeStyle = cssFromRGBA(color.rgba);
+    var startPoint = canvasFromWorld(renderer.canvas, trajectory[0]);
+    
+    context.beginPath();
+	context.moveTo(startPoint[0], startPoint[1]);
+    for (var i = 1; i < trajectory.length; i++) {
+        var point = canvasFromWorld(renderer.canvas, trajectory[i]);
+        context.lineTo(point[0], point[1]);
+    }
+    context.stroke();
 }
 
 function resizeRenderer(renderer)
