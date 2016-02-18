@@ -18,9 +18,8 @@ function canvasFromWorld(renderer, worldPosition)
     }
     var bounds = renderer.worldBounds;
     var canvasX = transform(worldPosition[0], bounds.left, bounds.right, renderer.canvas.width);
-    var canvasY = transform(worldPosition[1], bounds.bottom, bounds.top, renderer.canvas.height);
-    canvasY = renderer.canvas.height - canvasY;
-
+    var canvasY = renderer.canvas.height - transform(worldPosition[1], bounds.bottom, bounds.top, renderer.canvas.height);
+    
     return vec2.fromValues(canvasX, canvasY);
 }
 

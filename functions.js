@@ -406,6 +406,7 @@ function createSimulation(id, opts) {
             particleCount: 91,
             radiusScaling: 0.08,
             boxSize: 500,
+            friction: 0,
         }
     });
 
@@ -572,6 +573,17 @@ function createSimulation(id, opts) {
                 minLabel: "Tiny",
                 max: 1000,
                 maxLabel: "Huge",
+            });
+        },
+        friction: function() {
+            createSlider(simulation, {
+                name: "friction",
+                label: "Friction:",
+                initial: 0,
+                min: 0,
+                minLabel: "None",
+                max: 1,
+                maxLabel: "A lot",
             });
         },
         quadtreeEnabled: function() {
@@ -831,6 +843,12 @@ var updateSimulation = function() {
                 vec2.scaleAndAdd(particle.acceleration, particle.acceleration, accelerationDirection, -accelerationMagnitude);
                 vec2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration, accelerationDirection, accelerationMagnitude);
             }
+
+            // Friction
+
+            vec2.scaleAndAdd(particle.acceleration, particle.acceleration, 
+                particle.velocity, - simulation.parameters.friction / mass);
+
         }
 
         for (var particleIndex = 0; particleIndex < particleCount;
