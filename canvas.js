@@ -2,13 +2,41 @@ function createRenderer(canvas) {
     var renderer = {
         canvas: canvas,
         context: canvas.getContext("2d"),
+        worldBounds: new Rect(),
     };
     
     return renderer;
 }
 
-function initGraphics(canvas) {
-    context = canvas.getContext("2d");
+function canvasFromWorld(renderer, worldPosition)
+{
+    function transform(worldZ, minZ, maxZ, canvasLength)
+    {
+        var worldLength = maxZ - minZ;
+        var relative = (worldZ - minZ) / worldLength;
+        return relative * canvasLength;
+    }
+    var bounds = renderer.worldBounds;
+    var canvasX = transform(worldPosition[0], bounds.left, bounds.right, renderer.canvas.width);
+    var canvasY = transform(worldPosition[1], bounds.bottom, bounds.top, renderer.canvas.height);
+    canvasY = renderer.canvas.height - canvasY;
+
+    return vec2.fromValues(canvasX, canvasY);
+}
+
+function worldFromCanvas(renderer, canvasPosition)
+{
+    function transform(canvasZ, minZ, maxZ, canvasLength)
+    {
+        var relative = canvasZ / canvasLength;
+        var worldLength = maxZ - minZ;
+        return relative * worldLength + minZ;
+    }
+    var bounds = renderer.worldBounds;
+    var worldX = transform(canvasPosition[0], bounds.left, bounds.right, renderer.canvas.width);
+    var worldY = transform(renderer.canvas.height - canvasPosition[1], bounds.bottom, bounds.top, renderer.canvas.height);
+
+    return vec2.fromValues(worldX, worldY);
 }
 
 function drawParticles(renderer, particles, radiusScaling) 
@@ -17,12 +45,11 @@ function drawParticles(renderer, particles, radiusScaling)
     for (var i = 0; i < particles.length; ++i) {
         var particle = particles[i];
         
-        var x = (particle.position[0] + 1) * renderer.canvas.height / 2;
-        var y = (- particle.position[1] + 1) * renderer.canvas.height / 2;
+        var position = canvasFromWorld(renderer, particle.position);
         
         context.beginPath();
         context.fillStyle = cssFromRGBA(particle.color.rgba);
-        context.arc(x, y, particle.radius * radiusScaling * renderer.canvas.height / 2, 0, tau);
+        context.arc(position[0], position[1], particle.radius * radiusScaling * renderer.canvas.height / 2, 0, tau);
         context.fill();
     }
 }
@@ -31,12 +58,12 @@ function drawTrajectory(renderer, trajectory, color)
 {
     var context = renderer.context;
     context.strokeStyle = cssFromRGBA(color.rgba);
-    var startPoint = canvasFromWorld(renderer.canvas, trajectory[0]);
+    var startPoint = canvasFromWorld(renderer, trajectory[0]);
     
     context.beginPath();
 	context.moveTo(startPoint[0], startPoint[1]);
     for (var i = 1; i < trajectory.length; i++) {
-        var point = canvasFromWorld(renderer.canvas, trajectory[i]);
+        var point = canvasFromWorld(renderer, trajectory[i]);
         context.lineTo(point[0], point[1]);
     }
     context.stroke();
