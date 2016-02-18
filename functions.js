@@ -356,10 +356,6 @@ function removeParticle(simulation, particleIndex) {
     drawSimulation(simulation);
 }
 
-function updateTrajectory(simulation) {
-    simulation.trajectory.push(vec2.clone(simulation.particles[0].position));
-}
-
 function worldFromPage(renderer, pagePosition) {
     var canvasBounds = renderer.canvas.getBoundingClientRect();
     var canvasX = pagePosition[0] - canvasBounds.left;
@@ -777,7 +773,7 @@ var updateSimulation = function() {
             var extraRadius = 1;
             var isCloseToParticle = (
                 pickParticle(simulation, simulation.mouse.worldPosition, extraRadius) !== undefined);
-            
+
             if (simulation.mouse.mode === "") {
                 if (isOnParticle) {
                     simulation.mouse.mode = "destroyParticles";
@@ -803,7 +799,10 @@ var updateSimulation = function() {
 
         updateParticleCount(simulation);
         updateBounds(simulation);
-        updateTrajectory(simulation);
+
+
+
+        // Equations of motion
 
         var particles = simulation.particles;
         var particleCount = simulation.particleCount;
@@ -925,6 +924,12 @@ var updateSimulation = function() {
                     }
                 }
             }
+        }
+
+        // Trajectory
+
+        if (simulation.particleCount > 0) {
+            simulation.trajectory.push(vec2.clone(simulation.particles[0].position));    
         }
 
         // Drawing
