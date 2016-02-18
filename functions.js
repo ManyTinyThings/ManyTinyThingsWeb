@@ -771,14 +771,18 @@ var updateSimulation = function() {
             simulation.mouse.mode = "";
         }
 
-        if (simulation.mouse.leftButton.down) {
+        if (simulation.mouse.leftButton.down) { 
+            var hitParticle = pickParticle(simulation, simulation.mouse.worldPosition);
+            var isOnParticle = (hitParticle !== undefined);
             var extraRadius = 1;
-            var hitParticle = pickParticle(simulation, simulation.mouse.worldPosition, extraRadius);
-            var isCloseToParticle = (hitParticle !== undefined);
+            var isCloseToParticle = (
+                pickParticle(simulation, simulation.mouse.worldPosition, extraRadius) !== undefined);
+            
             if (simulation.mouse.mode === "") {
-                if (isCloseToParticle) {
+                if (isOnParticle) {
                     simulation.mouse.mode = "destroyParticles";
-                } else {
+                    simulation.mouse.activeParticle = hitParticle;
+                } else if (! isCloseToParticle) {
                     simulation.mouse.mode = "createParticles";
                 }
             }
