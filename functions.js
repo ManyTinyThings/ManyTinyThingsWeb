@@ -449,8 +449,6 @@ function createSimulation(id, opts) {
     simulation.sliderDiv = createAndAppend("div", simulation.controlsDiv);
     simulation.checkboxDiv = createAndAppend("div", simulation.controlsDiv);
 
-    simulation.visualizationDiv = createAndAppend("div", simulation.div);
-    simulation.energyGraph = createGraph(createAndAppend("canvas", simulation.visualizationDiv));
 
     // Mouse stuff
 
@@ -620,7 +618,9 @@ function createSimulation(id, opts) {
 
     // visualisation
 
-
+    simulation.visualizationDiv = createAndAppend("div", simulation.div);
+    simulation.energyGraph = createGraph(createAndAppend("canvas", simulation.visualizationDiv));
+    simulation.temperatureGraph = createGraph(createAndAppend("canvas", simulation.visualizationDiv));
 
     // set up simulation
 
@@ -755,6 +755,7 @@ var updateSimulation = function() {
         simulation.previousTime = time;
 
         var totalEnergy = 0;
+        var kineticEnergy = 0;
         var totalPressure = 0;
         vec2.set(totalMomentum, 0, 0);
         var colorCounts = {};
@@ -871,7 +872,10 @@ var updateSimulation = function() {
             if (simulation.leftRect.containsPoint(particle.position)) {
                 colorCounts[particle.color.name] = 1 + (colorCounts[particle.color.name] || 0);
             }
-            totalEnergy += 0.5 * vec2.squaredLength(particle.velocity);
+
+            var particleKineticEnergy = 0.5 * vec2.squaredLength(particle.velocity);
+            kineticEnergy += particleKineticEnergy;
+            totalEnergy += particleKineticEnergy;
             totalEnergy += -vec2.dot(particle.position, simulation.parameters.gravityAcceleration);
 
             vec2.scaleAndAdd(totalMomentum, totalMomentum, particle.velocity, mass);
@@ -945,10 +949,10 @@ var updateSimulation = function() {
         // Measurements
         var measurements = simulation.measurements;
         measurements.runningTime.push(time);
-        measurements.runningEnergy.push(totalEnergy);
         measurements.runningPressure.push(totalPressure);
 
         graphAddPoint(simulation.energyGraph, vec2.fromValues(time, totalEnergy));
+        graphAddPoint(simulation.temperatureGraph, vec2.fromValues(time, kineticEnergy));
 
         var initialTime;
 
