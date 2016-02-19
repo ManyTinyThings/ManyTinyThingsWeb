@@ -763,6 +763,7 @@ var updateSimulation = function() {
 
 
         // Process mouse input
+
         if (simulation.mouse.leftButton.transitionCount > 0) {
             simulation.mouse.mode = "";
         }
@@ -776,7 +777,7 @@ var updateSimulation = function() {
 
             if (simulation.mouse.mode === "") {
                 if (isOnParticle) {
-                    simulation.mouse.mode = "destroyParticles";
+                    simulation.mouse.mode = "dragParticle";
                     simulation.mouse.activeParticle = hitParticle;
                 } else if (! isCloseToParticle) {
                     simulation.mouse.mode = "createParticles";
@@ -799,7 +800,6 @@ var updateSimulation = function() {
 
         updateParticleCount(simulation);
         updateBounds(simulation);
-
 
 
         // Equations of motion
@@ -851,6 +851,12 @@ var updateSimulation = function() {
 
             vec2.scaleAndAdd(particle.acceleration, particle.acceleration, 
                 particle.velocity, - simulation.parameters.friction / mass);
+            
+            if ((simulation.mouse.mode === "dragParticle") && (i === simulation.mouse.activeParticle)) {
+                vec2.subtract(relativePosition, simulation.mouse.worldPosition, particle.position);
+                vec2.scaleAndAdd(particle.acceleration, particle.acceleration, 
+                    relativePosition, 0.1 / mass);
+            }
 
         }
 
