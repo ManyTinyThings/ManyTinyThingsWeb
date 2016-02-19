@@ -1,5 +1,3 @@
-// Creating UI
-
 function combineWithDefaults(opts, defaults) {
     for (var key in defaults) {
         if (!opts.hasOwnProperty(key)) {
@@ -10,91 +8,20 @@ function combineWithDefaults(opts, defaults) {
     }
 }
 
-function createSlider(simulation, opts) {
-    combineWithDefaults(opts, {
-        label: name,
-        minLabel: String(opts.min),
-        maxLabel: String(opts.max),
-        snapBack: false,
-        function: function(x) {
-            return x;
-        },
-    });
-
-    // set up slider element
-
-    var slider = document.createElement("input");
-    slider.setAttribute("id", simulation.id + "_" + opts.name)
-    slider.setAttribute("type", "range");
-    slider.setAttribute("value", opts.initial);
-    slider.setAttribute("min", opts.min);
-    slider.setAttribute("max", opts.max);
-    var step = opts.step || (opts.max - opts.min) / 1000;
-    slider.setAttribute("step", step);
-
-    // set up presentation elements
-
-    var p = document.createElement("p");
-    simulation.sliderDiv.appendChild(p);
-    p.appendChild(document.createTextNode(opts.label));
-    p.appendChild(document.createElement("br"));
-    p.appendChild(document.createTextNode(opts.minLabel));
-    p.appendChild(slider);
-    p.appendChild(document.createTextNode(opts.maxLabel));
-
-    // set up callbacks
-
-    simulation.parameters[opts.name] = opts.function(opts.initial);
-
-    slider.addEventListener("input", function() {
-        simulation.parameters[opts.name] = opts.function(Number(this.value));
-    });
-
-    if (opts.snapBack) {
-        slider.addEventListener("change", function() {
-            this.value = opts.initial;
-            simulation.parameters[opts.name] = opts.function(opts.initial);
-        });
-    }
-}
-
-function createCheckbox(simulation, opts) {
-    combineWithDefaults(opts, {
-        label: name,
-        initial: false
-    });
-
-    var checkbox = document.createElement("input");
-    checkbox.setAttribute("type", "checkbox");
-    var checkboxId = simulation.id + "_" + opts.name;
-    checkbox.setAttribute("id", checkboxId)
-    checkbox.setAttribute("name", opts.name);
-    checkbox.checked = opts.initial;
-    var label = document.createElement("label");
-    label.setAttribute("for", checkboxId);
-    label.innerHTML = opts.label;
-
-    simulation.checkboxDiv.appendChild(label);
-    simulation.checkboxDiv.appendChild(checkbox);
-
-    checkbox.addEventListener("change", function() {
-        simulation.parameters[opts.name] = this.checked;
-    });
-}
-
-function createButton(simulation, label, callback) {
-    var button = document.createElement("input");
-    button.setAttribute("type", "button");
-    button.setAttribute("value", label);
-    button.addEventListener("click", callback);
-    simulation.buttonDiv.appendChild(button);
-}
-
+// DOM stuff
 
 function createAndAppend(elementType, parent) {
     var element = document.createElement(elementType);
     parent.appendChild(element);
     return element;
+}
+
+function hideElement(element) {
+    element.style.display = "none";
+}
+
+function showElement(element) {
+    element.style.display = "block";
 }
 
 function createGraph(canvas) {
@@ -400,7 +327,7 @@ function createSimulation(id, opts) {
             quadtreeEnabled: true,
             frameDuration: 33,
             deltaTemperature: 1,
-            gravityAcceleration: vec2.create(),
+            gravityAcceleration: 0,
             simulationSpeed: 1,
             particleCount: 91,
             radiusScaling: 0.08,
@@ -497,129 +424,201 @@ function createSimulation(id, opts) {
     // TODO: pause when window loses focus?
     // TODO: pause when scrolled out of view
 
-    // setup controls and meters
+    function createSlider(opts) {
+        combineWithDefaults(opts, {
+            label: name,
+            minLabel: String(opts.min),
+            maxLabel: String(opts.max),
+            snapBack: false,
+            function: function(x) {
+                return x;
+            },
+        });
 
-    var controls = {
-        deltaTemperature: function() {
-            createSlider(simulation, {
-                name: "deltaTemperature",
-                label: "Control temperature:",
-                initial: 1,
-                min: 0.97,
-                minLabel: "Colder",
-                max: 1.03,
-                maxLabel: "Warmer",
-                snapBack: true,
-            });
-        },
-        simulationSpeed: function() {
-            createSlider(simulation, {
-                name: "simulationSpeed",
-                label: "Control time:",
-                initial: 1,
-                min: -1,
-                minLabel: "Backward",
-                max: 1,
-                maxLabel: "Forward",
-            });
-        },
-        particleCount: function() {
-            createSlider(simulation, {
-                name: "particleCount",
-                label: "Number of particles:",
-                initial: 91,
-                min: 1,
-                minLabel: "1",
-                max: 200,
-                maxLabel: "200",
-                step: 1,
-                // TODO: make this exponential?
-            });
-        },
-        radiusScaling: function() {
-            createSlider(simulation, {
-                name: "radiusScaling",
-                label: "Particle size:",
-                initial: 0.08,
-                min: 0.01,
-                minLabel: "Tiny",
-                max: 0.1,
-                maxLabel: "Huge",
-            });
-        },
-        gravityAcceleration: function() {
-            createSlider(simulation, {
-                name: "gravityAcceleration",
-                label: "Gravity:",
-                initial: 0,
-                min: 0,
-                minLabel: "None",
-                max: 2e-4,
-                maxLabel: "Strong",
-                function: function(g) {
-                    return vec2.fromValues(0, -g);
-                },
-            });
-        },
-        boxSize: function() {
-            createSlider(simulation, {
-                name: "boxSize",
-                label: "Box Size:",
-                initial: 500,
-                min: 20,
-                minLabel: "Tiny",
-                max: 1000,
-                maxLabel: "Huge",
-            });
-        },
-        friction: function() {
-            createSlider(simulation, {
-                name: "friction",
-                label: "Friction:",
-                initial: 0,
-                min: 0,
-                minLabel: "None",
-                max: 1,
-                maxLabel: "A lot",
-            });
-        },
-        quadtreeEnabled: function() {
-            createCheckbox(simulation, {
-                name: "quadtreeEnabled",
-                label: "Quadtree",
-                initial: false,
-            });
-        },
-        trajectoryEnabled: function() {
-            createCheckbox(simulation, {
-                name: "trajectoryEnabled",
-                label: "Draw trajectory",
-                initial: false,
-            });
-        },
-        resetButton: function() {
-            createButton(simulation, "Reset", function() {
-                resetSimulation(simulation);
-            });
-        },
-        playPauseButton: function() {
-            createButton(simulation, "Play/Pause", function() {
-                if (simulation.requestFrameId) {
-                    simulation.pausedByUser = true;
-                    pauseSimulation(simulation);
-                } else {
-                    simulation.pausedByUser = false;
-                    resumeSimulation(simulation);
-                }
+        var initialValue = simulation.parameters[opts.name];
+
+        // set up slider element
+
+        var slider = document.createElement("input");
+        slider.setAttribute("id", simulation.id + "_" + opts.name)
+        slider.setAttribute("type", "range");
+        slider.setAttribute("value", initialValue);
+        slider.setAttribute("min", opts.min);
+        slider.setAttribute("max", opts.max);
+        var step = opts.step || (opts.max - opts.min) / 1000;
+        slider.setAttribute("step", step);
+
+        // set up presentation elements
+
+        var p = createAndAppend("p", simulation.sliderDiv);
+        p.appendChild(document.createTextNode(opts.label));
+        p.appendChild(document.createElement("br"));
+        p.appendChild(document.createTextNode(opts.minLabel));
+        p.appendChild(slider);
+        p.appendChild(document.createTextNode(opts.maxLabel));
+
+        // set up callbacks
+
+        slider.addEventListener("input", function() {
+            simulation.parameters[opts.name] = opts.function(Number(this.value));
+        });
+
+        if (opts.snapBack) {
+            slider.addEventListener("change", function() {
+                this.value = initialValue;
+                simulation.parameters[opts.name] = opts.function(initialValue);
             });
         }
+
+        hideElement(p);
+
+        simulation.controls[opts.name] = p;
+        return p;
     }
 
+    function createCheckbox(opts) {
+        combineWithDefaults(opts, {
+            label: name
+        });
+
+        var span = createAndAppend("span", simulation.checkboxDiv)
+
+        var label = createAndAppend("label", span);
+        var checkbox = createAndAppend("input", span);
+        checkbox.setAttribute("type", "checkbox");
+        var checkboxId = simulation.id + "_" + opts.name;
+        checkbox.setAttribute("id", checkboxId)
+        checkbox.setAttribute("name", opts.name);
+        checkbox.checked = simulation.parameters[opts.name];
+        label.setAttribute("for", checkboxId);
+        label.innerHTML = opts.label;
+
+        checkbox.addEventListener("change", function() {
+            simulation.parameters[opts.name] = this.checked;
+        });
+
+        hideElement(span);
+        simulation.controls[opts.name] = span;
+        return span;
+    }
+
+    function createButton(opts) {
+        var button = createAndAppend("input", simulation.buttonDiv);
+        button.setAttribute("type", "button");
+        button.setAttribute("value", opts.label);
+        button.addEventListener("click", opts.callback);
+        hideElement(button);
+        simulation.controls[opts.name] = button;
+        return button;
+    }
+
+    // setup UI
+
+    simulation.controls = {};
+
+    // sliders
+
+    createSlider({
+        name: "deltaTemperature",
+        label: "Control temperature:",
+        min: 0.97,
+        minLabel: "Colder",
+        max: 1.03,
+        maxLabel: "Warmer",
+        snapBack: true,
+    });
+    createSlider({
+        name: "simulationSpeed",
+        label: "Control time:",
+        min: -1,
+        minLabel: "Backward",
+        max: 1,
+        maxLabel: "Forward",
+    });
+    createSlider({
+        name: "particleCount",
+        label: "Number of particles:",
+        min: 1,
+        minLabel: "1",
+        max: 200,
+        maxLabel: "200",
+        step: 1,
+        // TODO: make this exponential?
+    });
+    createSlider({
+        name: "radiusScaling",
+        label: "Particle size:",
+        min: 0.01,
+        minLabel: "Tiny",
+        max: 0.1,
+        maxLabel: "Huge",
+    });
+    createSlider({
+        name: "gravityAcceleration",
+        label: "Gravity:",
+        min: 0,
+        minLabel: "None",
+        max: 2e-4,
+        maxLabel: "Strong",
+    });
+    createSlider({
+        name: "boxSize",
+        label: "Box Size:",
+        min: 20,
+        minLabel: "Tiny",
+        max: 1000,
+        maxLabel: "Huge",
+    });
+    createSlider({
+        name: "friction",
+        label: "Friction:",
+        min: 0,
+        minLabel: "None",
+        max: 1,
+        maxLabel: "A lot",
+    });
+
+    // checkboxes
+
+    createCheckbox({
+        name: "quadtreeEnabled",
+        label: "Quadtree",
+    });
+    createCheckbox({
+        name: "trajectoryEnabled",
+        label: "Draw trajectory",
+    });
+
+    // buttons
+
+    createButton({
+        name: "resetButton",
+        label: "Reset",
+        callback: function() {
+            resetSimulation(simulation);
+        }
+    });
+    createButton({
+        name: "playPauseButton",
+        label: "Play/Pause",
+        callback: function() {
+            if (simulation.requestFrameId) {
+                simulation.pausedByUser = true;
+                pauseSimulation(simulation);
+            } else {
+                simulation.pausedByUser = false;
+                resumeSimulation(simulation);
+            }
+        },
+    });
+
     for (var i = 0; i < opts.controls.length; i++) {
-        controls[opts.controls[i]]();
+        showElement(simulation.controls[opts.controls[i]]);
     }
 
     // visualisation
+
+    // TODO: only activate graphs when they are called for
 
     simulation.visualizationDiv = createAndAppend("div", simulation.div);
     simulation.energyGraph = createGraph(createAndAppend("canvas", simulation.visualizationDiv));
@@ -764,7 +763,7 @@ var updateSimulation = function() {
         var colorCounts = {};
 
         var mass = 1;
-
+        var gravityAcceleration = vec2.fromValues(0, - simulation.parameters.gravityAcceleration);
 
         // Process mouse input
 
@@ -772,7 +771,7 @@ var updateSimulation = function() {
             simulation.mouse.mode = "";
         }
 
-        if (simulation.mouse.leftButton.down) { 
+        if (simulation.mouse.leftButton.down) {
             var hitParticle = pickParticle(simulation, simulation.mouse.worldPosition);
             var isOnParticle = (hitParticle !== undefined);
             var extraRadius = 1;
@@ -783,15 +782,14 @@ var updateSimulation = function() {
                 if (isOnParticle) {
                     simulation.mouse.mode = "dragParticle";
                     simulation.mouse.activeParticle = hitParticle;
-                } else if (! isCloseToParticle) {
+                } else if (!isCloseToParticle) {
                     simulation.mouse.mode = "createParticles";
                 }
             }
 
-            if ((simulation.mouse.mode == "createParticles") && (! isCloseToParticle)) {
+            if ((simulation.mouse.mode == "createParticles") && (!isCloseToParticle)) {
                 addParticle(simulation, simulation.mouse.worldPosition);
-            }
-            else if (simulation.mouse.mode == "destroyParticles") {
+            } else if (simulation.mouse.mode == "destroyParticles") {
                 var pickedParticle = pickParticle(simulation, simulation.mouse.worldPosition);
                 if (pickedParticle !== undefined) {
                     removeParticle(simulation, pickedParticle);
@@ -825,7 +823,7 @@ var updateSimulation = function() {
             vec2.scaleAndAdd(particle.position, particle.position, particle.velocity, dt);
 
             // set up acceleration before next loop
-            vec2.copy(particle.acceleration, simulation.parameters.gravityAcceleration);
+            vec2.copy(particle.acceleration, gravityAcceleration);
         }
 
         // Calculate forces
@@ -853,12 +851,12 @@ var updateSimulation = function() {
 
             // Friction
 
-            vec2.scaleAndAdd(particle.acceleration, particle.acceleration, 
-                particle.velocity, - simulation.parameters.friction / mass);
-            
+            vec2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                particle.velocity, -simulation.parameters.friction / mass);
+
             if ((simulation.mouse.mode === "dragParticle") && (i === simulation.mouse.activeParticle)) {
                 vec2.subtract(relativePosition, simulation.mouse.worldPosition, particle.position);
-                vec2.scaleAndAdd(particle.acceleration, particle.acceleration, 
+                vec2.scaleAndAdd(particle.acceleration, particle.acceleration,
                     relativePosition, 0.1 / mass);
             }
 
@@ -879,7 +877,7 @@ var updateSimulation = function() {
             var particleKineticEnergy = 0.5 * vec2.squaredLength(particle.velocity);
             kineticEnergy += particleKineticEnergy;
             totalEnergy += particleKineticEnergy;
-            totalEnergy += -vec2.dot(particle.position, simulation.parameters.gravityAcceleration);
+            totalEnergy += -vec2.dot(particle.position, gravityAcceleration);
 
             vec2.scaleAndAdd(totalMomentum, totalMomentum, particle.velocity, mass);
 
@@ -942,7 +940,7 @@ var updateSimulation = function() {
         // Trajectory
 
         if (simulation.particleCount > 0) {
-            simulation.trajectory.push(vec2.clone(simulation.particles[0].position));    
+            simulation.trajectory.push(vec2.clone(simulation.particles[0].position));
         }
 
         // Drawing
