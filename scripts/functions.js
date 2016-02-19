@@ -108,6 +108,9 @@ function createGraph(canvas) {
     return graph;
 }
 
+// TODO: Graph should have a certain width
+// TODO: pause graph when pausing sim
+
 function graphAddPoint(graph, point) {
     // TODO: add more than one at a time?
     graph.points.push(point);
@@ -965,24 +968,26 @@ var updateSimulation = function() {
 
         var averagePressure = sum(measurements.runningPressure) / (time - initialTime);
 
-        document.getElementById("pressure").value = averagePressure.toExponential(2);
-        document.getElementById("energy").value = totalEnergy.toExponential(2);
-        document.getElementById("momentum").value =
-            ["(", totalMomentum[0].toExponential(2),
-            ", ", totalMomentum[1].toExponential(2), ")"
-        ].join("");
-        var colorCountStringArray = [];
-        var entropy = 0;
-        for (var color in colorCounts) {
-            if (colorCounts.hasOwnProperty(color)) {
-                var colorCount = colorCounts[color];
-                var p = colorCount / particles.length;
-                entropy = microstateEntropy(p) + microstateEntropy(1 - p);
-                colorCountStringArray.push(color, ": ", colorCount, " ");
-            }
-        }
-        document.getElementById("color").value = colorCountStringArray.join("");
-        document.getElementById("entropy").value = entropy.toExponential(2);
+        // Measurement text output 
+
+        // document.getElementById("pressure").value = averagePressure.toExponential(2);
+        // document.getElementById("energy").value = totalEnergy.toExponential(2);
+        // document.getElementById("momentum").value =
+        //     ["(", totalMomentum[0].toExponential(2),
+        //     ", ", totalMomentum[1].toExponential(2), ")"
+        // ].join("");
+        // var colorCountStringArray = [];
+        // var entropy = 0;
+        // for (var color in colorCounts) {
+        //     if (colorCounts.hasOwnProperty(color)) {
+        //         var colorCount = colorCounts[color];
+        //         var p = colorCount / particles.length;
+        //         entropy = microstateEntropy(p) + microstateEntropy(1 - p);
+        //         colorCountStringArray.push(color, ": ", colorCount, " ");
+        //     }
+        // }
+        // document.getElementById("color").value = colorCountStringArray.join("");
+        // document.getElementById("entropy").value = entropy.toExponential(2);
 
         simulation.mouse.leftButton.transitionCount = 0;
         simulation.mouse.rightButton.transitionCount = 0;

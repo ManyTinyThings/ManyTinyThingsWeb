@@ -1,0 +1,1 @@
+pandoc chapter1.markdown --template template.html --output book/chapter1.html
