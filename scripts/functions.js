@@ -146,11 +146,12 @@ var triangularLatticePosition = function() {
         var integerX = rest;
         var integerY = triangularNumber - rest;
         var latticeSpacing = 2 * simulation.parameters.radiusScaling;
-        vec2.setPolar(latticeX, latticeSpacing * integerX, 0);
-        vec2.setPolar(latticeY, latticeSpacing * integerY, tau / 6);
+        var overallRotation = - tau / 12;
+        vec2.setPolar(latticeX, latticeSpacing * integerX, overallRotation);
+        vec2.setPolar(latticeY, latticeSpacing * integerY, overallRotation + tau / 6);
         return vec2.add(vec2.create(), latticeX, latticeY);
     }
-}
+}();
 
 var hexagonalLatticePosition = function() {
 
@@ -177,10 +178,6 @@ var hexagonalLatticePosition = function() {
         return vec2.add(vec2.create(), latticeX, latticeY);
     }
 }();
-
-function noVelocity(simulation, particleIndex) {
-    return vec2.create();
-}
 
 function uniformVelocity(simulation, particleIndex) {
     var speed = randomInInterval(0, simulation.parameters.maxInitialSpeed);
@@ -252,7 +249,7 @@ function twoColorParticleGenerator(simulation, particleIndex) {
 function latticeParticleGenerator(simulation, particleIndex) {
     return new Particle(
         hexagonalLatticePosition(simulation, particleIndex),
-        noVelocity(simulation, particleIndex),
+        vec2.create(),
         oneColor(simulation, particleIndex)
     );
 }
@@ -321,9 +318,10 @@ function pickParticle(simulation, pickPosition, extraRadius) {
 function createSimulation(id, opts) {
     combineWithDefaults(opts, {
         width: 500,
-        height: 500,
+        height: 400,
         controls: [],
         graphs: [],
+        particleGenerator: latticeParticleGenerator,
         parameters: {
             maxInitialSpeed: 0.001,
             collisionEnabled: false,
@@ -342,6 +340,8 @@ function createSimulation(id, opts) {
 
     var simulation = {};
 
+    document.currentScript.insertAdjacentHTML("afterEnd", '<div id="' + id +'"></div>');
+
     simulation.id = id;
 
     simulation.running = true;
@@ -351,7 +351,7 @@ function createSimulation(id, opts) {
 
     simulation.particles = [];
     simulation.particleCount = 0;
-    simulation.particleGenerator = latticeParticleGenerator;
+    simulation.particleGenerator = opts.particleGenerator;
 
     simulation.quadTree = undefined;
 
@@ -415,6 +415,10 @@ function createSimulation(id, opts) {
     simulation.canvas.addEventListener("mousedown", updateMouseFromEvent);
     simulation.canvas.addEventListener("mouseup", updateMouseFromEvent);
     simulation.canvas.addEventListener("mousemove", updateMouseFromEvent);
+    simulation.canvas.addEventListener("mouseout", function(event) {
+        updateMouseButton(simulation.mouse.leftButton, false);
+        updateMouseButton(simulation.mouse.rightButton, false);
+    })
 
     // Pause when switching tabs
 
@@ -953,7 +957,7 @@ var updateSimulation = function() {
 
         // Trajectory
 
-        if (simulation.particleCount > 0) {
+        if (simulation.parameters.trajectoryEnabled && (simulation.particleCount > 0)) {
             simulation.trajectory.push(vec2.clone(simulation.particles[0].position));
         }
 
