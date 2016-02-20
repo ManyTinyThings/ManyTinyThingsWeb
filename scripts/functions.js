@@ -30,9 +30,13 @@ function createGraph(canvas) {
     graph.renderer = createRenderer(canvas);
 
     graph.points = [];
-    graph.maxPointCount = 2000;
+    graph.xWindowSize = 100;
 
     return graph;
+}
+
+function arrayLast(array) {
+    return array[array.length - 1];
 }
 
 // TODO: Graph should have a certain width
@@ -41,13 +45,13 @@ function createGraph(canvas) {
 function graphAddPoint(graph, point) {
     // TODO: add more than one at a time?
     graph.points.push(point);
-    if (graph.points.length > graph.maxPointCount) {
+
+    while ((arrayLast(graph.points) - graph.points[0]) > graph.xWindowSize) {
         graph.points.shift();
     }
 
-
-    var minX = graph.points[0][0];
-    var maxX = graph.points[graph.points.length - 1][0];
+    var maxX = arrayLast(graph.points)[0];
+    var minX = maxX - graph.xWindowSize;
     var minY = Number.MAX_VALUE;
     var maxY = Number.MIN_VALUE;
 
@@ -61,7 +65,7 @@ function graphAddPoint(graph, point) {
         }
     }
 
-    var paddingY = 0.03 * (maxY - minY);
+    var paddingY = 0.05 * (maxY - minY);
 
     // Rescale renderer
     graph.renderer.worldBounds.setLeftTopRightBottom(minX, maxY + paddingY, maxX, minY - paddingY);
@@ -341,8 +345,9 @@ function createSimulation(id, opts) {
     simulation.id = id;
 
     simulation.running = true;
+    simulation.time = 0;
     simulation.pausedByUser = false;
-    simulation.previousTime = 0;
+    simulation.previousTimestamp = 0;
 
     simulation.particles = [];
     simulation.particleCount = 0;
@@ -618,18 +623,26 @@ function createSimulation(id, opts) {
 
     // visualisation
 
-    // TODO: only activate graphs when they are called for
-
     simulation.visualizationDiv = createAndAppend("div", simulation.div);
-    simulation.energyGraph = createGraph(createAndAppend("canvas", simulation.visualizationDiv));
-    simulation.temperatureGraph = createGraph(createAndAppend("canvas", simulation.visualizationDiv));
+    simulation.graphs = {
+        energy:  createGraph(createAndAppend("canvas", simulation.visualizationDiv)),
+        temperature:  createGraph(createAndAppend("canvas", simulation.visualizationDiv)),
+    }
+
+    for (var key in simulation.graphs) {
+        hideElement(simulation.graphs[key].renderer.canvas);
+    }
+
+    for (var i = 0; i < opts.graphs.length; i++) {
+        showElement(simulation.graphs[opts.graphs[i]].renderer.canvas);
+    }
 
     // set up simulation
 
     simulation.renderer = createRenderer(simulation.canvas);
 
-    simulation.updateFunction = function(time) {
-        updateSimulation(simulation.updateFunction, simulation, time);
+    simulation.updateFunction = function(timestamp) {
+        updateSimulation(simulation.updateFunction, simulation, timestamp);
     };
 
     simulation.requestFrameId = window.requestAnimationFrame(simulation.updateFunction);
@@ -646,7 +659,7 @@ function pauseSimulation(simulation) {
 
 function resumeSimulation(simulation) {
     if (!simulation.requestFrameId) {
-        simulation.previousTime = 0;
+        simulation.previousTimestamp = 0;
         simulation.requestFrameId = window.requestAnimationFrame(simulation.updateFunction);
     }
 }
@@ -747,14 +760,15 @@ var updateSimulation = function() {
     var wallNormal = vec2.create();
     var projection = vec2.create();
 
-    return function(updateFunction, simulation, time) {
-        var elapsed = time - simulation.previousTime;
+    return function(updateFunction, simulation, timestamp) {
+        var elapsed = timestamp - simulation.previousTimestamp;
         if ((elapsed > 100) || (elapsed <= 0)) {
             elapsed = simulation.parameters.frameDuration;
         }
         var slowingFactor = 0.01;
         var dt = elapsed * simulation.parameters.simulationSpeed * slowingFactor;
-        simulation.previousTime = time;
+        simulation.time += dt;
+        simulation.previousTimestamp = timestamp;
 
         var totalEnergy = 0;
         var kineticEnergy = 0;
@@ -949,11 +963,11 @@ var updateSimulation = function() {
 
         // Measurements
         var measurements = simulation.measurements;
-        measurements.runningTime.push(time);
+        measurements.runningTime.push(simulation.time);
         measurements.runningPressure.push(totalPressure);
 
-        graphAddPoint(simulation.energyGraph, vec2.fromValues(time, totalEnergy));
-        graphAddPoint(simulation.temperatureGraph, vec2.fromValues(time, kineticEnergy));
+        graphAddPoint(simulation.graphs.energy, vec2.fromValues(simulation.time, totalEnergy));
+        graphAddPoint(simulation.graphs.temperature, vec2.fromValues(simulation.time, kineticEnergy));
 
         var initialTime;
 
@@ -964,7 +978,7 @@ var updateSimulation = function() {
             initialTime = measurements.runningTime[0];
         }
 
-        var averagePressure = sum(measurements.runningPressure) / (time - initialTime);
+        var averagePressure = sum(measurements.runningPressure) / (simulation.time - initialTime);
 
         // Measurement text output 
 
