@@ -46,7 +46,8 @@ function graphAddPoint(graph, point) {
     // TODO: add more than one at a time?
     graph.points.push(point);
 
-    while ((arrayLast(graph.points) - graph.points[0]) > graph.xWindowSize) {
+    // NOTE: save points outside window for better auto-scaling
+    while ((arrayLast(graph.points)[0] - graph.points[0][0]) > 2*graph.xWindowSize) {
         graph.points.shift();
     }
 
