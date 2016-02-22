@@ -333,6 +333,7 @@ function updateParticleCount(simulation)
 
 function addParticle(simulation, position)
 {
+    var inside = simulation.collisionBounds.containsPoint(position);
     var particleIndex = simulation.particleCount;
     var particle = simulation.particleGenerator(simulation, particleIndex);
     particle.position = position;
@@ -476,6 +477,7 @@ function createSimulation(id, opts)
     // Mouse stuff
 
     simulation.mouse = {
+        active: false,
         worldPosition: vec2.create(),
         leftButton:
         {
@@ -489,7 +491,8 @@ function createSimulation(id, opts)
         },
         mode: "",
         activeParticleIndex: undefined,
-        billiardCue: {
+        billiardCue:
+        {
             visible: false,
             start: vec2.create(),
             end: vec2.create(),
@@ -506,19 +509,27 @@ function createSimulation(id, opts)
 
     function updateMouseFromEvent(event)
     {
-        simulation.mouse.worldPosition = worldFromPage(simulation.renderer, vec2.fromValues(event.clientX, event.clientY));
-        updateMouseButton(simulation.mouse.leftButton, (event.buttons & 1) != 0);
-        updateMouseButton(simulation.mouse.rightButton, (event.buttons & 2) != 0);
+        if (simulation.mouse.active)
+        {
+            simulation.mouse.worldPosition = worldFromPage(simulation.renderer, vec2.fromValues(event.clientX, event.clientY));
+            updateMouseButton(simulation.mouse.leftButton, (event.buttons & 1) != 0);
+            updateMouseButton(simulation.mouse.rightButton, (event.buttons & 2) != 0);
+            event.preventDefault();
+        }
     }
 
-    simulation.canvas.addEventListener("mousedown", updateMouseFromEvent);
-    simulation.canvas.addEventListener("mouseup", updateMouseFromEvent);
-    simulation.canvas.addEventListener("mousemove", updateMouseFromEvent);
-    simulation.canvas.addEventListener("mouseout", function(event)
+    // NOTE: only listen to mouse events that start on this canvas
+    simulation.canvas.addEventListener("mousedown", function(event)
     {
-        updateMouseButton(simulation.mouse.leftButton, false);
-        updateMouseButton(simulation.mouse.rightButton, false);
-    })
+        simulation.mouse.active = true;
+        updateMouseFromEvent(event);
+    });
+    document.addEventListener("mouseup", function(event)
+    {
+        updateMouseFromEvent(event);
+        simulation.mouse.active = false;
+    });
+    document.addEventListener("mousemove", updateMouseFromEvent);
 
     // Pause when switching tabs
 
@@ -1019,8 +1030,11 @@ var updateSimulation = function()
                 }
                 else if (latestDownKey == "b")
                 {
-                    simulation.mouse.mode = "billiardCue";
-                    simulation.mouse.activeParticleIndex = hitParticle;
+                    if (isOnParticle)
+                    {
+                        simulation.mouse.mode = "billiardCue";
+                        simulation.mouse.activeParticleIndex = hitParticle;
+                    }
                 }
                 else
                 {
@@ -1080,7 +1094,7 @@ var updateSimulation = function()
             // velocity verlet
 
             vec2.scaleAndAdd(particle.velocity, particle.velocity, particle.acceleration, 0.5 * dt);
-            vec2.scaleAndAdd(particle.position, particle.position, particle.velocity, dt);        
+            vec2.scaleAndAdd(particle.position, particle.position, particle.velocity, dt);
 
             // set up acceleration before next loop
             vec2.copy(particle.acceleration, gravityAcceleration);
