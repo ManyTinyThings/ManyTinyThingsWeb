@@ -339,7 +339,6 @@ function addParticle(simulation, position)
     simulation.particles.push(particle);
     simulation.particleCount += 1;
     simulation.parameters.particleCount += 1;
-    drawSimulation(simulation);
 }
 
 function removeParticle(simulation, particleIndex)
@@ -347,7 +346,6 @@ function removeParticle(simulation, particleIndex)
     simulation.particles.splice(particleIndex, 1);
     simulation.particleCount -= 1;
     simulation.parameters.particleCount -= 1;
-    drawSimulation(simulation);
 }
 
 function worldFromPage(renderer, pagePosition)
@@ -490,7 +488,14 @@ function createSimulation(id, opts)
             transitionCount: 0,
         },
         mode: "",
-        activeParticle: undefined,
+        activeParticleIndex: undefined,
+        billiardCue: {
+            visible: false,
+            start: vec2.create(),
+            end: vec2.create(),
+            strength: 1,
+            length: 0.8,
+        }
     }
 
     function updateMouseButton(button, willBeDown)
@@ -877,6 +882,51 @@ function lennardJonesForce(invDistance, bondEnergy, separation)
     return bondEnergy * shape;
 }
 
+// Colors
+
+colors = {};
+
+function addColor(color)
+{
+    colors[color.name] = color;
+}
+
+addColor(
+{
+    name: "blue",
+    rgba: [0, 0, 1, 1],
+});
+
+addColor(
+{
+    name: "red",
+    rgba: [1, 0, 0, 1],
+});
+
+addColor(
+{
+    name: "green",
+    rgba: [0, 1, 0, 1],
+});
+
+addColor(
+{
+    name: "black",
+    rgba: [0, 0, 0, 1],
+})
+
+addColor(
+{
+    name: "white",
+    rgba: [0, 0, 0, 1],
+})
+
+addColor(
+{
+    name: "gray",
+    rgba: [0.5, 0.5, 0.5, 1],
+})
+
 // Simulation
 
 
@@ -888,11 +938,14 @@ function drawSimulation(simulation)
 
     if (simulation.parameters.trajectoryEnabled)
     {
-        drawTrajectory(simulation.renderer, simulation.trajectory,
-        {
-            name: "blue",
-            rgba: [0, 0, 1, 1]
-        });
+        drawTrajectory(simulation.renderer, simulation.trajectory, colors.blue);
+    }
+
+    var billiardCue = simulation.mouse.billiardCue;
+    if (billiardCue.visible)
+    {
+        var billiardCueTrajectory = [billiardCue.start, billiardCue.end];
+        drawTrajectory(simulation.renderer, billiardCueTrajectory, colors.black);
     }
 }
 
@@ -930,6 +983,17 @@ var updateSimulation = function()
 
         if (simulation.mouse.leftButton.transitionCount > 0)
         {
+            var billiardCue = simulation.mouse.billiardCue;
+            if ((simulation.mouse.mode === "billiardCue") && billiardCue.visible)
+            {
+                // Let go of billiardCue
+                var activeParticle = simulation.particles[simulation.mouse.activeParticleIndex]
+                vec2.subtract(relativePosition, activeParticle.position, simulation.mouse.worldPosition);
+                vec2.scaleAndAdd(activeParticle.velocity, activeParticle.velocity,
+                    relativePosition, billiardCue.strength);
+                billiardCue.visible = false;
+            }
+
             simulation.mouse.mode = "";
         }
 
@@ -953,12 +1017,17 @@ var updateSimulation = function()
                 {
                     simulation.mouse.mode = "destroyParticles";
                 }
+                else if (latestDownKey == "b")
+                {
+                    simulation.mouse.mode = "billiardCue";
+                    simulation.mouse.activeParticleIndex = hitParticle;
+                }
                 else
                 {
                     if (isOnParticle)
                     {
                         simulation.mouse.mode = "dragParticle";
-                        simulation.mouse.activeParticle = hitParticle;
+                        simulation.mouse.activeParticleIndex = hitParticle;
                     }
                 }
             }
@@ -973,6 +1042,17 @@ var updateSimulation = function()
                 {
                     removeParticle(simulation, hitParticle);
                 }
+            }
+            else if (simulation.mouse.mode == "billiardCue")
+            {
+                var billiardCue = simulation.mouse.billiardCue;
+                var activeParticle = simulation.particles[simulation.mouse.activeParticleIndex]
+                vec2.subtract(relativePosition, simulation.mouse.worldPosition, activeParticle.position);
+                var effectiveRadius = activeParticle.radius * simulation.parameters.radiusScaling;
+                billiardCue.visible = vec2.squaredLength(relativePosition) > squared(effectiveRadius);
+                vec2.normalize(relativePosition, relativePosition);
+                vec2.copy(billiardCue.start, simulation.mouse.worldPosition);
+                vec2.scaleAndAdd(billiardCue.end, billiardCue.start, relativePosition, billiardCue.length);
             }
         }
 
@@ -1000,7 +1080,7 @@ var updateSimulation = function()
             // velocity verlet
 
             vec2.scaleAndAdd(particle.velocity, particle.velocity, particle.acceleration, 0.5 * dt);
-            vec2.scaleAndAdd(particle.position, particle.position, particle.velocity, dt);
+            vec2.scaleAndAdd(particle.position, particle.position, particle.velocity, dt);        
 
             // set up acceleration before next loop
             vec2.copy(particle.acceleration, gravityAcceleration);
@@ -1011,6 +1091,8 @@ var updateSimulation = function()
         for (var i = 0; i < particleCount; ++i)
         {
             var particle = particles[i];
+
+            // Particle interactions
 
             for (var j = 0; j < i; ++j)
             {
@@ -1035,14 +1117,20 @@ var updateSimulation = function()
 
             vec2.scaleAndAdd(particle.acceleration, particle.acceleration,
                 particle.velocity, -simulation.parameters.friction / mass);
+        }
 
-            if ((simulation.mouse.mode === "dragParticle") && (i === simulation.mouse.activeParticle))
+
+        // User interaction
+
+        if (simulation.mouse.activeParticleIndex !== undefined)
+        {
+            var particle = particles[simulation.mouse.activeParticleIndex];
+            if (simulation.mouse.mode === "dragParticle")
             {
                 vec2.subtract(relativePosition, simulation.mouse.worldPosition, particle.position);
                 vec2.scaleAndAdd(particle.acceleration, particle.acceleration,
                     relativePosition, 0.1 / mass);
             }
-
         }
 
         for (var particleIndex = 0; particleIndex < particleCount;
