@@ -49,3 +49,23 @@ I added some more balls. Play around with them some.
 
 </script>
 
+It's easy to make a mess, which is what makes billiards an interesting game: it always creates new situations!
+
+Let's remove all the friction and see what happens:
+
+<script>
+    createSimulation("frictionlessBilliards", {
+        graphs: ["energy"],
+        particleGenerator: billiardsParticleGenerator,
+        parameters: {
+            particleCount: 11,
+            friction: 0,
+        },
+    });
+</script>
+
+Oh, look at that! The balls are bouncing all over the place, and they never stop. We have created a perpetual motion machine! 
+
+Look at the energy: it stays the same, no matter how the balls are bouncing. If the energy was decreasing, like before, everything would eventually stop. If it was increasing, well, everything would be moving faster and faster and eventually EXPLODE!!! (good thing it doesn't!)
+
+There is one way to change the energy: if you poke the balls after they have started bouncing. See if you can get the energy to decrease!
