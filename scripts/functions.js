@@ -93,6 +93,9 @@ function graphAddPoint(graph, point)
 
     var paddingY = 0.05 * (maxY - minY);
 
+    // NOTE: I set this to zero to get a reference point
+    var minY = 0;
+
     // Rescale renderer
     graph.renderer.worldBounds.setLeftTopRightBottom(minX, maxY + paddingY, maxX, minY - paddingY);
 
