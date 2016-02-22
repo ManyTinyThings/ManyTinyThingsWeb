@@ -1,3 +1,5 @@
+// Generally useful
+
 function combineWithDefaults(opts, defaults)
 {
     for (var key in defaults)
@@ -12,6 +14,12 @@ function combineWithDefaults(opts, defaults)
         }
     }
 }
+
+function arrayLast(array)
+{
+    return array[array.length - 1];
+}
+
 
 // DOM stuff
 
@@ -32,21 +40,23 @@ function showElement(element)
     element.style.display = "block";
 }
 
-function createGraph(canvas)
+// Graphs/Plots
+
+function createGraph(div, label)
 {
     var graph = {};
 
+    var span = createAndAppend("div", div);
+    span.innerHTML = label;
+    var canvas = createAndAppend("canvas", div);
+
+    graph.div = div;
     graph.renderer = createRenderer(canvas);
 
     graph.points = [];
     graph.xWindowSize = 100;
 
     return graph;
-}
-
-function arrayLast(array)
-{
-    return array[array.length - 1];
 }
 
 // TODO: Graph should have a certain width
@@ -745,18 +755,18 @@ function createSimulation(id, opts)
 
     simulation.visualizationDiv = createAndAppend("div", simulation.div);
     simulation.graphs = {
-        energy: createGraph(createAndAppend("canvas", simulation.visualizationDiv)),
-        temperature: createGraph(createAndAppend("canvas", simulation.visualizationDiv)),
+        energy: createGraph(createAndAppend("div", simulation.visualizationDiv), "Energy"),
+        temperature: createGraph(createAndAppend("div", simulation.visualizationDiv), "Temperature"),
     }
 
     for (var key in simulation.graphs)
     {
-        hideElement(simulation.graphs[key].renderer.canvas);
+        hideElement(simulation.graphs[key].div);
     }
 
     for (var i = 0; i < opts.graphs.length; i++)
     {
-        showElement(simulation.graphs[opts.graphs[i]].renderer.canvas);
+        showElement(simulation.graphs[opts.graphs[i]].div);
     }
 
     // set up simulation
@@ -916,7 +926,7 @@ var updateSimulation = function()
         var mass = 1;
         var gravityAcceleration = vec2.fromValues(0, -simulation.parameters.gravityAcceleration);
 
-        // Process mouse input
+        // Process input
 
         if (simulation.mouse.leftButton.transitionCount > 0)
         {
