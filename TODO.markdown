@@ -5,9 +5,8 @@
     * Stuttery animation sometimes
 * Bugs
     * Stability
-        * timestep
+        * Smaller timestep?
         * energy conservation
-    * Collision's not on
 * Run backwards with collisions
     * Correct collision detection
     * Might have to arrange fixed timestep for this to work with collisions (might not be enough b/c collisions inherently non-reversible)
@@ -15,8 +14,6 @@
 * Controls
     * Save settings in cookie
     * Draggable numbers
-    * Move particles around
-    * Control velocities
     * Draggable borders of box
     * Controls drawn in GL?
     * Draw potential?
@@ -27,21 +24,15 @@
     * Different thermal energy
     * Removing wall
 * Measurements
-    * Measure temperature
     * Measure velocity distribution
     * Pressure should be measured over time, not number of timesteps
+    * Pressure using virial
 * Figures
     * Trajectory particle gets a pilot hat 8)
     * Density histogram
-    * Graph over quantities
-    * Show total momentum as vector?
-    * Phase diagram
+    * Phase diagrams?
 * Optimizations
     * Quadtree restructure instead of clear+repopulate?
     * Do quadtree in local coordinates? So we don't have to regenerate it when the box changes size
     * SOA instead of AOS -> ballPositions = new Float32Array() etc.
     * Update velocities and positions on GPU?
-* State transitions
-    * Changing temperature by just scaling velocities
-    * Cooling down system to solid form
-        * Needs gravity?

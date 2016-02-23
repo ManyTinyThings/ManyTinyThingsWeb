@@ -59,8 +59,6 @@ function createGraph(div, label)
     return graph;
 }
 
-// TODO: Graph should have a certain width
-// TODO: pause graph when pausing sim
 
 function graphAddPoint(graph, point)
 {
@@ -95,7 +93,7 @@ function graphAddPoint(graph, point)
     // NOTE: I set this to zero to get a reference point
     var minY = 0;
     var paddingY = 0.05 * (maxY - minY);
-    
+
     // Rescale renderer
     graph.renderer.worldBounds.setLeftTopRightBottom(minX, maxY + paddingY, maxX, minY - paddingY);
 
@@ -144,6 +142,7 @@ function groupedPosition(simulation, particleIndex)
 
 function uniformPosition(simulation, particleIndex)
 {
+    // TODO: use poisson disk sampling to avoid collisions?
     return randomPointInRect(simulation.collisionBounds);
 }
 
@@ -1320,39 +1319,6 @@ var updateSimulation = function()
         if (simulation.running)
         {
             simulation.requestFrameId = window.requestAnimationFrame(updateFunction);
-        }
-    }
-}();
-
-var collide = function()
-{
-
-    var relativePosition = vec2.create();
-    var relativeVelocity = vec2.create();
-
-    return function(particle1, particle2)
-    {
-        vec2.subtract(relativePosition, particle1.position, particle2.position);
-        var quadrance = vec2.squaredLength(relativePosition);
-        if (quadrance < squared(2 * radiusScaling))
-        {
-            var distanceBetweenCenters = Math.sqrt(quadrance);
-            var overlap = 2 * radiusScaling - distanceBetweenCenters;
-            var normal = vec2.scale(relativePosition, relativePosition, 1 / distanceBetweenCenters);
-
-            // Move out of overlap
-            // TODO: improve to perform correct collision
-            // TODO: use a continuous force instead of hard spheres
-
-            vec2.scaleAndAdd(particle1.position, particle1.position, normal, overlap / 2);
-            vec2.scaleAndAdd(particle2.position, particle2.position, normal, -overlap / 2);
-
-            // Elastic collision
-
-            vec2.subtract(relativeVelocity, particle1.velocity, particle2.velocity);
-            var deltaVelocity = vec2.projectOntoNormal(relativeVelocity, relativeVelocity, normal);
-            vec2.sub(particle1.velocity, particle1.velocity, deltaVelocity);
-            vec2.add(particle2.velocity, particle2.velocity, deltaVelocity);
         }
     }
 }();

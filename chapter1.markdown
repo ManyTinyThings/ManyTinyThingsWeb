@@ -51,6 +51,8 @@ I added some more balls. Play around with them some.
 
 </script>
 
+* Maybe ask user to try putting them back where they were
+
 It's easy to make a mess, which is what makes billiards an interesting game: it always creates new situations!
 
 Let's remove all the friction and see what happens:
