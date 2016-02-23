@@ -35,7 +35,7 @@ I added some more balls. Play around with them some.
             vec2.add(position, position, vec2.fromValues(0.3, 0))
         }
         var velocity = vec2.fromValues(0, 0);
-        return new Particle(position, velocity, oneColor(simulation, particleIndex));
+        return new Particle(position, velocity, colors.black);
     }
 
     createSimulation("billiards", {

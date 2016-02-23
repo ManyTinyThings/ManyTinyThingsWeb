@@ -100,11 +100,7 @@ function graphAddPoint(graph, point)
     graph.renderer.worldBounds.setLeftTopRightBottom(minX, maxY + paddingY, maxX, minY - paddingY);
 
     clearRenderer(graph.renderer);
-    drawTrajectory(graph.renderer, graph.points,
-    {
-        name: "black",
-        rgba: [0, 0, 0, 1]
-    });
+    drawTrajectory(graph.renderer, graph.points, colors.black);
 }
 
 
@@ -122,11 +118,7 @@ var Particle = function(position, velocity, color)
     this.position = position || vec2.create();
     this.velocity = velocity || vec2.create();
     this.acceleration = vec2.create();
-    this.color = color ||
-    {
-        name: "black",
-        rgba: [0, 0, 0, 1]
-    };
+    this.color = color || colors.black;
     this.bounds = new Rect();
     this.radius = 1;
 }
@@ -236,29 +228,15 @@ function identicalVelocity(simulation, particleIndex)
     return vec2.fromValues(0, -simulation.parameters.maxInitialSpeed);
 }
 
-function oneColor(simulation, particleIndex)
-{
-    return {
-        name: "black",
-        rgba: [0, 0, 0, 1]
-    };
-}
-
 function twoColors(simulation, particleIndex)
 {
     if (particleIndex % 2 == 0)
     {
-        return {
-            name: "black",
-            rgba: [0, 0, 0, 1]
-        };
+        return colors.black;
     }
     else
     {
-        return {
-            name: "red",
-            rgba: [1, 0, 0, 1]
-        };
+        return colors.red;
     }
 }
 
@@ -271,7 +249,7 @@ function uniformParticleGenerator(simulation, particleIndex)
     return new Particle(
         uniformPosition(simulation, particleIndex),
         uniformVelocity(simulation, particleIndex),
-        oneColor(simulation, particleIndex)
+        colors.black
     );
 }
 
@@ -280,7 +258,7 @@ function groupedParticleGenerator(simulation, particleIndex)
     return new Particle(
         groupedPosition(simulation, particleIndex),
         uniformVelocity(simulation, particleIndex),
-        oneColor(simulation, particleIndex)
+        colors.black
     );
 }
 
@@ -289,7 +267,7 @@ function fallingParticleGenerator(simulation, particleIndex)
     return new Particle(
         groupedPosition(simulation, particleIndex),
         identicalVelocity(simulation, particleIndex),
-        oneColor(simulation, particleIndex)
+        colors.black
     );
 }
 
@@ -307,7 +285,7 @@ function latticeParticleGenerator(simulation, particleIndex)
     return new Particle(
         hexagonalLatticePosition(simulation, particleIndex),
         vec2.create(),
-        oneColor(simulation, particleIndex)
+        colors.black
     );
 }
 
