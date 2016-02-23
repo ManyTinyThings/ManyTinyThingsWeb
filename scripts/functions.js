@@ -1098,13 +1098,17 @@ var updateSimulation = function()
                 var otherParticle = particles[j];
                 // TODO: use quadtree with given cutoff distance
 
-                var separation = simulation.parameters.radiusScaling * (particle.radius + otherParticle.radius);
+                var separationFactor = 1.2;
+
+                var distanceLimit = simulation.parameters.radiusScaling * (particle.radius + otherParticle.radius);
+                var separation = separationFactor * distanceLimit;
 
                 vec2.subtract(relativePosition, otherParticle.position, particle.position);
                 var distanceBetweenCenters = vec2.length(relativePosition);
-                var distanceLimit = 0.75 * separation;
-                var isHardCollision = distanceBetweenCenters < distanceLimit;
+
                 var normal = vec2.scale(relativePosition, relativePosition, 1 / distanceBetweenCenters);
+                var isHardCollision = distanceBetweenCenters < distanceLimit;
+
                 if (isHardCollision)
                 {
                     var overlap = distanceLimit - distanceBetweenCenters;
