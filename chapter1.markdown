@@ -55,6 +55,11 @@ It's easy to make a mess, which is what makes billiards an interesting game: it 
 
 Let's remove all the friction and see what happens:
 
+* maybe remove friction for just one particle
+    * ask to decrease the energy
+* then to billiards frictionless
+    * ask to decrease energy
+
 <script>
     createSimulation("frictionlessBilliards", {
         graphs: ["energy"],
@@ -71,4 +76,44 @@ Oh, look at that! The balls are bouncing all over the place, and they never stop
 
 Look at the energy: it stays the same, no matter how the balls are bouncing. If the energy was decreasing, like before, everything would eventually stop. If it was increasing, well, everything would be moving faster and faster and eventually EXPLODE!!! (good thing it doesn't!)
 
-There is one way to change the energy: if you poke the balls after they have started bouncing. See if you can get the energy to decrease!
+There is one way to change the energy: if you poke the balls after they have started bouncing. See if you can get the energy to decrease! Kinda hard, isn't it?
+
+Now, imagine there are lots and lots of tiny, tiny balls bouncing around. Oh wait, we don't have to imagine!
+
+<script>
+    createSimulation("manyParticles", {
+        graphs: ["energy"],
+        particleGenerator: uniformParticleGenerator,
+        parameters: {
+            particleCount: 200,
+            radiusScaling: 0.01,
+            bondEnergy: 0,
+        },
+    });
+</script>
+
+The energy here is still the sum of the kinetic energy of each individual particle. But it's hard to even follow a single particle with your eyes, let alone interact with it!
+
+Have a look at these two systems:
+
+* two rooms in one simulation
+    * First with just a single particle?
+    * each with its own energy measurement, both in one plot
+    * Maybe let user give them different energy
+
+<script>
+    createSimulation("colderManyParticles", {
+        graphs: ["energy"],
+        particleGenerator: uniformParticleGenerator,
+        parameters: {
+            particleCount: 200,
+            radiusScaling: 0.01,
+            bondEnergy: 0,
+            maxInitialSpeed: 0.05,
+        },
+    });
+</script>
+
+While it's hard to say anything about a particular particle, we can clearly see that one of them is much more bouncy, jittery, filled with energy! However, it's a much more messy kind of energy than the one of a large object such as a billiard ball. This messy, jiggling, random, bouncing-all-over-the-place kind of energy is what we call _heat_. The more _heat_ something has, the _warmer_ it will seem. 
+
+This might seem strange to you, and I agree: at this point, it is not clear how this giant billiards table connects to boiling water, a metal feeling colder than wood, etc. It will hopefully be more clear as we explore the world of tiny particles in the chapters ahead!

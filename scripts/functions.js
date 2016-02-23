@@ -91,11 +91,11 @@ function graphAddPoint(graph, point)
         }
     }
 
-    var paddingY = 0.05 * (maxY - minY);
 
     // NOTE: I set this to zero to get a reference point
     var minY = 0;
-
+    var paddingY = 0.05 * (maxY - minY);
+    
     // Rescale renderer
     graph.renderer.worldBounds.setLeftTopRightBottom(minX, maxY + paddingY, maxX, minY - paddingY);
 
@@ -375,7 +375,7 @@ function createSimulation(id, opts)
         particleGenerator: latticeParticleGenerator,
         parameters:
         {
-            maxInitialSpeed: 0.001,
+            maxInitialSpeed: 0.1,
             collisionEnabled: false,
             pressureWindowSize: 1000,
             quadtreeEnabled: true,
@@ -1058,8 +1058,9 @@ var updateSimulation = function()
         // Update lots of stuff
         // TODO: put this stuff inline here
 
-        updateParticleCount(simulation);
         updateBounds(simulation);
+        updateParticleCount(simulation);
+ 
 
 
         // Equations of motion
