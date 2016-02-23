@@ -387,6 +387,7 @@ function createSimulation(id, opts)
             radiusScaling: 0.08,
             boxSize: 500,
             friction: 0,
+            bondEnergy: 0.0001,
         }
     });
 
@@ -945,6 +946,9 @@ var updateSimulation = function()
 {
 
     var relativePosition = vec2.create();
+    var relativeVelocity = vec2.create();
+    var deltaVelocity = vec2.create();
+    var deltaAcceleration = vec2.create();
 
     var totalMomentum = vec2.create();
     var wallNormal = vec2.create();
@@ -1094,18 +1098,53 @@ var updateSimulation = function()
                 var otherParticle = particles[j];
                 // TODO: use quadtree with given cutoff distance
 
-                var bondEnergy = 0.0001;
                 var separation = simulation.parameters.radiusScaling * (particle.radius + otherParticle.radius);
 
                 vec2.subtract(relativePosition, otherParticle.position, particle.position);
-                var invDistance = 1 / vec2.length(relativePosition);
-                var force = lennardJonesForce(invDistance, bondEnergy, separation);
-                totalEnergy += lennardJonesEnergy(invDistance, bondEnergy, separation);
+                var distanceBetweenCenters = vec2.length(relativePosition);
+                var distanceLimit = 0.75 * separation;
+                var isHardCollision = distanceBetweenCenters < distanceLimit;
+                var normal = vec2.scale(relativePosition, relativePosition, 1 / distanceBetweenCenters);
+                if (isHardCollision)
+                {
+                    var overlap = distanceLimit - distanceBetweenCenters;
 
-                var accelerationDirection = vec2.normalize(relativePosition, relativePosition);
-                var accelerationMagnitude = force / mass;
-                vec2.scaleAndAdd(particle.acceleration, particle.acceleration, accelerationDirection, -accelerationMagnitude);
-                vec2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration, accelerationDirection, accelerationMagnitude);
+                    // Move out of overlap
+
+                    // TODO: calculate time to collision instead of moving out of overlap
+
+                    vec2.scaleAndAdd(particle.position, particle.position, normal, -overlap / 2);
+                    vec2.scaleAndAdd(otherParticle.position, otherParticle.position, normal, overlap / 2);
+
+                    // Elastic collision
+
+                    // TODO: allow different masses
+
+                    vec2.subtract(relativeVelocity, particle.velocity, otherParticle.velocity);
+                    vec2.projectOntoNormal(deltaVelocity, relativeVelocity, normal);
+                    vec2.scale(deltaAcceleration, deltaVelocity, 1 / dt);
+
+                    // TODO: should I change acceleration?
+                    // vec2.subtract(particle.acceleration, particle.acceleration, deltaAcceleration);
+                    // vec2.add(otherParticle.acceleration, otherParticle.acceleration, deltaAcceleration);
+
+                    // NOTE: I change the velocity instead of the acceleration, because otherwise
+                    // there are transient dips in energy at collision (because of how velocity verlet works)
+                    vec2.subtract(particle.velocity, particle.velocity, deltaVelocity);
+                    vec2.add(otherParticle.velocity, otherParticle.velocity, deltaVelocity);
+                }
+                else if (simulation.parameters.bondEnergy !== 0)
+                {
+                    // Potential force
+                    var invDistance = 1 / distanceBetweenCenters;
+                    var force = lennardJonesForce(invDistance, simulation.parameters.bondEnergy, separation);
+                    totalEnergy += lennardJonesEnergy(invDistance, simulation.parameters.bondEnergy, separation);
+
+                    var accelerationDirection = normal;
+                    var accelerationMagnitude = force / mass;
+                    vec2.scaleAndAdd(particle.acceleration, particle.acceleration, accelerationDirection, -accelerationMagnitude);
+                    vec2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration, accelerationDirection, accelerationMagnitude);
+                }
             }
 
             // Friction

@@ -10,6 +10,7 @@ Here is a billiard ball. Try throwing it around.
         parameters: {
             particleCount: 1,
             friction: 0.1,
+            bondEnergy: 0,
         },
     });
 </script>
@@ -44,6 +45,7 @@ I added some more balls. Play around with them some.
         parameters: {
             particleCount: 11,
             friction: 0.1,
+            bondEnergy: 0,
         },
     });
 
@@ -60,6 +62,7 @@ Let's remove all the friction and see what happens:
         parameters: {
             particleCount: 11,
             friction: 0,
+            bondEnergy: 0,
         },
     });
 </script>
