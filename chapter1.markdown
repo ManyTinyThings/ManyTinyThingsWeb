@@ -27,7 +27,8 @@ I added some more balls. Play around with them some.
     function billiardsParticleGenerator(simulation, particleIndex)
     {
         var position;
-        if (particleIndex == 0) {
+        if (particleIndex == 0)
+        {
             position = vec2.fromValues(-0.5, 0);
         }
         else
@@ -36,7 +37,8 @@ I added some more balls. Play around with them some.
             vec2.add(position, position, vec2.fromValues(0.3, 0))
         }
         var velocity = vec2.fromValues(0, 0);
-        return new Particle(position, velocity, colors.black);
+        var particle = new Particle(position, velocity, colors.black);
+        return particle;
     }
 
     createSimulation("billiards", {
@@ -116,6 +118,6 @@ Have a look at these two systems:
     });
 </script>
 
-While it's hard to say anything about a particular particle, we can clearly see that one of them is much more bouncy, jittery, filled with energy! However, it's a much more messy kind of energy than the one of a large object such as a billiard ball. This messy, jiggling, random, bouncing-all-over-the-place kind of energy is what we call _heat_. The more _heat_ something has, the _warmer_ it will seem. 
+While it's hard to say anything about a particular particle, we can clearly see that particles in the left box are much more bouncy, jittery, filled with energy! However, it's a much more messy kind of energy than the one of a large object such as a billiard ball. This messy, jiggling, random, bouncing-all-over-the-place kind of energy is what we call _heat_. The more _heat_ something has, the _warmer_ it will seem. 
 
 This might seem strange to you, and I agree: at this point, it is not clear how this giant billiards table connects to boiling water, a metal feeling colder than wood, etc. It will hopefully be more clear as we explore the world of tiny particles in the chapters ahead!

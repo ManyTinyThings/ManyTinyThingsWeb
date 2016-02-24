@@ -119,6 +119,7 @@ var Particle = function(position, velocity, color)
     this.color = color || colors.black;
     this.bounds = new Rect();
     this.radius = 1;
+    this.mass = 1;
 }
 
 Particle.prototype.updateBounds = function()
@@ -971,7 +972,6 @@ var updateSimulation = function()
         vec2.set(totalMomentum, 0, 0);
         var colorCounts = {};
 
-        var mass = 1;
         var gravityAcceleration = vec2.fromValues(0, -simulation.parameters.gravityAcceleration);
 
         // Process input
@@ -1122,8 +1122,6 @@ var updateSimulation = function()
 
                     // Elastic collision
 
-                    // TODO: allow different masses
-
                     vec2.subtract(relativeVelocity, particle.velocity, otherParticle.velocity);
                     vec2.projectOntoNormal(deltaVelocity, relativeVelocity, normal);
                     vec2.scale(deltaAcceleration, deltaVelocity, 1 / dt);
@@ -1134,8 +1132,11 @@ var updateSimulation = function()
 
                     // NOTE: I change the velocity instead of the acceleration, because otherwise
                     // there are transient dips in energy at collision (because of how velocity verlet works)
-                    vec2.subtract(particle.velocity, particle.velocity, deltaVelocity);
-                    vec2.add(otherParticle.velocity, otherParticle.velocity, deltaVelocity);
+                    var massSum = particle.mass + otherParticle.mass;
+                    vec2.scaleAndAdd(particle.velocity, particle.velocity, 
+                        deltaVelocity, - 2 * otherParticle.mass / massSum);
+                    vec2.scaleAndAdd(otherParticle.velocity, otherParticle.velocity, 
+                        deltaVelocity, 2 * particle.mass / massSum);
                 }
                 else if (simulation.parameters.bondEnergy !== 0)
                 {
@@ -1145,16 +1146,17 @@ var updateSimulation = function()
                     totalEnergy += lennardJonesEnergy(invDistance, simulation.parameters.bondEnergy, separation);
 
                     var accelerationDirection = normal;
-                    var accelerationMagnitude = force / mass;
-                    vec2.scaleAndAdd(particle.acceleration, particle.acceleration, accelerationDirection, -accelerationMagnitude);
-                    vec2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration, accelerationDirection, accelerationMagnitude);
+                    vec2.scaleAndAdd(particle.acceleration, particle.acceleration, 
+                        accelerationDirection, - force / particle.mass);
+                    vec2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration,
+                        accelerationDirection, force / otherParticle.mass);
                 }
             }
 
             // Friction
 
             vec2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                particle.velocity, -simulation.parameters.friction / mass);
+                particle.velocity, -simulation.parameters.friction / particle.mass);
         }
 
 
@@ -1167,7 +1169,7 @@ var updateSimulation = function()
             {
                 vec2.subtract(relativePosition, simulation.mouse.worldPosition, particle.position);
                 vec2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                    relativePosition, 0.1 / mass);
+                    relativePosition, 0.1 / particle.mass);
             }
         }
 
@@ -1190,7 +1192,7 @@ var updateSimulation = function()
             totalEnergy += particleKineticEnergy;
             totalEnergy += -vec2.dot(particle.position, gravityAcceleration);
 
-            vec2.scaleAndAdd(totalMomentum, totalMomentum, particle.velocity, mass);
+            vec2.scaleAndAdd(totalMomentum, totalMomentum, particle.velocity, particle.mass);
 
 
             // Collision with wall
