@@ -1194,9 +1194,12 @@ var updateSimulation = function()
                     // Move out of overlap
 
                     // TODO: calculate time to collision instead of moving out of overlap
+                    var massSum = particle.mass + otherParticle.mass;
 
-                    vec2.scaleAndAdd(particle.position, particle.position, normal, -overlap / 2);
-                    vec2.scaleAndAdd(otherParticle.position, otherParticle.position, normal, overlap / 2);
+                    vec2.scaleAndAdd(particle.position, particle.position,
+                        normal, - overlap * otherParticle.mass / massSum);
+                    vec2.scaleAndAdd(otherParticle.position, otherParticle.position,
+                        normal, overlap * particle.mass / massSum);
 
                     // Elastic collision
 
@@ -1206,7 +1209,7 @@ var updateSimulation = function()
 
                     // NOTE: I change the velocity instead of the acceleration, because otherwise
                     // there are transient dips in energy at collision (because of how velocity verlet works)
-                    var massSum = particle.mass + otherParticle.mass;
+                    
                     vec2.scaleAndAdd(particle.velocity, particle.velocity,
                         deltaVelocity, -2 * otherParticle.mass / massSum);
                     vec2.scaleAndAdd(otherParticle.velocity, otherParticle.velocity,
@@ -1393,6 +1396,7 @@ var updateSimulation = function()
         for (var key in simulation.graphs)
         {
             var graph = simulation.graphs[key];
+            // TODO: make the limits change smoothly, so it's less noticable
             setGraphLimits(graph, {
                 xMin: simulation.time - simulation.parameters.measurementWindowLength,
                 xMax: simulation.time,

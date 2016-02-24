@@ -129,3 +129,30 @@ Have a look at these two systems:
 While it's hard to say anything about a particular particle, we can clearly see that particles in the left box are much more bouncy, jittery, filled with energy! However, it's a much more messy kind of energy than the one of a large object such as a billiard ball. This messy, jiggling, random, bouncing-all-over-the-place kind of energy is what we call _heat_. The more _heat_ something has, the _warmer_ it will seem. 
 
 This might seem strange to you, and I agree: at this point, it is not clear how this giant billiards table connects to boiling water, a metal feeling colder than wood, etc. It will hopefully be more clear as we explore the world of tiny particles in the chapters ahead!
+
+# Random walk
+
+<script>
+    function oneMassiveParticleGenerator(simulation, particleIndex)
+    {
+        var particle = uniformParticleGenerator(simulation, particleIndex);
+        if (particleIndex == 0)
+        {
+            particle.mass = 50;
+            particle.radius = Math.sqrt(50);
+        }
+        return particle;
+    }
+
+    createSimulation("randomWalk", {
+        controls: ["trajectoryEnabled"],
+        graphs: ["energy"],
+        particleGenerator: oneMassiveParticleGenerator,
+        parameters: {
+            particleCount: 1000,
+            radiusScaling: 0.005,
+            bondEnergy: 0,
+            maxInitialSpeed: 0.05,
+        },
+    });
+</script>
