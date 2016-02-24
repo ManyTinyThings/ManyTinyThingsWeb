@@ -199,9 +199,9 @@ Particle.prototype.updateBounds = function()
 
 function groupedPosition(simulation, particleIndex)
 {
-    var collisionBounds = simulation.collisionBounds;
+    var boxBounds = simulation.boxBounds;
     var smallCenteredRect = new Rect().setCenterWidthHeight(
-        collisionBounds.center, collisionBounds.width / 5, collisionBounds.height / 5
+        boxBounds.center, boxBounds.width / 5, boxBounds.height / 5
     );
     return randomPointInRect(smallCenteredRect);
 }
@@ -478,7 +478,6 @@ function createSimulation(id, opts)
     simulation.quadTree = undefined;
 
     simulation.boxBounds = new Rect();
-    simulation.collisionBounds = new Rect();
     simulation.leftRect = new Rect();
     simulation.rightRect = new Rect();
 
