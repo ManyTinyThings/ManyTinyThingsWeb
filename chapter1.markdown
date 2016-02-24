@@ -106,7 +106,7 @@ Have a look at these two systems:
     * Maybe let user give them different energy
 
 <script>
-    createSimulation("colderManyParticles", {
+    var hotColdSim = createSimulation("hotAndCold", {
         graphs: ["energy"],
         particleGenerator: uniformParticleGenerator,
         parameters: {
@@ -116,6 +116,14 @@ Have a look at these two systems:
             maxInitialSpeed: 0.05,
         },
     });
+
+    leftRegion = createMeasurementRegion();
+    leftRegion.bounds.setFromRect(hotColdSim.leftRect);
+    var rightRegion = createMeasurementRegion();
+    rightRegion.bounds.setFromRect(hotColdSim.rightRect);
+
+    hotColdSim.measurementRegions = [leftRegion, rightRegion];
+
 </script>
 
 While it's hard to say anything about a particular particle, we can clearly see that particles in the left box are much more bouncy, jittery, filled with energy! However, it's a much more messy kind of energy than the one of a large object such as a billiard ball. This messy, jiggling, random, bouncing-all-over-the-place kind of energy is what we call _heat_. The more _heat_ something has, the _warmer_ it will seem. 

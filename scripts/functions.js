@@ -53,54 +53,119 @@ function createGraph(div, label)
     graph.div = div;
     graph.renderer = createRenderer(canvas);
 
-    graph.points = [];
-    graph.xWindowSize = 100;
+    graph.curves = [];
+    graph.limits = {
+        xMin: "auto",
+        xMax: "auto",
+        yMin: "auto",
+        yMax: "auto",
+    };
 
     return graph;
 }
 
-
-function graphAddPoint(graph, point)
+function addCurve(graph, x, y)
 {
-    // TODO: add more than one at a time?
-    graph.points.push(point);
-
-    // NOTE: save points outside window for better auto-scaling
-    while ((arrayLast(graph.points)[0] - graph.points[0][0]) > 2 * graph.xWindowSize)
-    {
-        graph.points.shift();
+    var curve = [];
+    for (var i = 0; i < x.length; i++) {
+        curve.push(vec2.fromValues(x[i], y[i]));
     }
-
-    var maxX = arrayLast(graph.points)[0];
-    var minX = maxX - graph.xWindowSize;
-    var minY = Number.MAX_VALUE;
-    var maxY = Number.MIN_VALUE;
-
-    for (var i = 0; i < graph.points.length; i++)
-    {
-        var y = graph.points[i][1];
-        if (y < minY)
-        {
-            minY = y;
-        }
-        if (y > maxY)
-        {
-            maxY = y;
-        }
-    }
-
-
-    // NOTE: I set this to zero to get a reference point
-    var minY = 0;
-    var paddingY = 0.05 * (maxY - minY);
-
-    // Rescale renderer
-    graph.renderer.worldBounds.setLeftTopRightBottom(minX, maxY + paddingY, maxX, minY - paddingY);
-
-    clearRenderer(graph.renderer);
-    drawTrajectory(graph.renderer, graph.points, colors.black);
+    graph.curves.push(curve);
 }
 
+function setGraphLimits(graph, limits)
+{
+    for (var key in limits)
+    {
+        graph.limits[key] = limits[key];
+    }
+}
+
+function drawGraph(graph)
+{
+    var autoLimits = {
+        xMin: Number.MAX_VALUE,
+        xMax: - Number.MAX_VALUE,
+        yMin: Number.MAX_VALUE,
+        yMax: - Number.MAX_VALUE,
+    }
+    for (var curveIndex = 0;
+        curveIndex < graph.curves.length;
+        curveIndex++)
+    {
+        var curve = graph.curves[curveIndex];
+        for (var i = 0; i < curve.length; i++)
+        {
+            var x = curve[i][0];
+            var y = curve[i][1];
+            if (x < autoLimits.xMin)
+            {
+                autoLimits.xMin = x;
+            }
+            if (x > autoLimits.xMax)
+            {
+                autoLimits.xMax = x;
+            }
+
+            if (y < autoLimits.yMin)
+            {
+                autoLimits.yMin = y;
+            }
+            if (y > autoLimits.yMax)
+            {
+                autoLimits.yMax = y;
+            }
+        }
+    }
+    
+
+    var limits = {};
+
+    for (var key in graph.limits)
+    {
+        if (graph.limits[key] == "auto") 
+        {
+            limits[key] = autoLimits[key];
+        }
+        else
+        {
+            limits[key] = graph.limits[key];
+        }
+    }
+
+    var paddingFactor = 0.05;
+    var minimumPadding = 0.00001;
+    var paddingX = Math.max(paddingFactor * (limits.xMax - limits.xMin), minimumPadding);
+    var paddingY = Math.max(paddingFactor * (limits.yMax - limits.yMin), minimumPadding);
+
+    // TODO: always pad?
+    
+    if (graph.limits.xMin == "auto") { limits.xMin += - paddingX; }
+    if (graph.limits.xMax == "auto") { limits.xMax += paddingX; }
+    if (graph.limits.yMin == "auto") { limits.yMin += - paddingY; }
+    if (graph.limits.yMax == "auto") { limits.yMax += paddingY; }
+
+    graph.renderer.worldBounds.setLeftTopRightBottom(limits.xMin, limits.yMax, limits.xMax, limits.yMin);
+
+    clearRenderer(graph.renderer);
+    for (var curveIndex = 0; curveIndex < graph.curves.length; curveIndex++)
+    {
+        drawTrajectory(graph.renderer, graph.curves[curveIndex], colors.black);
+    }
+    graph.curves = [];
+}
+
+function createMeasurementRegion()
+{
+    var region = {};
+    region.bounds = new Rect();
+    region.measurements = {
+        time: [],
+        energy: [],
+        temperature: [],
+    }
+    return region;
+}
 
 
 // Constants
@@ -366,12 +431,15 @@ function pickParticle(simulation, pickPosition, extraRadius)
 
 function createSimulation(id, opts)
 {
+    var simulation = {};
+
     combineWithDefaults(opts,
     {
         width: 500,
         height: 400,
         controls: [],
         graphs: [],
+        measurementRegions: [],
         particleGenerator: latticeParticleGenerator,
         parameters:
         {
@@ -388,12 +456,13 @@ function createSimulation(id, opts)
             boxSize: 500,
             friction: 0,
             bondEnergy: 0.0001,
+            measurementWindowLength: 100,
         }
     });
 
-    var simulation = {};
-
     document.currentScript.insertAdjacentHTML("afterEnd", '<div id="' + id + '"></div>');
+
+    // TODO: maybe don't have an id? only necessary to distinguish ids of input elements, and doesn't bring much else
 
     simulation.id = id;
 
@@ -415,15 +484,9 @@ function createSimulation(id, opts)
 
     simulation.parameters = opts.parameters;
 
-    // TODO: this should probably be in measurements
+    // TODO: more than one trajectory
     simulation.trajectoryEnabled = false;
     simulation.trajectory = [];
-
-    simulation.measurements = {
-        runningTime: [],
-        runningEnergy: [],
-        runningPressure: [],
-    };
 
     // set up HTML elements
     simulation.div = document.getElementById(id);
@@ -767,9 +830,26 @@ function createSimulation(id, opts)
         showElement(simulation.graphs[opts.graphs[i]].div);
     }
 
-    // set up simulation
 
     simulation.renderer = createRenderer(simulation.canvas);
+
+    updateBounds(simulation);
+
+    // Measurements
+
+
+    if (opts.measurementRegions.length > 0)
+    {
+        simulation.measurementRegions = opts.measurementRegions;    
+    }
+    else
+    {
+        var totalRegion = createMeasurementRegion();
+        totalRegion.bounds.setFromRect(simulation.boxBounds);
+        simulation.measurementRegions = [totalRegion];
+    }
+
+    // Start simulation
 
     simulation.updateFunction = function(timestamp)
     {
@@ -966,9 +1046,6 @@ var updateSimulation = function()
         simulation.time += dt;
         simulation.previousTimestamp = timestamp;
 
-        var totalEnergy = 0;
-        var kineticEnergy = 0;
-        var totalPressure = 0;
         vec2.set(totalMomentum, 0, 0);
         var colorCounts = {};
 
@@ -1059,7 +1136,7 @@ var updateSimulation = function()
 
         updateBounds(simulation);
         updateParticleCount(simulation);
- 
+
 
 
         // Equations of motion
@@ -1081,8 +1158,9 @@ var updateSimulation = function()
             vec2.scaleAndAdd(particle.velocity, particle.velocity, particle.acceleration, 0.5 * dt);
             vec2.scaleAndAdd(particle.position, particle.position, particle.velocity, dt);
 
-            // set up acceleration before next loop
+            // reset stuff before next loop
             vec2.copy(particle.acceleration, gravityAcceleration);
+            particle.potentialEnergy = - vec2.dot(particle.position, gravityAcceleration);
         }
 
         // Calculate forces
@@ -1126,16 +1204,12 @@ var updateSimulation = function()
                     vec2.projectOntoNormal(deltaVelocity, relativeVelocity, normal);
                     vec2.scale(deltaAcceleration, deltaVelocity, 1 / dt);
 
-                    // TODO: should I change acceleration?
-                    // vec2.subtract(particle.acceleration, particle.acceleration, deltaAcceleration);
-                    // vec2.add(otherParticle.acceleration, otherParticle.acceleration, deltaAcceleration);
-
                     // NOTE: I change the velocity instead of the acceleration, because otherwise
                     // there are transient dips in energy at collision (because of how velocity verlet works)
                     var massSum = particle.mass + otherParticle.mass;
-                    vec2.scaleAndAdd(particle.velocity, particle.velocity, 
-                        deltaVelocity, - 2 * otherParticle.mass / massSum);
-                    vec2.scaleAndAdd(otherParticle.velocity, otherParticle.velocity, 
+                    vec2.scaleAndAdd(particle.velocity, particle.velocity,
+                        deltaVelocity, -2 * otherParticle.mass / massSum);
+                    vec2.scaleAndAdd(otherParticle.velocity, otherParticle.velocity,
                         deltaVelocity, 2 * particle.mass / massSum);
                 }
                 else if (simulation.parameters.bondEnergy !== 0)
@@ -1143,11 +1217,14 @@ var updateSimulation = function()
                     // Potential force
                     var invDistance = 1 / distanceBetweenCenters;
                     var force = lennardJonesForce(invDistance, simulation.parameters.bondEnergy, separation);
-                    totalEnergy += lennardJonesEnergy(invDistance, simulation.parameters.bondEnergy, separation);
+                    var potentialEnergy = lennardJonesEnergy(invDistance, simulation.parameters.bondEnergy, separation);
+                    // TODO: this is a little weird
+                    particle.potentialEnergy += potentialEnergy / 2;
+                    otherParticle.potentialEnergy += potentialEnergy / 2;
 
                     var accelerationDirection = normal;
-                    vec2.scaleAndAdd(particle.acceleration, particle.acceleration, 
-                        accelerationDirection, - force / particle.mass);
+                    vec2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                        accelerationDirection, -force / particle.mass);
                     vec2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration,
                         accelerationDirection, force / otherParticle.mass);
                 }
@@ -1187,10 +1264,7 @@ var updateSimulation = function()
                 colorCounts[particle.color.name] = 1 + (colorCounts[particle.color.name] || 0);
             }
 
-            var particleKineticEnergy = 0.5 * vec2.squaredLength(particle.velocity);
-            kineticEnergy += particleKineticEnergy;
-            totalEnergy += particleKineticEnergy;
-            totalEnergy += -vec2.dot(particle.position, gravityAcceleration);
+            particle.kineticEnergy = 0.5 * vec2.squaredLength(particle.velocity);
 
             vec2.scaleAndAdd(totalMomentum, totalMomentum, particle.velocity, particle.mass);
 
@@ -1233,7 +1307,7 @@ var updateSimulation = function()
                 vec2.projectOntoNormal(projection, particle.velocity, wallNormal);
                 vec2.scaleAndAdd(particle.velocity, particle.velocity, projection, -2);
 
-                totalPressure += vec2.length(projection);
+                // totalPressure += vec2.length(projection);
             }
         }
 
@@ -1277,47 +1351,60 @@ var updateSimulation = function()
         drawSimulation(simulation);
 
         // Measurements
-        var measurements = simulation.measurements;
-        measurements.runningTime.push(simulation.time);
-        measurements.runningPressure.push(totalPressure);
 
-        graphAddPoint(simulation.graphs.energy, vec2.fromValues(simulation.time, totalEnergy));
-        graphAddPoint(simulation.graphs.temperature, vec2.fromValues(simulation.time, kineticEnergy));
-
-        var initialTime;
-
-        if (measurements.runningPressure.length > simulation.parameters.pressureWindowSize)
+        for (var regionIndex = 0; regionIndex < simulation.measurementRegions.length; regionIndex++)
         {
-            measurements.runningPressure.shift();
-            initialTime = measurements.runningTime.shift();
+            var region = simulation.measurementRegions[regionIndex];
+            var m = region.measurements;
+
+            // Add new value, remove old, crufty ones
+            m.time.push(simulation.time);
+            var tooOldCount = -1;
+            // NOTE: save more data than shown, to avoid weird autoscaling in plots
+            while ((simulation.time - m.time[++tooOldCount]) > 2 * simulation.parameters.measurementWindowLength) {};
+            for (var key in m)
+            {
+                m[key].splice(0, tooOldCount);
+            }
+
+            var regionEnergy = 0;
+            var regionTemperature = 0;
+
+            for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++)
+            {
+                var particle = simulation.particles[particleIndex];
+
+                if (region.bounds.containsPoint(particle.position))
+                {
+                    regionEnergy += (particle.potentialEnergy + particle.kineticEnergy);
+                    regionTemperature += particle.kineticEnergy;
+                }
+            }
+
+            m.energy.push(regionEnergy);
+            m.temperature.push(regionTemperature);
+
+            addCurve(simulation.graphs.energy, m.time, m.energy);
+            addCurve(simulation.graphs.temperature, m.time, m.temperature);
         }
-        else
+
+        // Plot things
+
+        for (var key in simulation.graphs)
         {
-            initialTime = measurements.runningTime[0];
+            var graph = simulation.graphs[key];
+            setGraphLimits(graph, {
+                xMin: simulation.time - simulation.parameters.measurementWindowLength,
+                xMax: simulation.time,
+                yMin: 0,
+                yMax: "auto",
+            })
+            drawGraph(graph);    
         }
+        
+        drawGraph(simulation.graphs.temperature);
 
-        var averagePressure = sum(measurements.runningPressure) / (simulation.time - initialTime);
-
-        // Measurement text output 
-
-        // document.getElementById("pressure").value = averagePressure.toExponential(2);
-        // document.getElementById("energy").value = totalEnergy.toExponential(2);
-        // document.getElementById("momentum").value =
-        //     ["(", totalMomentum[0].toExponential(2),
-        //     ", ", totalMomentum[1].toExponential(2), ")"
-        // ].join("");
-        // var colorCountStringArray = [];
-        // var entropy = 0;
-        // for (var color in colorCounts) {
-        //     if (colorCounts.hasOwnProperty(color)) {
-        //         var colorCount = colorCounts[color];
-        //         var p = colorCount / particles.length;
-        //         entropy = microstateEntropy(p) + microstateEntropy(1 - p);
-        //         colorCountStringArray.push(color, ": ", colorCount, " ");
-        //     }
-        // }
-        // document.getElementById("color").value = colorCountStringArray.join("");
-        // document.getElementById("entropy").value = entropy.toExponential(2);
+        // Input cleanup
 
         simulation.mouse.leftButton.transitionCount = 0;
         simulation.mouse.rightButton.transitionCount = 0;
@@ -1414,6 +1501,18 @@ Rect.prototype.setCenterWidthHeight = function(center, width, height)
     this.width = width;
     this.height = height;
     vec2.copy(this.center, center);
+    return this;
+}
+
+Rect.prototype.setFromRect = function(rect)
+{
+    this.left = rect.left;
+    this.right = rect.right;
+    this.top = rect.top;
+    this.bottom = rect.bottom;
+    this.width = rect.width;
+    this.height = rect.height;
+    this.center = vec2.clone(rect.center);
     return this;
 }
 
