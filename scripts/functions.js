@@ -209,7 +209,7 @@ function groupedPosition(simulation, particleIndex)
 function uniformPosition(simulation, particleIndex)
 {
     // TODO: use poisson disk sampling to avoid collisions?
-    return randomPointInRect(simulation.collisionBounds);
+    return randomPointInRect(simulation.boxBounds);
 }
 
 function halvesPosition(simulation, particleIndex)
@@ -921,11 +921,6 @@ function updateBounds(simulation)
         origin, 2 * aspectRatio, 2
     );
 
-    var radiusScaling = simulation.parameters.radiusScaling;
-    simulation.collisionBounds.setCenterWidthHeight(
-        origin, 2 * (aspectRatio - radiusScaling), 2 * (1 - radiusScaling)
-    );
-
     simulation.rightRect.setLeftTopRightBottom(
         boxBounds.center[0], boxBounds.top,
         boxBounds.right, boxBounds.bottom);
@@ -1274,33 +1269,34 @@ var updateSimulation = function()
 
             // Collision with wall
 
-            var collisionBounds = simulation.collisionBounds;
+            var boxBounds = simulation.boxBounds;
 
-            if (!collisionBounds.containsPoint(particle.position))
+            var overlap = 0;
+            var radius = particle.radius * simulation.parameters.radiusScaling;
+
+            if (particle.position[0] - radius < boxBounds.left)
             {
-                var overlap;
+                overlap = boxBounds.left - particle.position[0] + radius;
+                vec2.set(wallNormal, 1, 0);
+            }
+            else if (particle.position[0] + radius > boxBounds.right)
+            {
+                overlap = particle.position[0] + radius - boxBounds.right;
+                vec2.set(wallNormal, -1, 0);
+            }
+            else if (particle.position[1] - radius < boxBounds.top)
+            {
+                overlap = boxBounds.top - particle.position[1] + radius;
+                vec2.set(wallNormal, 0, 1);
+            }
+            else if (particle.position[1] + radius > boxBounds.bottom)
+            {
+                overlap = particle.position[1] + radius - boxBounds.bottom;
+                vec2.set(wallNormal, 0, -1);
+            }
 
-                if (particle.position[0] < collisionBounds.left)
-                {
-                    overlap = collisionBounds.left - particle.position[0];
-                    vec2.set(wallNormal, 1, 0);
-                }
-                else if (particle.position[0] > collisionBounds.right)
-                {
-                    overlap = particle.position[0] - collisionBounds.right;
-                    vec2.set(wallNormal, -1, 0);
-                }
-                else if (particle.position[1] < collisionBounds.top)
-                {
-                    overlap = collisionBounds.top - particle.position[1];
-                    vec2.set(wallNormal, 0, 1);
-                }
-                else if (particle.position[1] > collisionBounds.bottom)
-                {
-                    overlap = particle.position[1] - collisionBounds.bottom;
-                    vec2.set(wallNormal, 0, -1);
-                }
-
+            if (overlap > 0)
+            {
                 // Move out of overlap
 
                 vec2.scaleAndAdd(particle.position, particle.position, wallNormal, overlap);
@@ -1313,7 +1309,6 @@ var updateSimulation = function()
                 // totalPressure += vec2.length(projection);
             }
         }
-
 
         // Collision with other particles
         if (simulation.parameters.collisionEnabled)
