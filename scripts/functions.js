@@ -577,20 +577,37 @@ function createSimulation(id, opts)
 
     // Pause when switching tabs
 
-    document.addEventListener('visibilitychange', function(event)
+    function setAutoPause(isAutoPaused)
     {
-        if (document.hidden)
+        if (isAutoPaused)
         {
             pauseSimulation(simulation);
         }
-        else if (!simulation.pausedByUser)
+        else if (! simulation.pausedByUser)
         {
             resumeSimulation(simulation);
         }
+    }
+
+    document.addEventListener('visibilitychange', function(event)
+    {
+        setAutoPause(document.hidden);
     });
 
+    function pauseIfOutside(event)
+    {
+        var divBounds = simulation.div.getBoundingClientRect();
+
+        var isAboveViewport = divBounds.bottom < 0;
+        var isBelowViewport = divBounds.top > window.innerHeight;
+
+        setAutoPause(isAboveViewport || isBelowViewport);
+    }
+
+    document.addEventListener("scroll", pauseIfOutside);
+    document.addEventListener("resize", pauseIfOutside);
+
     // TODO: pause when window loses focus?
-    // TODO: pause when scrolled out of view
 
     function createSlider(opts)
     {
@@ -1184,11 +1201,11 @@ var updateSimulation = function()
                 if (isHardCollision)
                 {
                     var overlap = distanceLimit - distanceBetweenCenters;
+                    var massSum = particle.mass + otherParticle.mass;
 
                     // Move out of overlap
 
                     // TODO: calculate time to collision instead of moving out of overlap
-                    var massSum = particle.mass + otherParticle.mass;
 
                     vec2.scaleAndAdd(particle.position, particle.position,
                         normal, - overlap * otherParticle.mass / massSum);
