@@ -67,7 +67,8 @@ function createGraph(div, label)
 function addCurve(graph, x, y)
 {
     var curve = [];
-    for (var i = 0; i < x.length; i++) {
+    for (var i = 0; i < x.length; i++)
+    {
         curve.push(vec2.fromValues(x[i], y[i]));
     }
     graph.curves.push(curve);
@@ -85,13 +86,11 @@ function drawGraph(graph)
 {
     var autoLimits = {
         xMin: Number.MAX_VALUE,
-        xMax: - Number.MAX_VALUE,
+        xMax: -Number.MAX_VALUE,
         yMin: Number.MAX_VALUE,
-        yMax: - Number.MAX_VALUE,
+        yMax: -Number.MAX_VALUE,
     }
-    for (var curveIndex = 0;
-        curveIndex < graph.curves.length;
-        curveIndex++)
+    for (var curveIndex = 0; curveIndex < graph.curves.length; curveIndex++)
     {
         var curve = graph.curves[curveIndex];
         for (var i = 0; i < curve.length; i++)
@@ -117,13 +116,13 @@ function drawGraph(graph)
             }
         }
     }
-    
+
 
     var limits = {};
 
     for (var key in graph.limits)
     {
-        if (graph.limits[key] == "auto") 
+        if (graph.limits[key] == "auto")
         {
             limits[key] = autoLimits[key];
         }
@@ -139,11 +138,23 @@ function drawGraph(graph)
     var paddingY = Math.max(paddingFactor * (limits.yMax - limits.yMin), minimumPadding);
 
     // TODO: always pad?
-    
-    if (graph.limits.xMin == "auto") { limits.xMin += - paddingX; }
-    if (graph.limits.xMax == "auto") { limits.xMax += paddingX; }
-    if (graph.limits.yMin == "auto") { limits.yMin += - paddingY; }
-    if (graph.limits.yMax == "auto") { limits.yMax += paddingY; }
+
+    if (graph.limits.xMin == "auto")
+    {
+        limits.xMin += -paddingX;
+    }
+    if (graph.limits.xMax == "auto")
+    {
+        limits.xMax += paddingX;
+    }
+    if (graph.limits.yMin == "auto")
+    {
+        limits.yMin += -paddingY;
+    }
+    if (graph.limits.yMax == "auto")
+    {
+        limits.yMax += paddingY;
+    }
 
     graph.renderer.worldBounds.setLeftTopRightBottom(limits.xMin, limits.yMax, limits.xMax, limits.yMin);
 
@@ -379,7 +390,7 @@ function updateParticleCount(simulation)
 
 function addParticle(simulation, position)
 {
-    var inside = simulation.collisionBounds.containsPoint(position);
+    var inside = simulation.boxBounds.containsPoint(position);
     var particleIndex = simulation.particleCount;
     var particle = simulation.particleGenerator(simulation, particleIndex);
     particle.position = position;
@@ -583,7 +594,7 @@ function createSimulation(id, opts)
         {
             pauseSimulation(simulation);
         }
-        else if (! simulation.pausedByUser)
+        else if (!simulation.pausedByUser)
         {
             resumeSimulation(simulation);
         }
@@ -606,6 +617,7 @@ function createSimulation(id, opts)
 
     document.addEventListener("scroll", pauseIfOutside);
     document.addEventListener("resize", pauseIfOutside);
+    window.addEventListener("load", pauseIfOutside);
 
     // TODO: pause when window loses focus?
 
@@ -680,7 +692,7 @@ function createSimulation(id, opts)
         var checkbox = createAndAppend("input", span);
         checkbox.setAttribute("type", "checkbox");
         var checkboxId = simulation.id + "_" + opts.name;
-        checkbox.setAttribute("id", checkboxId)
+        checkbox.setAttribute("id", checkboxId);
         checkbox.setAttribute("name", opts.name);
         checkbox.checked = simulation.parameters[opts.name];
         label.setAttribute("for", checkboxId);
@@ -856,7 +868,7 @@ function createSimulation(id, opts)
 
     if (opts.measurementRegions.length > 0)
     {
-        simulation.measurementRegions = opts.measurementRegions;    
+        simulation.measurementRegions = opts.measurementRegions;
     }
     else
     {
@@ -909,8 +921,6 @@ function updateBounds(simulation)
 {
 
     simulation.canvas.width = simulation.parameters.boxSize;
-
-
 
     // retina stuff
     var canvasWidth = simulation.canvas.width;
@@ -1171,7 +1181,7 @@ var updateSimulation = function()
 
             // reset stuff before next loop
             vec2.copy(particle.acceleration, gravityAcceleration);
-            particle.potentialEnergy = - vec2.dot(particle.position, gravityAcceleration);
+            particle.potentialEnergy = -vec2.dot(particle.position, gravityAcceleration);
         }
 
         // Calculate forces
@@ -1195,20 +1205,27 @@ var updateSimulation = function()
                 vec2.subtract(relativePosition, otherParticle.position, particle.position);
                 var distanceBetweenCenters = vec2.length(relativePosition);
 
+                var invDistance = 1 / distanceBetweenCenters;
+                var potentialEnergy = lennardJonesEnergy(invDistance, simulation.parameters.bondEnergy, separation);
+
                 var normal = vec2.scale(relativePosition, relativePosition, 1 / distanceBetweenCenters);
                 var isHardCollision = distanceBetweenCenters < distanceLimit;
 
                 if (isHardCollision)
                 {
+
+
                     var overlap = distanceLimit - distanceBetweenCenters;
                     var massSum = particle.mass + otherParticle.mass;
 
                     // Move out of overlap
 
                     // TODO: calculate time to collision instead of moving out of overlap
+                    // TODO: the moving makes the outcome depend on the indices of the particles 
+                    // (as they are processed in order)
 
                     vec2.scaleAndAdd(particle.position, particle.position,
-                        normal, - overlap * otherParticle.mass / massSum);
+                        normal, -overlap * otherParticle.mass / massSum);
                     vec2.scaleAndAdd(otherParticle.position, otherParticle.position,
                         normal, overlap * particle.mass / massSum);
 
@@ -1220,16 +1237,36 @@ var updateSimulation = function()
 
                     // NOTE: I change the velocity instead of the acceleration, because otherwise
                     // there are transient dips in energy at collision (because of how velocity verlet works)
-                    
+
                     vec2.scaleAndAdd(particle.velocity, particle.velocity,
                         deltaVelocity, -2 * otherParticle.mass / massSum);
                     vec2.scaleAndAdd(otherParticle.velocity, otherParticle.velocity,
                         deltaVelocity, 2 * particle.mass / massSum);
+
+                    // NOTE: change potential energy to compensate for moving particles
+
+                    var newPotentialEnergy = lennardJonesEnergy(1 / distanceLimit, simulation.parameters.bondEnergy, separation);
+                    var potentialEnergyDifference = potentialEnergy - newPotentialEnergy;
+
+                    // NOTE: using half of potential energy for each particle
+                    // TODO: special case for zero/small velocity?
+                    var squaredVelocity = vec2.squaredLength(particle.velocity);
+                    if (squaredVelocity !== 0)
+                    {
+                        var velocityFactor = Math.sqrt(1 + potentialEnergyDifference / (particle.mass * vec2.squaredLength(particle.velocity)));
+                        vec2.scale(particle.velocity, particle.velocity, velocityFactor);
+                    }
+                    
+                    var squaredVelocity = vec2.squaredLength(otherParticle.velocity);
+                    if (squaredVelocity !== 0)
+                    {
+                        var velocityFactor = Math.sqrt(1 + potentialEnergyDifference / (otherParticle.mass * vec2.squaredLength(otherParticle.velocity)));
+                        vec2.scale(otherParticle.velocity, otherParticle.velocity, velocityFactor);
+                    }
                 }
                 else if (simulation.parameters.bondEnergy !== 0)
                 {
                     // Potential force
-                    var invDistance = 1 / distanceBetweenCenters;
                     var force = lennardJonesForce(invDistance, simulation.parameters.bondEnergy, separation);
                     var potentialEnergy = lennardJonesEnergy(invDistance, simulation.parameters.bondEnergy, separation);
                     // TODO: this is a little weird
@@ -1375,7 +1412,8 @@ var updateSimulation = function()
             m.time.push(simulation.time);
             var tooOldCount = -1;
             // NOTE: save more data than shown, to avoid weird autoscaling in plots
-            while ((simulation.time - m.time[++tooOldCount]) > 2 * simulation.parameters.measurementWindowLength) {};
+            while ((simulation.time - m.time[++tooOldCount]) > 2 * simulation.parameters.measurementWindowLength)
+            {};
             for (var key in m)
             {
                 m[key].splice(0, tooOldCount);
@@ -1408,15 +1446,16 @@ var updateSimulation = function()
         {
             var graph = simulation.graphs[key];
             // TODO: make the limits change smoothly, so it's less noticable
-            setGraphLimits(graph, {
+            setGraphLimits(graph,
+            {
                 xMin: simulation.time - simulation.parameters.measurementWindowLength,
                 xMax: simulation.time,
                 yMin: 0,
                 yMax: "auto",
             })
-            drawGraph(graph);    
+            drawGraph(graph);
         }
-        
+
         drawGraph(simulation.graphs.temperature);
 
         // Input cleanup
