@@ -3,9 +3,9 @@
 <head>
     <title>Dynamic Thermodynamics</title>
     <meta name="viewport" content="width=device-width">
-    <script src="gl-matrix.js" type="text/javascript" charset="utf-8"></script>
-    <script src="functions.js" type="text/javascript"></script>
-    <script src="canvas.js" type="text/javascript" charset="utf-8"></script>
+    <script src="scripts/gl-matrix.js" type="text/javascript" charset="utf-8"></script>
+    <script src="scripts/functions.js" type="text/javascript"></script>
+    <script src="scripts/canvas.js" type="text/javascript" charset="utf-8"></script>
     <style type="text/css" media="screen">
         body {
             width: 500px;
@@ -47,7 +47,6 @@
     </style>
 </head>
 <body>
-    <div id="billiards"></div>
     <script type="text/javascript">
         var billiards = createSimulation("billiards", {
             controls: [
@@ -58,19 +57,12 @@
                 "playPauseButton",
                 "friction",
                 "particleCount"],
-            graphs: [],
+            graphs: ["energy"],
             parameters: {
-                particleCount: 91,
+                particleCount: 1,
             },
         });
     </script>
-    <p>
-        Energy = <output id="energy">?</output> <br>
-        Total momentum = <output id="momentum">?</output> <br>
-        Pressure = <output id="pressure">?</output> <br>
-        Colors in left half = <output id="color">?</output> <br>
-        Entropy = <output id="entropy">?</output> <br>
-    </p>
 </body>
 
 </html>
