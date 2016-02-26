@@ -586,10 +586,17 @@ function createSimulation(id, opts)
     });
     document.addEventListener("mousemove", updateMouseFromEvent);
 
-    // Pause when switching tabs
+    // Pause when simulation is not visible
 
-    function setAutoPause(isAutoPaused)
+    function pauseIfHidden(event)
     {
+        var divBounds = simulation.div.getBoundingClientRect();
+
+        var isAboveViewport = divBounds.bottom < 0;
+        var isBelowViewport = divBounds.top > window.innerHeight;
+
+        var isAutoPaused = document.hidden || isAboveViewport || isBelowViewport;
+
         if (isAutoPaused)
         {
             pauseSimulation(simulation);
@@ -600,24 +607,10 @@ function createSimulation(id, opts)
         }
     }
 
-    document.addEventListener('visibilitychange', function(event)
-    {
-        setAutoPause(document.hidden);
-    });
-
-    function pauseIfOutside(event)
-    {
-        var divBounds = simulation.div.getBoundingClientRect();
-
-        var isAboveViewport = divBounds.bottom < 0;
-        var isBelowViewport = divBounds.top > window.innerHeight;
-
-        setAutoPause(isAboveViewport || isBelowViewport);
-    }
-
-    document.addEventListener("scroll", pauseIfOutside);
-    document.addEventListener("resize", pauseIfOutside);
-    window.addEventListener("load", pauseIfOutside);
+    document.addEventListener('visibilitychange', pauseIfHidden);
+    document.addEventListener("scroll", pauseIfHidden);
+    document.addEventListener("resize", pauseIfHidden);
+    window.addEventListener("load", pauseIfHidden);
 
     // TODO: pause when window loses focus?
 
