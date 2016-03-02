@@ -612,7 +612,7 @@ function createSimulation(id, opts)
     document.addEventListener("resize", pauseIfHidden);
     window.addEventListener("load", pauseIfHidden);
 
-    // TODO: pause when window loses focus?
+    // TODO: pause when window loses focus? (blur, focus events)
 
     function createSlider(opts)
     {
@@ -1499,6 +1499,21 @@ vec2.projectOntoNormal = function(out, a, normal)
     return out;
 }
 
+vec2.rotateCCW = function(out, a)
+{
+    return vec2.set(out, -a[1], a[0]);
+}
+
+vec2.rotateCW = function(out, a)
+{
+    return vec2.set(out, a[1], -a[0]);
+}
+
+vec2.outer = function(a, b)
+{
+    return a[0]*b[1] - a[1]*b[0];
+}
+
 // Rectangle
 
 function Rect()
@@ -1588,6 +1603,200 @@ function randomInInterval(a, b)
 {
     return (a + (b - a) * Math.random())
 }
+function intersectionCircleLine(circle, line)
+{
+    var c = vec2.create();
+    vec2.subtract(c, circle.center, line.start);
+    var dotBC = vec2.dot(line.vector, c);
+    var bSq = vec2.squaredLength(line.vector);
+    var rootInput = square(dotBC) + bSq * (squared(circle.radius) - vec2.squaredLength(c));
+    if (rootInput > 0)
+    {
+        var root = Math.sqrt(rootInput);
+        var bSqInv = 1 / bSq;
+        var t1 = (dotBC - root) * bSqInv;
+        var t2 = (dotBC + root) * bSqInv;
+        
+
+        return {
+            isIntersected: true,
+            t1: t1, t2: t2,
+        }
+    }
+    else
+    {
+        return {isIntersected: false};
+    }
+}
+
+
+// Collision
+
+function isIntersecting(shape, otherShape)
+{
+    var direction = vec2.fromValues(1, 0);
+    var s = support(direction, shape);
+    var s2 = support(vec2.scale(vec2.create(), direction, -1), otherShape);
+    var minkowskiPoint = vec2.subtract(vec2.create(), s, s2);
+    var simplex = [minkowskiPoint];
+    var direction = vec2.scale(direction, minkowskiPoint, -1);
+    while (true)
+    {
+        // TODO: do this more efficiently if we know the pair of shapes
+        var s = support(direction, shape);
+        var s2 = support(vec2.scale(vec2.create(), direction, -1), otherShape);
+        var a = vec2.subtract(vec2.create(), s, s2);
+        if (vec2.dot(a, direction) < 0)
+        {
+            return false;
+        }
+        simplex.push(a);
+        // do simplex
+
+        if (simplex.length <= 1)
+        {
+            // assert
+        }
+        
+        if (simplex.length == 2) {
+            var a = simplex[1];
+            var b = simplex[0];
+            var ab = vec2.subtract(vec2.create(), b, a);
+            var ao = vec2.scale(vec2.create(), a, -1);
+            if (isSameDirection(ab, ao))
+            {
+                simplex = [a, b];
+                vec2.rotateCCW(direction, ab);
+                vec2.scale(direction, direction, vec2.outer(ab, ao));
+            }
+            else
+            {
+                simplex = [a];
+                vec2.copy(direction, ao);
+            }
+        }
+
+        if (simplex.length == 3) {
+            var a = simplex[2];
+            var b = simplex[1];
+            var c = simplex[0];
+            var ab = vec2.subtract(vec2.create(), b, a);
+            var ac = vec2.subtract(vec2.create(), c, a);
+
+            var orientation = vec2.outer(ab, ac);
+            var abNormal = vec2.rotateCW(vec2.create(), ab);
+            vec2.scale(abNormal, abNormal, orientation);
+            var acNormal = vec2.rotateCCW(vec2.create(), ac);
+            vec2.scale(acNormal, acNormal, orientation);
+            var ao = vec2.scale(vec2.create(), a, -1);
+
+            var inStarRegion = false;
+            if (isSameDirection(acNormal, ao))
+            {
+                if (isSameDirection(ac, ao)) 
+                {
+                    simplex = [a, c];
+                    vec2.copy(direction, acNormal);
+                }
+                else
+                {
+                    inStarRegion = true;
+                }
+            }
+            else if (isSameDirection(abNormal, ao))
+            {
+                inStarRegion = true;
+            }
+            else
+            {
+                // origin is inside simplex
+                return true;
+            }
+
+
+            if (inStarRegion)
+            {
+                if (isSameDirection(ab, ao))
+                {
+                    simplex = [a, b];
+                    vec2.copy(direction, abNormal);
+                }
+                else
+                {
+                    simplex = [a];
+                    vec2.copy(direction, ao);
+                }
+            }
+        }
+    }
+}
+
+function crossCross(out, a, b)
+{
+    vec2.rotateCCW(out, a);
+    vec2.scale(out, out, vec2.outer(a, b));
+    return out;
+}
+
+function isSameDirection(a, b)
+{
+    return vec2.dot(a, b) > 0;
+}
+
+function support(direction, shape)
+{
+    if (shape.type == "circle")
+    {   
+        // NOTE: Assumes direction is a unit vector
+        return vec2.scale(vec2.create(), direction, shape.radius);
+    }
+
+    if (shape.type == "polygon")
+    {
+        var maximumDistance = -Number.MAX_VALUE;
+        var maximumVertex;
+        for (var vertexIndex = 0; vertexIndex < shape.vertices.length; vertexIndex++) {
+            var vertex = shape.vertices[vertexIndex];
+            var distance = vec2.dot(vertex, direction);
+            if (distance > maximumDistance)
+            {
+                maximumDistance = distance;
+                maximumVertex = vertex;
+            }
+        }
+        return vec2.clone(maximumVertex);
+    }
+}
+
+function testGJK() {
+    var h = {type: "polygon", vertices: [vec2.fromValues(-1, 0), vec2.fromValues(1, 0)]};
+    var v = {type: "polygon", vertices: [vec2.fromValues(0, -1), vec2.fromValues(0, 1)]};
+    var t = {type: "polygon", vertices: [vec2.fromValues(-2, 0), vec2.fromValues(2, 1)]};
+    var c = {type: "circle", center: vec2.fromValues(0, 0), radius: 0.01};
+
+    var testBothWays = function(shape, otherShape, expected)
+    {
+        var a = isIntersecting(shape, otherShape);
+        var b = isIntersecting(otherShape, shape);
+        return (a == b) && (a == expected);
+    }
+
+    var tests = [ testBothWays(h, v, true)
+                , testBothWays(h, t, false) 
+                , testBothWays(v, t, true) 
+                , testBothWays(c, t, false) 
+                , testBothWays(c, h, true) 
+                , testBothWays(c, v, true)
+                ];
+    for (var i = 0; i < tests.length; i++) 
+    {
+        if(! tests[i])
+        {
+            console.log("Test " + i + " failed.");
+        }
+    }
+}
+
 
 // Quadtree
 
