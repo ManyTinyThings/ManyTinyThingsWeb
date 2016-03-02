@@ -451,6 +451,7 @@ function createSimulation(id, opts)
         controls: [],
         graphs: [],
         measurementRegions: [],
+        walls: [],
         particleGenerator: latticeParticleGenerator,
         parameters:
         {
@@ -509,6 +510,8 @@ function createSimulation(id, opts)
     simulation.buttonDiv = createAndAppend("div", simulation.controlsDiv);
     simulation.sliderDiv = createAndAppend("div", simulation.controlsDiv);
     simulation.checkboxDiv = createAndAppend("div", simulation.controlsDiv);
+
+    simulation.walls = opts.walls;
 
     // Keyboard stuff
 
@@ -1023,6 +1026,11 @@ function drawSimulation(simulation)
 
     drawParticles(simulation.renderer, simulation.particles, simulation.parameters.radiusScaling);
 
+    for (var i = 0; i < simulation.walls.length; i++) {
+        var wall = simulation.walls[i];
+        drawTrajectory(simulation.renderer, [wall.start, wall.end], colors.black);
+    }
+
     if (simulation.parameters.trajectoryEnabled)
     {
         drawTrajectory(simulation.renderer, simulation.trajectory, colors.blue);
@@ -1313,7 +1321,58 @@ var updateSimulation = function()
             vec2.scaleAndAdd(totalMomentum, totalMomentum, particle.velocity, particle.mass);
 
 
-            // Collision with wall
+            // Collision with walls
+
+            for (var i = 0; i < simulation.walls.length; i++) {
+                var wall = simulation.walls[i];
+                var wallVector = vec2.subtract(vec2.create(), wall.end, wall.start);
+                var radius = particle.radius * simulation.parameters.radiusScaling;
+                var fromStart = vec2.subtract(vec2.create(), particle.position, wall.start);
+                var fromEnd = vec2.subtract(vec2.create(), particle.position, wall.end);
+                var normal = vec2.rotateCCW(vec2.create(), wallVector);
+                vec2.normalize(normal, normal);
+                var rejection = vec2.projectOntoNormal(vec2.create(), fromStart, normal);
+                var rejectionLengthSquared = vec2.squaredLength(rejection);
+                var isAfterStart = isSameDirection(fromStart, wallVector);
+                var isBeforeEnd = ! isSameDirection(fromEnd, wallVector);
+
+                var overlap = 0;
+
+                var isIntersectingWall = (rejectionLengthSquared < squared(radius)) && isAfterStart && isBeforeEnd;
+                if (isIntersectingWall)
+                {
+                    overlap = radius - Math.sqrt(rejectionLengthSquared);
+                    vec2.normalize(normal, rejection);
+                }
+                else
+                {
+                    var distanceFromStart = vec2.length(fromStart);
+                    if (distanceFromStart < radius)
+                    {
+                        overlap = radius - distanceFromStart;
+                        vec2.normalize(normal, fromStart);
+                    }
+
+                    var distanceFromEnd = vec2.length(fromEnd);
+                    if (distanceFromEnd < radius) {
+                        overlap = radius - distanceFromEnd;
+                        vec2.normalize(normal, fromEnd);
+                    }
+                }
+
+                if (overlap > 0)
+                {
+                    vec2.scaleAndAdd(particle.position, particle.position, normal, overlap);
+
+                    vec2.projectOntoNormal(projection, particle.velocity, normal);
+                    vec2.scaleAndAdd(particle.velocity, particle.velocity, projection, -2);
+                }
+
+                
+
+            }
+
+            // Collision with box
 
             var boxBounds = simulation.boxBounds;
 

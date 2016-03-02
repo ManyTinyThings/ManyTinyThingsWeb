@@ -48,6 +48,13 @@
 </head>
 <body>
     <script type="text/javascript">
+        var d = 0.5;
+        var corners = [
+            vec2.fromValues(-d, -d),
+            vec2.fromValues(d, -d),
+            vec2.fromValues(d, d),
+            vec2.fromValues(-d, d)
+        ];
         var billiards = createSimulation("billiards", {
             controls: [
                 "deltaTemperature", 
@@ -61,6 +68,12 @@
             parameters: {
                 particleCount: 1,
             },
+            walls: [
+                {start: corners[0], end: corners[1]},
+                {start: corners[1], end: corners[2]},
+                {start: corners[2], end: corners[3]},
+                {start: corners[3], end: corners[0]},
+            ],
         });
     </script>
 </body>
