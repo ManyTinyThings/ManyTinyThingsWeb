@@ -54,6 +54,7 @@ function createGraph(div, label)
     graph.renderer = createRenderer(canvas);
 
     graph.curves = [];
+    graph.bars = [];
     graph.limits = {
         xMin: "auto",
         xMax: "auto",
@@ -66,7 +67,8 @@ function createGraph(div, label)
 
 function addCurve(graph, opts)
 {
-    combineWithDefaults(opts, {
+    combineWithDefaults(opts,
+    {
         color: colors.black,
     });
 
@@ -78,15 +80,19 @@ function addCurve(graph, opts)
     var x = opts.x;
     var y = opts.y;
 
-    if (! x) {
-        for (var i = 0; i < y.length; i++) {
+    if (!x)
+    {
+        for (var i = 0; i < y.length; i++)
+        {
             curve.points.push(vec2.fromValues(i, y[i]));
         }
     }
-    else if (! y) {
-        for (var i = 0; i < x.length; i++) {
+    else if (!y)
+    {
+        for (var i = 0; i < x.length; i++)
+        {
             curve.points.push(vec2.fromValues(x[i], i));
-        }   
+        }
     }
     else
     {
@@ -95,8 +101,18 @@ function addCurve(graph, opts)
             curve.points.push(vec2.fromValues(x[i], y[i]));
         }
     }
-    
+
     graph.curves.push(curve);
+}
+
+function addBars(graph, opts)
+{
+    combineWithDefaults(opts,
+    {
+        bars: []
+    });
+
+    graph.bars = graph.bars.concat(opts.bars);
 }
 
 function setGraphLimits(graph, limits)
@@ -107,8 +123,46 @@ function setGraphLimits(graph, limits)
     }
 }
 
+function maximumBy(array, f)
+{
+    var max = -Number.MAX_VALUE;
+    for (var i = 0; i < array.length; i++)
+    {
+        var x = f(array[i]);
+
+        if (x > max)
+        {
+            max = x;
+        }
+    }
+    return max;
+}
+
+function updateAutoLimits(autoLimits, x, y)
+{
+    if (x < autoLimits.xMin)
+    {
+        autoLimits.xMin = x;
+    }
+    if (x > autoLimits.xMax)
+    {
+        autoLimits.xMax = x;
+    }
+
+    if (y < autoLimits.yMin)
+    {
+        autoLimits.yMin = y;
+    }
+    if (y > autoLimits.yMax)
+    {
+        autoLimits.yMax = y;
+    }
+}
+
 function drawGraph(graph)
 {
+    // Figure out limits
+
     var autoLimits = {
         xMin: Number.MAX_VALUE,
         xMax: -Number.MAX_VALUE,
@@ -122,26 +176,16 @@ function drawGraph(graph)
         {
             var x = points[i][0];
             var y = points[i][1];
-            if (x < autoLimits.xMin)
-            {
-                autoLimits.xMin = x;
-            }
-            if (x > autoLimits.xMax)
-            {
-                autoLimits.xMax = x;
-            }
-
-            if (y < autoLimits.yMin)
-            {
-                autoLimits.yMin = y;
-            }
-            if (y > autoLimits.yMax)
-            {
-                autoLimits.yMax = y;
-            }
+            updateAutoLimits(autoLimits, x, y);
         }
     }
 
+    for (var barIndex = 0; barIndex < graph.bars.length; barIndex++)
+    {
+        var bar = graph.bars[barIndex];
+        updateAutoLimits(autoLimits, bar.start, 0);
+        updateAutoLimits(autoLimits, bar.end, bar.value);
+    }
 
     var limits = {};
 
@@ -181,15 +225,32 @@ function drawGraph(graph)
         limits.yMax += paddingY;
     }
 
-    graph.renderer.worldBounds.setLeftTopRightBottom(limits.xMin, limits.yMax, limits.xMax, limits.yMin);
+    setLeftTopRightBottom(graph.renderer.worldBounds, limits.xMin, limits.yMax, limits.xMax, limits.yMin);
+
+    // Clear and draw
 
     clearRenderer(graph.renderer);
+
     for (var curveIndex = 0; curveIndex < graph.curves.length; curveIndex++)
     {
         var curve = graph.curves[curveIndex];
         drawTrajectory(graph.renderer, curve.points, curve.color);
     }
+    if (graph.bars.length > 0)
+    {
+        var barWidth = (limits.xMax - limits.xMin) / graph.bars.length;
+        for (var barIndex = 0; barIndex < graph.bars.length; barIndex++)
+        {
+            var bar = graph.bars[barIndex];
+            var barRect = setLeftTopRightBottom(new Rectangle(), bar.start, 0, bar.end, bar.value);
+            drawRectangle(graph.renderer, barRect, bar.color);
+        }
+    }
+
+    // Reset state
+
     graph.curves = [];
+    graph.bars = [];
 }
 
 // Measurement regions
@@ -197,13 +258,14 @@ function drawGraph(graph)
 function createMeasurementRegion()
 {
     var region = {};
-    region.bounds = new Rect();
+    region.bounds = new Rectangle();
     region.color = colors.black;
     region.overlayColor = colors.transparent;
     region.measurements = {
         time: [],
         energy: [],
         temperature: [],
+        count: [],
     }
     return region;
 }
@@ -211,12 +273,12 @@ function createMeasurementRegion()
 function setLeftRightRegions(simulation)
 {
     var leftRegion = createMeasurementRegion();
-    leftRegion.bounds.setFromRect(simulation.leftRect);
+    copyRectangle(leftRegion.bounds, simulation.leftRect);
     leftRegion.color = colors.blue;
     leftRegion.overlayColor = withAlpha(colors.blue, 0.2);
 
     var rightRegion = createMeasurementRegion();
-    rightRegion.bounds.setFromRect(simulation.rightRect);
+    copyRectangle(rightRegion.bounds, simulation.rightRect);
     rightRegion.color = colors.red;
     rightRegion.overlayColor = withAlpha(colors.red, 0.2);
 
@@ -237,7 +299,7 @@ var Particle = function(position, velocity, color)
     this.velocity = velocity || vec2.create();
     this.acceleration = vec2.create();
     this.color = color || colors.black;
-    this.bounds = new Rect();
+    this.bounds = new Rectangle();
     this.radius = 1;
     this.mass = 1;
 }
@@ -255,7 +317,7 @@ Particle.prototype.updateBounds = function()
 function groupedPosition(simulation, particleIndex)
 {
     var boxBounds = simulation.boxBounds;
-    var smallCenteredRect = new Rect().setCenterWidthHeight(
+    var smallCenteredRect = new Rectangle().setCenterWidthHeight(
         boxBounds.center, boxBounds.width / 5, boxBounds.height / 5
     );
     return randomPointInRect(smallCenteredRect);
@@ -459,7 +521,7 @@ function updateParticleCount(simulation)
 
 function addParticle(simulation, position)
 {
-    var inside = simulation.boxBounds.containsPoint(position);
+    var inside = doesRectContainPoint(simulation.boxBounds, position);
     var particleIndex = simulation.particleCount;
     var particle = simulation.particleGenerator(simulation, particleIndex);
     particle.position = position;
@@ -518,7 +580,7 @@ function createSimulation(id, opts)
         width: 500,
         height: 400,
         controls: [],
-        graphs: [],
+        visualizations: [],
         measurementRegions: [],
         walls: [],
         particleGenerator: latticeParticleGenerator,
@@ -558,9 +620,9 @@ function createSimulation(id, opts)
 
     simulation.quadTree = undefined;
 
-    simulation.boxBounds = new Rect();
-    simulation.leftRect = new Rect();
-    simulation.rightRect = new Rect();
+    simulation.boxBounds = new Rectangle();
+    simulation.leftRect = new Rectangle();
+    simulation.rightRect = new Rectangle();
 
     simulation.parameters = opts.parameters;
 
@@ -905,22 +967,26 @@ function createSimulation(id, opts)
         showElement(simulation.controls[opts.controls[i]]);
     }
 
-    // visualisation
+    // visualization
 
     simulation.visualizationDiv = createAndAppend("div", simulation.div);
-    simulation.graphs = {
+    simulation.visualizations = {
         energy: createGraph(createAndAppend("div", simulation.visualizationDiv), "Energy"),
         temperature: createGraph(createAndAppend("div", simulation.visualizationDiv), "Temperature"),
+        counts: createGraph(createAndAppend("div", simulation.visualizationDiv), "Counts"),
+        countsHistogram: createGraph(createAndAppend("div", simulation.visualizationDiv), "Counts"),
+    }
+    simulation.timeSeries = [simulation.visualizations.energy, simulation.visualizations.temperature, simulation.visualizations.counts];
+    simulation.histograms = [simulation.visualizations.countHistogram];
+
+    for (var key in simulation.visualizations)
+    {
+        hideElement(simulation.visualizations[key].div);
     }
 
-    for (var key in simulation.graphs)
+    for (var i = 0; i < opts.visualizations.length; i++)
     {
-        hideElement(simulation.graphs[key].div);
-    }
-
-    for (var i = 0; i < opts.graphs.length; i++)
-    {
-        showElement(simulation.graphs[opts.graphs[i]].div);
+        showElement(simulation.visualizations[opts.visualizations[i]].div);
     }
 
 
@@ -938,7 +1004,7 @@ function createSimulation(id, opts)
     else
     {
         var totalRegion = createMeasurementRegion();
-        totalRegion.bounds.setFromRect(simulation.boxBounds);
+        copyRectangle(totalRegion.bounds, simulation.boxBounds);
         simulation.measurementRegions = [totalRegion];
     }
 
@@ -1003,19 +1069,20 @@ function updateBounds(simulation)
     var aspectRatio = simulation.canvas.width / simulation.canvas.height;
     var origin = vec2.fromValues(0, 0);
 
-    simulation.renderer.worldBounds.setCenterWidthHeight(
+    setCenterWidthHeight(
+        simulation.renderer.worldBounds,
         origin, 2 * aspectRatio, 2
     );
 
     var boxBounds = simulation.boxBounds;
-    boxBounds.setCenterWidthHeight(
+    setCenterWidthHeight(boxBounds,
         origin, 2 * aspectRatio, 2
     );
 
-    simulation.rightRect.setLeftTopRightBottom(
+    setLeftTopRightBottom(simulation.rightRect,
         boxBounds.center[0], boxBounds.top,
         boxBounds.right, boxBounds.bottom);
-    simulation.leftRect.setLeftTopRightBottom(
+    setLeftTopRightBottom(simulation.leftRect,
         boxBounds.left, boxBounds.top,
         boxBounds.center[0], boxBounds.bottom);
 
@@ -1107,12 +1174,14 @@ function drawSimulation(simulation)
 {
     clearRenderer(simulation.renderer);
 
-    for (var regionIndex = 0; regionIndex < simulation.measurementRegions.length; regionIndex++) {
+    for (var regionIndex = 0; regionIndex < simulation.measurementRegions.length; regionIndex++)
+    {
         var region = simulation.measurementRegions[regionIndex];
         drawRectangle(simulation.renderer, region.bounds, region.overlayColor);
     }
 
-    for (var i = 0; i < simulation.walls.length; i++) {
+    for (var i = 0; i < simulation.walls.length; i++)
+    {
         var wall = simulation.walls[i];
         drawTrajectory(simulation.renderer, [wall.start, wall.end], colors.black);
     }
@@ -1345,7 +1414,7 @@ var updateSimulation = function()
                         var velocityFactor = Math.sqrt(1 + potentialEnergyDifference / (particle.mass * vec2.squaredLength(particle.velocity)));
                         vec2.scale(particle.velocity, particle.velocity, velocityFactor);
                     }
-                    
+
                     var squaredVelocity = vec2.squaredLength(otherParticle.velocity);
                     if (squaredVelocity !== 0)
                     {
@@ -1399,7 +1468,7 @@ var updateSimulation = function()
             vec2.scaleAndAdd(particle.velocity, particle.velocity, particle.acceleration, 0.5 * dt);
 
             // calculate quantities
-            if (simulation.leftRect.containsPoint(particle.position))
+            if (doesRectContainPoint(simulation.leftRect, particle.position))
             {
                 colorCounts[particle.color.name] = 1 + (colorCounts[particle.color.name] || 0);
             }
@@ -1411,7 +1480,8 @@ var updateSimulation = function()
 
             // Collision with walls
 
-            for (var i = 0; i < simulation.walls.length; i++) {
+            for (var i = 0; i < simulation.walls.length; i++)
+            {
                 var wall = simulation.walls[i];
                 var wallVector = vec2.subtract(vec2.create(), wall.end, wall.start);
                 var radius = particle.radius * simulation.parameters.radiusScaling;
@@ -1422,7 +1492,7 @@ var updateSimulation = function()
                 var rejection = vec2.projectOntoNormal(vec2.create(), fromStart, normal);
                 var rejectionLengthSquared = vec2.squaredLength(rejection);
                 var isAfterStart = isSameDirection(fromStart, wallVector);
-                var isBeforeEnd = ! isSameDirection(fromEnd, wallVector);
+                var isBeforeEnd = !isSameDirection(fromEnd, wallVector);
 
                 var overlap = 0;
 
@@ -1442,7 +1512,8 @@ var updateSimulation = function()
                     }
 
                     var distanceFromEnd = vec2.length(fromEnd);
-                    if (distanceFromEnd < radius) {
+                    if (distanceFromEnd < radius)
+                    {
                         overlap = radius - distanceFromEnd;
                         vec2.normalize(normal, fromEnd);
                     }
@@ -1456,7 +1527,7 @@ var updateSimulation = function()
                     vec2.scaleAndAdd(particle.velocity, particle.velocity, projection, -2);
                 }
 
-                
+
 
             }
 
@@ -1477,14 +1548,14 @@ var updateSimulation = function()
                 overlap = particle.position[0] + radius - boxBounds.right;
                 vec2.set(wallNormal, -1, 0);
             }
-            else if (particle.position[1] - radius < boxBounds.top)
+            else if (particle.position[1] - radius < boxBounds.bottom)
             {
-                overlap = boxBounds.top - particle.position[1] + radius;
+                overlap = boxBounds.bottom - particle.position[1] + radius;
                 vec2.set(wallNormal, 0, 1);
             }
-            else if (particle.position[1] + radius > boxBounds.bottom)
+            else if (particle.position[1] + radius > boxBounds.top)
             {
-                overlap = particle.position[1] + radius - boxBounds.bottom;
+                overlap = particle.position[1] + radius - boxBounds.top;
                 vec2.set(wallNormal, 0, -1);
             }
 
@@ -1543,6 +1614,7 @@ var updateSimulation = function()
 
         // Measurements
 
+        var barWidth = 1 / simulation.measurementRegions.length;
         for (var regionIndex = 0; regionIndex < simulation.measurementRegions.length; regionIndex++)
         {
             var region = simulation.measurementRegions[regionIndex];
@@ -1562,15 +1634,17 @@ var updateSimulation = function()
 
             var regionEnergy = 0;
             var regionTemperature = 0;
+            var regionCount = 0;
 
             for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++)
             {
                 var particle = simulation.particles[particleIndex];
 
-                if (region.bounds.containsPoint(particle.position))
+                if (doesRectContainPoint(region.bounds, particle.position))
                 {
                     regionEnergy += (particle.potentialEnergy + particle.kineticEnergy);
                     regionTemperature += particle.kineticEnergy;
+                    regionCount += 1;
                 }
             }
 
@@ -1578,28 +1652,59 @@ var updateSimulation = function()
 
             m.energy.push(regionEnergy);
             m.temperature.push(regionTemperature);
+            m.count.push(regionCount);
 
-            addCurve(simulation.graphs.energy, {x: m.time, y: m.energy, color: region.color});
-            addCurve(simulation.graphs.temperature, {x: m.time, y: m.temperature, color: region.color});
+            addCurve(simulation.visualizations.energy,
+            {
+                x: m.time,
+                y: m.energy,
+                color: region.color
+            });
+            addCurve(simulation.visualizations.temperature,
+            {
+                x: m.time,
+                y: m.temperature,
+                color: region.color
+            });
+            addCurve(simulation.visualizations.counts,
+            {
+                x: m.time,
+                y: m.count,
+                color: region.color,
+            });
+            addBars(simulation.visualizations.countsHistogram,
+            {
+                bars: [
+                {
+                    start: barWidth * regionIndex,
+                    end: barWidth * (regionIndex + 1),
+                    value: regionCount,
+                    color: region.color,
+                }]
+            });
         }
+
 
         // Plot things
 
-        for (var key in simulation.graphs)
+        setGraphLimits(simulation.visualizations.counts, {yMax: simulation.particles.length});
+
+        for (var i = 0; i < simulation.timeSeries.length; ++i)
         {
-            var graph = simulation.graphs[key];
+            var graph = simulation.timeSeries[i];
             // TODO: make the limits change smoothly, so it's less noticable
             setGraphLimits(graph,
             {
                 xMin: simulation.time - simulation.parameters.measurementWindowLength,
                 xMax: simulation.time,
                 yMin: 0,
-                yMax: "auto",
             })
             drawGraph(graph);
         }
 
-        drawGraph(simulation.graphs.temperature);
+        setGraphLimits(simulation.visualizations.countsHistogram,
+            {xMin: 0, xMax:1, yMin: 0, yMax: simulation.particles.length});
+        drawGraph(simulation.visualizations.countsHistogram);
 
         // Input cleanup
 
@@ -1661,12 +1766,14 @@ vec2.rotateCW = function(out, a)
 
 vec2.outer = function(a, b)
 {
-    return a[0]*b[1] - a[1]*b[0];
+    return a[0] * b[1] - a[1] * b[0];
 }
 
 // Rectangle
 
-function Rect()
+
+
+function Rectangle()
 {
     this.left = 0;
     this.right = 0;
@@ -1678,68 +1785,67 @@ function Rect()
     return this;
 }
 
-Rect.prototype.setLeftTopRightBottom = function(left, top, right, bottom)
+function setLeftTopRightBottom(rectangle, left, top, right, bottom)
 {
-    this.left = left;
-    this.top = top;
-    this.right = right;
-    this.bottom = bottom;
-    this.width = right - left;
-    this.height = bottom - top;
-    vec2.set(this.center, (left + right) / 2, (top + bottom) / 2);
-    return this;
+    rectangle.left = left;
+    rectangle.right = right;
+    rectangle.top = top;
+    rectangle.bottom = bottom;
+    rectangle.width = right - left;
+    rectangle.height = top - bottom;
+    vec2.set(rectangle.center, (left + right) / 2, (top + bottom) / 2);
+    return rectangle;
 }
 
-Rect.prototype.setLeftTopWidthHeight = function(left, top, width, height)
+function setLeftTopWidthHeight(rectangle, left, top, width, height)
 {
-    this.left = left;
-    this.top = top;
-    this.right = left + width;
-    this.bottom = top + height;
-    this.width = width;
-    this.height = height;
-    vec2.set(this.center, left + width / 2, top + height / 2);
-    return this;
+    rectangle.left = left;
+    rectangle.top = top;
+    rectangle.right = left + width;
+    rectangle.bottom = top - height;
+    rectangle.width = width;
+    rectangle.height = height;
+    vec2.set(rectangle.center, left + width / 2, top + height / 2);
+    return rectangle;
 }
 
-Rect.prototype.setCenterWidthHeight = function(center, width, height)
+function setCenterWidthHeight(rectangle, center, width, height)
 {
     var halfWidth = width / 2;
     var halfHeight = height / 2;
-    this.left = center[0] - halfWidth;
-    this.top = center[1] - halfHeight;
-    this.right = center[0] + halfWidth;
-    this.bottom = center[1] + halfHeight;
-    this.width = width;
-    this.height = height;
-    vec2.copy(this.center, center);
-    return this;
+    rectangle.left = center[0] - halfWidth;
+    rectangle.top = center[1] + halfHeight;
+    rectangle.right = center[0] + halfWidth;
+    rectangle.bottom = center[1] - halfHeight;
+    rectangle.width = width;
+    rectangle.height = height;
+    vec2.copy(rectangle.center, center);
+    return rectangle;
 }
 
-Rect.prototype.setFromRect = function(rect)
+function copyRectangle(newRect, rect)
 {
-    this.left = rect.left;
-    this.right = rect.right;
-    this.top = rect.top;
-    this.bottom = rect.bottom;
-    this.width = rect.width;
-    this.height = rect.height;
-    this.center = vec2.clone(rect.center);
-    return this;
+    newRect.left = rect.left;
+    newRect.right = rect.right;
+    newRect.top = rect.top;
+    newRect.bottom = rect.bottom;
+    newRect.width = rect.width;
+    newRect.height = rect.height;
+    newRect.center = vec2.clone(rect.center);
+    return newRect;
 }
 
-Rect.prototype.containsRect = function(inner)
+function doesRectContainRect(outer, inner)
 {
-    var outer = this;
     var insideX = (outer.left <= inner.left) && (inner.right <= outer.right);
-    var insideY = (outer.top <= inner.top) && (inner.bottom <= outer.bottom);
+    var insideY = (outer.bottom <= inner.bottom) && (inner.top <= outer.top);
     return insideX && insideY;
 }
 
-Rect.prototype.containsPoint = function(point)
+function doesRectContainPoint(rectangle, point)
 {
-    var insideX = (this.left <= point[0]) && (point[0] <= this.right)
-    var insideY = (this.top <= point[1]) && (point[1] <= this.bottom)
+    var insideX = (rectangle.left <= point[0]) && (point[0] <= rectangle.right)
+    var insideY = (rectangle.bottom <= point[1]) && (point[1] <= rectangle.top)
     return insideX && insideY;
 }
 
@@ -1751,8 +1857,9 @@ function randomPointInRect(rect)
 
 function randomInInterval(a, b)
 {
-    return (a + (b - a) * Math.random())
+    return (a + (b - a) * Math.random());
 }
+
 function intersectionCircleLine(circle, line)
 {
     var c = vec2.create();
@@ -1766,16 +1873,19 @@ function intersectionCircleLine(circle, line)
         var bSqInv = 1 / bSq;
         var t1 = (dotBC - root) * bSqInv;
         var t2 = (dotBC + root) * bSqInv;
-        
+
 
         return {
             isIntersected: true,
-            t1: t1, t2: t2,
+            t1: t1,
+            t2: t2,
         }
     }
     else
     {
-        return {isIntersected: false};
+        return {
+            isIntersected: false
+        };
     }
 }
 
@@ -1807,8 +1917,9 @@ function isIntersecting(shape, otherShape)
         {
             // assert
         }
-        
-        if (simplex.length == 2) {
+
+        if (simplex.length == 2)
+        {
             var a = simplex[1];
             var b = simplex[0];
             var ab = vec2.subtract(vec2.create(), b, a);
@@ -1826,7 +1937,8 @@ function isIntersecting(shape, otherShape)
             }
         }
 
-        if (simplex.length == 3) {
+        if (simplex.length == 3)
+        {
             var a = simplex[2];
             var b = simplex[1];
             var c = simplex[0];
@@ -1843,7 +1955,7 @@ function isIntersecting(shape, otherShape)
             var inStarRegion = false;
             if (isSameDirection(acNormal, ao))
             {
-                if (isSameDirection(ac, ao)) 
+                if (isSameDirection(ac, ao))
                 {
                     simplex = [a, c];
                     vec2.copy(direction, acNormal);
@@ -1881,13 +1993,6 @@ function isIntersecting(shape, otherShape)
     }
 }
 
-function crossCross(out, a, b)
-{
-    vec2.rotateCCW(out, a);
-    vec2.scale(out, out, vec2.outer(a, b));
-    return out;
-}
-
 function isSameDirection(a, b)
 {
     return vec2.dot(a, b) > 0;
@@ -1896,7 +2001,7 @@ function isSameDirection(a, b)
 function support(direction, shape)
 {
     if (shape.type == "circle")
-    {   
+    {
         // NOTE: Assumes direction is a unit vector
         return vec2.scale(vec2.create(), direction, shape.radius);
     }
@@ -1905,7 +2010,8 @@ function support(direction, shape)
     {
         var maximumDistance = -Number.MAX_VALUE;
         var maximumVertex;
-        for (var vertexIndex = 0; vertexIndex < shape.vertices.length; vertexIndex++) {
+        for (var vertexIndex = 0; vertexIndex < shape.vertices.length; vertexIndex++)
+        {
             var vertex = shape.vertices[vertexIndex];
             var distance = vec2.dot(vertex, direction);
             if (distance > maximumDistance)
@@ -1918,11 +2024,25 @@ function support(direction, shape)
     }
 }
 
-function testGJK() {
-    var h = {type: "polygon", vertices: [vec2.fromValues(-1, 0), vec2.fromValues(1, 0)]};
-    var v = {type: "polygon", vertices: [vec2.fromValues(0, -1), vec2.fromValues(0, 1)]};
-    var t = {type: "polygon", vertices: [vec2.fromValues(-2, 0), vec2.fromValues(2, 1)]};
-    var c = {type: "circle", center: vec2.fromValues(0, 0), radius: 0.01};
+function testGJK()
+{
+    var h = {
+        type: "polygon",
+        vertices: [vec2.fromValues(-1, 0), vec2.fromValues(1, 0)]
+    };
+    var v = {
+        type: "polygon",
+        vertices: [vec2.fromValues(0, -1), vec2.fromValues(0, 1)]
+    };
+    var t = {
+        type: "polygon",
+        vertices: [vec2.fromValues(-2, 0), vec2.fromValues(2, 1)]
+    };
+    var c = {
+        type: "circle",
+        center: vec2.fromValues(0, 0),
+        radius: 0.01
+    };
 
     var testBothWays = function(shape, otherShape, expected)
     {
@@ -1931,16 +2051,10 @@ function testGJK() {
         return (a == b) && (a == expected);
     }
 
-    var tests = [ testBothWays(h, v, true)
-                , testBothWays(h, t, false) 
-                , testBothWays(v, t, true) 
-                , testBothWays(c, t, false) 
-                , testBothWays(c, h, true) 
-                , testBothWays(c, v, true)
-                ];
-    for (var i = 0; i < tests.length; i++) 
+    var tests = [testBothWays(h, v, true), testBothWays(h, t, false), testBothWays(v, t, true), testBothWays(c, t, false), testBothWays(c, h, true), testBothWays(c, v, true)];
+    for (var i = 0; i < tests.length; i++)
     {
-        if(! tests[i])
+        if (!tests[i])
         {
             console.log("Test " + i + " failed.");
         }
@@ -1967,7 +2081,7 @@ Quadtree.prototype.add = function(object)
             ++subtreeIndex)
         {
             var subtree = this.subtrees[subtreeIndex];
-            if (subtree.bounds.containsRect(object.bounds))
+            if (doesRectContainRect(subtree.bounds, object.bounds))
             {
                 subtree.add(object);
                 return;
@@ -1983,16 +2097,16 @@ Quadtree.prototype.add = function(object)
         if (this.objects.length > this.maxObjects)
         {
             // create subtrees
-            var topLeft = new Rect().setLeftTopRightBottom(
+            var topLeft = setLeftTopRightBottom(new Rectangle(),
                 this.bounds.left, this.bounds.top,
                 this.bounds.center[0], this.bounds.center[1]);
-            var topRight = new Rect().setLeftTopRightBottom(
+            var topRight = setLeftTopRightBottom(new Rectangle(),
                 this.bounds.center[0], this.bounds.top,
                 this.bounds.right, this.bounds.center[1]);
-            var bottomLeft = new Rect().setLeftTopRightBottom(
+            var bottomLeft = setLeftTopRightBottom(new Rectangle(),
                 this.bounds.left, this.bounds.center[1],
                 this.bounds.center[0], this.bounds.bottom);
-            var bottomRight = new Rect().setLeftTopRightBottom(
+            var bottomRight = setLeftTopRightBottom(new Rectangle(),
                 this.bounds.center[0], this.bounds.center[1],
                 this.bounds.right, this.bounds.bottom);
             this.subtrees = [new Quadtree(topLeft), new Quadtree(topRight),
@@ -2006,7 +2120,7 @@ Quadtree.prototype.add = function(object)
                     ++subtreeIndex)
                 {
                     var subtree = this.subtrees[subtreeIndex];
-                    if (subtree.bounds.containsRect(object.bounds))
+                    if (doesRectContainRect(subtree.bounds, object.bounds))
                     {
                         subtree.add(object);
                         break;

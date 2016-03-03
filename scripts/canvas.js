@@ -2,7 +2,7 @@ function createRenderer(canvas) {
     var renderer = {
         canvas: canvas,
         context: canvas.getContext("2d"),
-        worldBounds: new Rect(),
+        worldBounds: new Rectangle(),
     };
     
     return renderer;
@@ -73,10 +73,11 @@ function drawRectangle(renderer, rectangle, color)
     var context = renderer.context;
 
     context.fillStyle = cssFromRGBA(color.rgba);
-    var topLeftCorner = canvasFromWorld(renderer, vec2.fromValues(rectangle.left, rectangle.top));
-    var width = rectangle.width * renderer.canvas.width;
-    var height = rectangle.height * renderer.canvas.height;
-    context.fillRect(topLeftCorner[0], topLeftCorner[1], width, height);
+    var topLeft = canvasFromWorld(renderer, vec2.fromValues(rectangle.left, rectangle.top));
+    var bottomRight = canvasFromWorld(renderer, vec2.fromValues(rectangle.right, rectangle.bottom));
+    var width = bottomRight[0] - topLeft[0];
+    var height = bottomRight[1] - topLeft[1];
+    context.fillRect(topLeft[0], topLeft[1], width, height);
 }
 
 function resizeRenderer(renderer)

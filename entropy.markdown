@@ -36,6 +36,7 @@ How about something a little easier? Try putting all the particles in the left h
 <script>
     var halfRegionSim = createSimulation("halfRegion", { 
         particleGenerator: uniformParticleGenerator,
+        visualizations: ["counts"],
         parameters: {
             maxInitialSpeed: 0.01,
             particleCount: 20,
@@ -45,6 +46,7 @@ How about something a little easier? Try putting all the particles in the left h
     });
 
     setLeftRightRegions(halfRegionSim);
+
 </script>
 
 It's quite hard, and they keep wanting to escape! Notice how, if you don't touch anything, they tend to be about half on the left side and half on the right.
