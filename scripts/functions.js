@@ -192,6 +192,8 @@ function drawGraph(graph)
     graph.curves = [];
 }
 
+// Measurement regions
+
 function createMeasurementRegion()
 {
     var region = {};
@@ -206,6 +208,20 @@ function createMeasurementRegion()
     return region;
 }
 
+function setLeftRightRegions(simulation)
+{
+    var leftRegion = createMeasurementRegion();
+    leftRegion.bounds.setFromRect(simulation.leftRect);
+    leftRegion.color = colors.blue;
+    leftRegion.overlayColor = withAlpha(colors.blue, 0.2);
+
+    var rightRegion = createMeasurementRegion();
+    rightRegion.bounds.setFromRect(simulation.rightRect);
+    rightRegion.color = colors.red;
+    rightRegion.overlayColor = withAlpha(colors.red, 0.2);
+
+    simulation.measurementRegions = [leftRegion, rightRegion];
+}
 
 // Constants
 
@@ -320,12 +336,19 @@ var hexagonalLatticePosition = function()
     }
 }();
 
-function uniformVelocity(simulation, particleIndex)
+function randomVelocity(maxSpeed)
 {
-    var speed = randomInInterval(0, simulation.parameters.maxInitialSpeed);
+    var speed = randomInInterval(0, maxSpeed);
     var angle = randomInInterval(0, tau);
     return vec2.fromValues(speed * Math.cos(angle), speed * Math.sin(angle));
 }
+
+function uniformVelocity(simulation, particleIndex)
+{
+    return randomVelocity(simulation.parameters.maxInitialSpeed);
+}
+
+
 
 function identicalVelocity(simulation, particleIndex)
 {
@@ -391,6 +414,24 @@ function latticeParticleGenerator(simulation, particleIndex)
         vec2.create(),
         colors.black
     );
+}
+
+
+function billiardsParticleGenerator(simulation, particleIndex)
+{
+    var position;
+    if (particleIndex == 0)
+    {
+        position = vec2.fromValues(-0.5, 0);
+    }
+    else
+    {
+        position = triangularLatticePosition(simulation, particleIndex - 1);
+        vec2.add(position, position, vec2.fromValues(0.3, 0))
+    }
+    var velocity = vec2.fromValues(0, 0);
+    var particle = new Particle(position, velocity, colors.black);
+    return particle;
 }
 
 function updateParticleCount(simulation)

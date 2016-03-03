@@ -48,11 +48,27 @@
 </head>
 <body>
     <script>
-        
-    
+        function hotColdGenerator(simulation, particleIndex)
+        {
+            var position;
+            var velocity;
+            if (particleIndex % 2)
+            {
+                position = randomPointInRect(simulation.leftRect);
+                velocity = randomVelocity(0.01);
+            }
+            else
+            {
+                position = randomPointInRect(simulation.rightRect);
+                velocity = randomVelocity(0.03);
+            }
+            var particle = new Particle(position, velocity, colors.black);
+            return particle;
+        }
+
         var hotColdSim = createSimulation("hotAndCold", {
             graphs: ["energy"],
-            particleGenerator: uniformParticleGenerator,
+            particleGenerator: hotColdGenerator,
             parameters: {
                 particleCount: 200,
                 radiusScaling: 0.01,
@@ -62,16 +78,7 @@
             walls: [{start: vec2.fromValues(0, -1), end: vec2.fromValues(0, 1)}],
         });
 
-        leftRegion = createMeasurementRegion();
-        leftRegion.bounds.setFromRect(hotColdSim.leftRect);
-        leftRegion.color = colors.blue;
-        leftRegion.overlayColor = withAlpha(colors.blue, 0.2);
-        var rightRegion = createMeasurementRegion();
-        rightRegion.bounds.setFromRect(hotColdSim.rightRect);
-        rightRegion.color = colors.red;
-        rightRegion.overlayColor = withAlpha(colors.red, 0.2);
-
-        hotColdSim.measurementRegions = [leftRegion, rightRegion];
+        setLeftRightRegions(hotColdSim);
     </script>
 </body>
 

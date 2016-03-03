@@ -23,24 +23,6 @@ When you release the ball it starts to lose energy because of the friction in th
 I added some more balls. Play around with them some.
 
 <script>
-
-    function billiardsParticleGenerator(simulation, particleIndex)
-    {
-        var position;
-        if (particleIndex == 0)
-        {
-            position = vec2.fromValues(-0.5, 0);
-        }
-        else
-        {
-            position = triangularLatticePosition(simulation, particleIndex - 1);
-            vec2.add(position, position, vec2.fromValues(0.3, 0))
-        }
-        var velocity = vec2.fromValues(0, 0);
-        var particle = new Particle(position, velocity, colors.black);
-        return particle;
-    }
-
     createSimulation("billiards", {
         graphs: ["energy"],
         particleGenerator: billiardsParticleGenerator,
@@ -106,9 +88,27 @@ Have a look at these two systems:
     * Maybe let user give them different energy
 
 <script>
+    function hotColdGenerator(simulation, particleIndex)
+    {
+        var position;
+        var velocity;
+        if (particleIndex % 2)
+        {
+            position = randomPointInRect(simulation.leftRect);
+            velocity = randomVelocity(0.01);
+        }
+        else
+        {
+            position = randomPointInRect(simulation.rightRect);
+            velocity = randomVelocity(0.03);
+        }
+        var particle = new Particle(position, velocity, colors.black);
+        return particle;
+    }
+
     var hotColdSim = createSimulation("hotAndCold", {
         graphs: ["energy"],
-        particleGenerator: uniformParticleGenerator,
+        particleGenerator: hotColdGenerator,
         parameters: {
             particleCount: 200,
             radiusScaling: 0.01,
@@ -118,16 +118,7 @@ Have a look at these two systems:
         walls: [{start: vec2.fromValues(0, -1), end: vec2.fromValues(0, 1)}],
     });
 
-    leftRegion = createMeasurementRegion();
-    leftRegion.bounds.setFromRect(hotColdSim.leftRect);
-    leftRegion.color = colors.blue;
-    leftRegion.overlayColor = withAlpha(colors.blue, 0.2);
-    var rightRegion = createMeasurementRegion();
-    rightRegion.bounds.setFromRect(hotColdSim.rightRect);
-    rightRegion.color = colors.red;
-    rightRegion.overlayColor = withAlpha(colors.red, 0.2);
-
-    hotColdSim.measurementRegions = [leftRegion, rightRegion];
+    setLeftRightRegions(hotColdSim);
 
 </script>
 
