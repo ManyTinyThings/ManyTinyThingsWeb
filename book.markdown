@@ -33,6 +33,7 @@ Thermodynamics is the study of heat. What is heat? That's like temperature, righ
 
 #### Small ideas
 
+* Top of each page: "This page assumes you are familiar with the following concepts (click on them to read more)"
 
 * We see that Energy is conserved, which should be true for elastic collisions. [Is momentum conserved? Why/why not?]
 
