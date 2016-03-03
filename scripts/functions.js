@@ -64,13 +64,38 @@ function createGraph(div, label)
     return graph;
 }
 
-function addCurve(graph, x, y)
+function addCurve(graph, opts)
 {
-    var curve = [];
-    for (var i = 0; i < x.length; i++)
-    {
-        curve.push(vec2.fromValues(x[i], y[i]));
+    combineWithDefaults(opts, {
+        color: colors.black,
+    });
+
+    var curve = {
+        points: [],
+        color: opts.color,
+    };
+
+    var x = opts.x;
+    var y = opts.y;
+
+    if (! x) {
+        for (var i = 0; i < y.length; i++) {
+            curve.points.push(vec2.fromValues(i, y[i]));
+        }
     }
+    else if (! y) {
+        for (var i = 0; i < x.length; i++) {
+            curve.points.push(vec2.fromValues(x[i], i));
+        }   
+    }
+    else
+    {
+        for (var i = 0; i < x.length; i++)
+        {
+            curve.points.push(vec2.fromValues(x[i], y[i]));
+        }
+    }
+    
     graph.curves.push(curve);
 }
 
@@ -92,11 +117,11 @@ function drawGraph(graph)
     }
     for (var curveIndex = 0; curveIndex < graph.curves.length; curveIndex++)
     {
-        var curve = graph.curves[curveIndex];
-        for (var i = 0; i < curve.length; i++)
+        var points = graph.curves[curveIndex].points;
+        for (var i = 0; i < points.length; i++)
         {
-            var x = curve[i][0];
-            var y = curve[i][1];
+            var x = points[i][0];
+            var y = points[i][1];
             if (x < autoLimits.xMin)
             {
                 autoLimits.xMin = x;
@@ -161,7 +186,8 @@ function drawGraph(graph)
     clearRenderer(graph.renderer);
     for (var curveIndex = 0; curveIndex < graph.curves.length; curveIndex++)
     {
-        drawTrajectory(graph.renderer, graph.curves[curveIndex], colors.black);
+        var curve = graph.curves[curveIndex];
+        drawTrajectory(graph.renderer, curve.points, curve.color);
     }
     graph.curves = [];
 }
@@ -170,6 +196,8 @@ function createMeasurementRegion()
 {
     var region = {};
     region.bounds = new Rect();
+    region.color = colors.black;
+    region.overlayColor = colors.transparent;
     region.measurements = {
         time: [],
         energy: [],
@@ -1017,6 +1045,20 @@ addColor(
     rgba: [0.5, 0.5, 0.5, 1],
 })
 
+addColor(
+{
+    name: "transparent",
+    rgba: [0, 0, 0, 0],
+})
+
+function withAlpha(color, alpha)
+{
+    return {
+        name: color.name,
+        rgba: [color.rgba[0], color.rgba[1], color.rgba[2], alpha],
+    }
+}
+
 // Simulation
 
 
@@ -1024,12 +1066,17 @@ function drawSimulation(simulation)
 {
     clearRenderer(simulation.renderer);
 
-    drawParticles(simulation.renderer, simulation.particles, simulation.parameters.radiusScaling);
+    for (var regionIndex = 0; regionIndex < simulation.measurementRegions.length; regionIndex++) {
+        var region = simulation.measurementRegions[regionIndex];
+        drawRectangle(simulation.renderer, region.bounds, region.overlayColor);
+    }
 
     for (var i = 0; i < simulation.walls.length; i++) {
         var wall = simulation.walls[i];
         drawTrajectory(simulation.renderer, [wall.start, wall.end], colors.black);
     }
+
+    drawParticles(simulation.renderer, simulation.particles, simulation.parameters.radiusScaling);
 
     if (simulation.parameters.trajectoryEnabled)
     {
@@ -1466,6 +1513,7 @@ var updateSimulation = function()
             // NOTE: save more data than shown, to avoid weird autoscaling in plots
             while ((simulation.time - m.time[++tooOldCount]) > 2 * simulation.parameters.measurementWindowLength)
             {};
+
             for (var key in m)
             {
                 m[key].splice(0, tooOldCount);
@@ -1488,8 +1536,8 @@ var updateSimulation = function()
             m.energy.push(regionEnergy);
             m.temperature.push(regionTemperature);
 
-            addCurve(simulation.graphs.energy, m.time, m.energy);
-            addCurve(simulation.graphs.temperature, m.time, m.temperature);
+            addCurve(simulation.graphs.energy, {x: m.time, y: m.energy, color: region.color});
+            addCurve(simulation.graphs.temperature, {x: m.time, y: m.temperature, color: region.color});
         }
 
         // Plot things
@@ -1594,7 +1642,7 @@ Rect.prototype.setLeftTopRightBottom = function(left, top, right, bottom)
     this.right = right;
     this.bottom = bottom;
     this.width = right - left;
-    this.height = top - bottom;
+    this.height = bottom - top;
     vec2.set(this.center, (left + right) / 2, (top + bottom) / 2);
     return this;
 }

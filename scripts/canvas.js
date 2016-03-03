@@ -68,6 +68,17 @@ function drawTrajectory(renderer, trajectory, color)
     context.stroke();
 }
 
+function drawRectangle(renderer, rectangle, color)
+{
+    var context = renderer.context;
+
+    context.fillStyle = cssFromRGBA(color.rgba);
+    var topLeftCorner = canvasFromWorld(renderer, vec2.fromValues(rectangle.left, rectangle.top));
+    var width = rectangle.width * renderer.canvas.width;
+    var height = rectangle.height * renderer.canvas.height;
+    context.fillRect(topLeftCorner[0], topLeftCorner[1], width, height);
+}
+
 function resizeRenderer(renderer)
 {
     // TODO

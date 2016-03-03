@@ -115,12 +115,17 @@ Have a look at these two systems:
             bondEnergy: 0,
             maxInitialSpeed: 0.05,
         },
+        walls: [{start: vec2.fromValues(0, -1), end: vec2.fromValues(0, 1)}],
     });
 
     leftRegion = createMeasurementRegion();
     leftRegion.bounds.setFromRect(hotColdSim.leftRect);
+    leftRegion.color = colors.blue;
+    leftRegion.overlayColor = withAlpha(colors.blue, 0.2);
     var rightRegion = createMeasurementRegion();
     rightRegion.bounds.setFromRect(hotColdSim.rightRect);
+    rightRegion.color = colors.red;
+    rightRegion.overlayColor = withAlpha(colors.red, 0.2);
 
     hotColdSim.measurementRegions = [leftRegion, rightRegion];
 
