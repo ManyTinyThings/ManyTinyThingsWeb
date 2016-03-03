@@ -1533,6 +1533,8 @@ var updateSimulation = function()
                 }
             }
 
+            regionTemperature /= simulation.particles.length;
+
             m.energy.push(regionEnergy);
             m.temperature.push(regionTemperature);
 
