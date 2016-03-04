@@ -619,6 +619,7 @@ function createSimulation(id, opts)
 
     simulation.running = true;
     simulation.time = 0;
+    simulation.times = [];
     simulation.pausedByUser = false;
     simulation.previousTimestamp = 0;
 
@@ -983,8 +984,14 @@ function createSimulation(id, opts)
         temperature: createGraph(createAndAppend("div", simulation.visualizationDiv), "Temperature"),
         counts: createGraph(createAndAppend("div", simulation.visualizationDiv), "Counts"),
         countsHistogram: createGraph(createAndAppend("div", simulation.visualizationDiv), "Counts"),
+        entropy: createGraph(createAndAppend("div", simulation.visualizationDiv), "Entropy"),
     }
-    simulation.timeSeries = [simulation.visualizations.energy, simulation.visualizations.temperature, simulation.visualizations.counts];
+    simulation.timeSeries = [
+        simulation.visualizations.energy, 
+        simulation.visualizations.temperature, 
+        simulation.visualizations.counts,
+        simulation.visualizations.entropy,
+    ];
     simulation.histograms = [simulation.visualizations.countHistogram];
 
     for (var key in simulation.visualizations)
@@ -1015,6 +1022,7 @@ function createSimulation(id, opts)
         copyRectangle(totalRegion.bounds, simulation.boxBounds);
         simulation.measurementRegions = [totalRegion];
     }
+    simulation.entropy = [];
 
     // Start simulation
 
@@ -1622,6 +1630,10 @@ var updateSimulation = function()
 
         // Measurements
 
+
+
+        var totalEntropy = 0;
+
         var barWidth = 1 / simulation.measurementRegions.length;
         for (var regionIndex = 0; regionIndex < simulation.measurementRegions.length; regionIndex++)
         {
@@ -1690,12 +1702,30 @@ var updateSimulation = function()
                     color: region.color,
                 }]
             });
+
+            totalEntropy += microstateEntropy(regionCount / simulation.particles.length);
         }
 
+        simulation.times.push(simulation.time);
+        simulation.entropy.push(totalEntropy);
+        var tooOldCount = -1;
+        // NOTE: save more data than shown, to avoid weird autoscaling in plots
+        while ((simulation.time - simulation.times[++tooOldCount]) > 2 * simulation.parameters.measurementWindowLength)
+        {};
+
+        simulation.entropy.splice(0, tooOldCount);
+        simulation.times.splice(0, tooOldCount);
+
+        addCurve(simulation.visualizations.entropy,
+        {
+            x: m.time,
+            y: simulation.entropy,
+        });
 
         // Plot things
 
         setGraphLimits(simulation.visualizations.counts, {yMax: simulation.particles.length});
+        setGraphLimits(simulation.visualizations.entropy, {yMax: 1});
 
         for (var i = 0; i < simulation.timeSeries.length; ++i)
         {

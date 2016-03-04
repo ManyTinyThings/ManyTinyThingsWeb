@@ -259,17 +259,33 @@ Okay, put them wherever you want (hold _c_ on the keyboard).
         visualizations: ["countsHistogram"],
         parameters: {
             maxInitialSpeed: 0.01,
-            particleCount: 1,
+            particleCount: 0,
             radiusScaling: 0.02,
             bondEnergy: 0,
         },
     });
 
     setLeftRightRegions(initialConfigSim);
-    pauseSimulation(initialConfigSim);
 
 </script>
 
 That didn't take very long, did it?
 
 How come the particles like to spread out, but not come back together? Let's try to understand.
+
+<script>
+    var entropySim = createSimulation("entropySim", {
+        controls: ["resetButton"],
+        particleGenerator: uniformParticleGenerator,
+        visualizations: ["entropy", "countsHistogram"],
+        parameters: {
+            maxInitialSpeed: 0.01,
+            particleCount: 0,
+            radiusScaling: 0.02,
+            bondEnergy: 0,
+        },
+    });
+
+    setLeftRightRegions(entropySim);
+
+</script>
