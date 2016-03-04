@@ -1,3 +1,7 @@
+---
+title: Entropy
+---
+
 # Entropy
 
 When playing billiards, it's easy to make a mess.
@@ -36,7 +40,7 @@ How about something a little easier? Try putting all the particles in the left h
 <script>
     var halfRegionSim = createSimulation("halfRegion", { 
         particleGenerator: uniformParticleGenerator,
-        visualizations: ["counts"],
+        visualizations: ["countsHistogram"],
         parameters: {
             maxInitialSpeed: 0.01,
             particleCount: 20,

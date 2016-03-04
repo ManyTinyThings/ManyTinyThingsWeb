@@ -49,6 +49,8 @@ function createGraph(div, label)
     var span = createAndAppend("div", div);
     span.innerHTML = label;
     var canvas = createAndAppend("canvas", div);
+    canvas.width = 500;
+    canvas.height = 200;
 
     graph.div = div;
     graph.renderer = createRenderer(canvas);
@@ -401,8 +403,14 @@ var hexagonalLatticePosition = function()
 function randomVelocity(maxSpeed)
 {
     var speed = randomInInterval(0, maxSpeed);
+    var direction = randomUnitVector();
+    return vec2.scale(direction, direction, speed);
+}
+
+function randomUnitVector()
+{
     var angle = randomInInterval(0, tau);
-    return vec2.fromValues(speed * Math.cos(angle), speed * Math.sin(angle));
+    return vec2.fromValues(Math.cos(angle), Math.sin(angle));
 }
 
 function uniformVelocity(simulation, particleIndex)
@@ -579,7 +587,7 @@ function createSimulation(id, opts)
     {
         width: 500,
         height: 400,
-        controls: [],
+        controls: ["resetButton"],
         visualizations: [],
         measurementRegions: [],
         walls: [],
@@ -913,8 +921,8 @@ function createSimulation(id, opts)
     {
         name: "friction",
         label: "Friction:",
-        min: 0,
-        minLabel: "None",
+        min: -0.2,
+        minLabel: "Negative?",
         max: 1,
         maxLabel: "A lot",
     });
