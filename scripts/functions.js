@@ -635,6 +635,8 @@ function createSimulation(id, opts)
     simulation.rightRect = new Rectangle();
 
     simulation.parameters = opts.parameters;
+    simulation.initialParameters = {};
+    combineWithDefaults(simulation.initialParameters, opts.parameters);
 
     // TODO: more than one trajectory
     simulation.trajectoryEnabled = false;
@@ -1038,12 +1040,8 @@ function createSimulation(id, opts)
 
 function resetSimulation(simulation)
 {
-    var tempParticleCount = simulation.parameters.particleCount;
-    simulation.parameters.particleCount = 0;
-    updateParticleCount(simulation);
-    simulation.parameters.particleCount = tempParticleCount;
-    updateParticleCount(simulation);
-    drawSimulation(simulation);
+    simulation.parameters = {};
+    combineWithDefaults(simulation.parameters, simulation.initialParameters)
 }
 
 function updateBounds(simulation)
