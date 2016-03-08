@@ -78,7 +78,7 @@ Another big difference: the world isn't made of 11 atoms, there are a lot more!
     createSimulation("manyParticles", {
         particleGenerator: uniformParticleGenerator,
         parameters: {
-            particleCount: 500,
+            particleCount: 250,
             radiusScaling: 0.01,
             bondEnergy: 0,
         },
@@ -86,7 +86,7 @@ Another big difference: the world isn't made of 11 atoms, there are a lot more!
 </script>
 
 Try following a single particle with your eyes. It's hard! 
-And this is only 500 particles. That's about 100 000 000 000 000 000 000 times less than the amount of air particles in a single breath!
+And this is only 250 particles. That's about 100 000 000 000 000 000 000 times less than the amount of air particles in a single breath!
 
 So if we can't keep track of each particle, is there any way we can still make sense of the bouncy, jittery mess?
 
@@ -116,7 +116,7 @@ Take a look at these two boxes of particles. Which one has more energy?
         particleGenerator: hotColdGenerator,
         visualizations: ["energy"],
         parameters: {
-            particleCount: 500,
+            particleCount: 300,
             radiusScaling: 0.01,
             bondEnergy: 0,
             maxInitialSpeed: 0.02,
@@ -167,7 +167,7 @@ Yep, the right one definitely has more energy. Now compare with this:
     setLeftRightRegions(slowFastBall);
 </script>
 
-In both cases, it's obvious that one side has more energy. But with a single ball, there is a clear direction, and you can easily change the direction (try it!). For example: try decreasing the energy of both kinds of system. It's much harder to control!
+In both cases, it's obvious that one side has more energy. But with a single ball, there is a clear direction, and you can easily change the direction (try it!). With a lot of tiny particles, direction doesn't make sense, and it's hard to control what happens. Try _decreasing_ the energy of both kinds of system.
 
 Both cases are really the same kinetic energy, but the random, bouncy, jiggling energy is of a different character than the moving-in-a-straight-line energy of the single ball.
 
@@ -288,4 +288,44 @@ How come the particles like to spread out, but not come back together? Let's try
 
     setLeftRightRegions(entropySim);
 
+</script>
+
+# Friction
+
+<script>
+    function oneMassiveParticleGenerator(simulation, particleIndex)
+    {
+        var particle = uniformParticleGenerator(simulation, particleIndex);
+        if (particleIndex == 0)
+        {
+            particle.mass = 50;
+            particle.radius = Math.sqrt(50);
+        }
+        return particle;
+    }
+
+    createSimulation("randomWalk", {
+        controls: ["trajectoryEnabled"],
+        graphs: ["energy"],
+        particleGenerator: oneMassiveParticleGenerator,
+        parameters: {
+            particleCount: 500,
+            radiusScaling: 0.005,
+            bondEnergy: 0,
+            maxInitialSpeed: 0.05,
+        },
+    });
+</script>
+
+# States of matter
+
+<script>
+    createSimulation("lattice", {
+        controls: ["deltaTemperature"],
+        graphs: ["energy"],
+        particleGenerator: latticeParticleGenerator,
+        parameters: {
+            particleCount: 91,
+        },
+    });
 </script>
