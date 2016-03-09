@@ -272,7 +272,7 @@ function createMeasurementRegion()
     return region;
 }
 
-function setLeftRightRegions(simulation)
+function setColdHotRegions(simulation)
 {
     var leftRegion = createMeasurementRegion();
     copyRectangle(leftRegion.bounds, simulation.leftRect);
@@ -1129,6 +1129,12 @@ addColor(
 {
     name: "green",
     rgba: [0, 1, 0, 1],
+});
+
+addColor(
+{
+    name: "yellow",
+    rgba: [1, 0.8, 0, 1],
 });
 
 addColor(

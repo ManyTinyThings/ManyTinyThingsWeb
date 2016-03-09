@@ -1,5 +1,5 @@
 ---
-title: Energy and Heat
+title: Demo
 ---
 
 # Energy and Heat
@@ -124,7 +124,7 @@ Take a look at these two boxes of particles. Which one has more energy?
         walls: [{start: vec2.fromValues(0, -1), end: vec2.fromValues(0, 1)}],
     });
 
-    setLeftRightRegions(hotColdSim);
+    setColdHotRegions(hotColdSim);
 
 </script>
 
@@ -164,7 +164,7 @@ Yep, the right one definitely has more energy. Now compare with this:
         walls: [{start: vec2.fromValues(0, -1), end: vec2.fromValues(0, 1)}],
     });
 
-    setLeftRightRegions(slowFastBall);
+    setColdHotRegions(slowFastBall);
 </script>
 
 In both cases, it's obvious that one side has more energy. But with a single ball, there is a clear direction, and you can easily change the direction (try it!). With a lot of tiny particles, direction doesn't make sense, and it's hard to control what happens. Try _decreasing_ the energy of both kinds of system.
@@ -224,13 +224,13 @@ How about something a little easier? Try putting all the particles in the left h
         },
     });
 
-    setLeftRightRegions(halfRegionSim);
+    setColdHotRegions(halfRegionSim);
 
 </script>
 
 It's quite hard, and they keep wanting to escape! Notice how, if you don't touch anything, they tend to spread out so that about half is on the left side and half on the right.
 
-Don't agree? It's more obvious when there are more particles.
+Don't agree? It's more obvious when there are more particles. You can add even more by holding down _c_ on the keyboard and clicking.
 
 <script>
     var halfRegionMoreSim = createSimulation("halfRegionMore", { 
@@ -244,17 +244,17 @@ Don't agree? It's more obvious when there are more particles.
         },
     });
 
-    setLeftRightRegions(halfRegionMoreSim);
+    setColdHotRegions(halfRegionMoreSim);
 
 </script>
 
 "But you're cheating!", you might say, "you're starting with all particles evenly spread out!"
 
-Okay, put them wherever you want (hold _c_ on the keyboard).
+Okay, put them wherever you want (hold _c_ on the keyboard) and then give them a little kick.
 
 <script>
     var initialConfigSim = createSimulation("initialConfig", {
-        controls: ["playPauseButton", "resetButton"],
+        controls: ["resetButton"],
         particleGenerator: uniformParticleGenerator,
         visualizations: ["countsHistogram"],
         parameters: {
@@ -265,11 +265,46 @@ Okay, put them wherever you want (hold _c_ on the keyboard).
         },
     });
 
-    setLeftRightRegions(initialConfigSim);
+    setColdHotRegions(initialConfigSim);
 
 </script>
 
 That didn't take very long, did it?
+
+It works the same with more regions than just two.
+
+<script>
+    var fourRegionSim = createSimulation("fourRegion", {
+        controls: ["resetButton"],
+        particleGenerator: uniformParticleGenerator,
+        visualizations: ["countsHistogram"],
+        parameters: {
+            maxInitialSpeed: 0,
+            particleCount: 0,
+            radiusScaling: 0.02,
+            bondEnergy: 0,
+        },
+    });
+
+    fourRegionSim.measurementRegions = [];
+    var regionCount = 4;
+    var regionWidth = fourRegionSim.boxBounds.width / regionCount;
+    var regionColors = [colors.blue, colors.green, colors.yellow, colors.red];
+    for (var i = 0; i < regionCount; i++) {
+        var region = createMeasurementRegion();
+        var left = fourRegionSim.boxBounds.left + i * regionWidth;
+        var right = left + regionWidth;
+        setLeftTopRightBottom(region.bounds,
+            left, fourRegionSim.boxBounds.top, right, fourRegionSim.boxBounds.bottom);
+        region.color = regionColors[i];
+        region.overlayColor = withAlpha(regionColors[i], 0.2);
+        fourRegionSim.measurementRegions.push(region);
+    }
+</script>
+
+Try putting them in a neat pattern or something. Then give the a little kick. Speed it up if waiting is boring :)
+
+It doesn't matter how ordered they start out. As soon as they start moving they inevitably spread out evenly. What is going on? 
 
 How come the particles like to spread out, but not come back together? Let's try to understand.
 
@@ -286,7 +321,7 @@ How come the particles like to spread out, but not come back together? Let's try
         },
     });
 
-    setLeftRightRegions(entropySim);
+    setColdHotRegions(entropySim);
 
 </script>
 
