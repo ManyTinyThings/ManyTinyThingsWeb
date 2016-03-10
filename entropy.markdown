@@ -7,7 +7,7 @@ title: Entropy
 When playing billiards, it's easy to make a mess.
 
 <script>
-    createSimulation("billiards", {
+    createSimulation({
         particleGenerator: billiardsParticleGenerator,
         parameters: {
             particleCount: 11,
@@ -23,7 +23,7 @@ I mean, try putting the balls back manually. Not my idea of a fun time ...
 Frictionless billiards is even messier!
 
 <script>
-    createSimulation("frictionlessBilliards", {	
+    createSimulation({	
         particleGenerator: billiardsParticleGenerator,
         parameters: {
             particleCount: 11,
@@ -38,7 +38,7 @@ Try putting these back together. It's impossible!
 How about something a little easier? Try putting all the particles in the left half of the box.
 
 <script>
-    var halfRegionSim = createSimulation("halfRegion", { 
+    var halfRegionSim = createSimulation({ 
         particleGenerator: uniformParticleGenerator,
         visualizations: ["countsHistogram"],
         parameters: {

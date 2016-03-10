@@ -7,7 +7,7 @@ title: Energy and Heat
 Here is a billiard ball. Try throwing it around.
 
 <script>
-    createSimulation("single", {
+    createSimulation({
         graphs: ["energy"],
         parameters: {
             particleCount: 1,
@@ -25,7 +25,7 @@ When you release the ball it starts to lose energy because of the friction in th
 I added some more balls. Play around with them some.
 
 <script>
-    createSimulation("billiards", {
+    createSimulation({
         graphs: ["energy"],
         particleGenerator: billiardsParticleGenerator,
         parameters: {
@@ -49,7 +49,7 @@ Let's remove all the friction and see what happens:
     * ask to decrease energy
 
 <script>
-    createSimulation("frictionlessBilliards", {
+    createSimulation({
         graphs: ["energy"],
         particleGenerator: billiardsParticleGenerator,
         parameters: {
@@ -69,7 +69,7 @@ There is one way to change the energy: if you poke the balls after they have sta
 Now, imagine there are lots and lots of tiny, tiny balls bouncing around. Oh wait, we don't have to imagine!
 
 <script>
-    createSimulation("manyParticles", {
+    createSimulation({
         graphs: ["energy"],
         particleGenerator: uniformParticleGenerator,
         parameters: {
@@ -108,7 +108,7 @@ Have a look at these two systems:
         return particle;
     }
 
-    var hotColdSim = createSimulation("hotAndCold", {
+    var hotColdSim = createSimulation({
         graphs: ["energy"],
         particleGenerator: hotColdGenerator,
         parameters: {
@@ -142,7 +142,7 @@ This might seem strange to you, and I agree: at this point, it is not clear how 
         return particle;
     }
 
-    createSimulation("randomWalk", {
+    createSimulation({
         controls: ["trajectoryEnabled"],
         graphs: ["energy"],
         particleGenerator: oneMassiveParticleGenerator,

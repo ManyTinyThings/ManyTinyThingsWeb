@@ -16,7 +16,7 @@ title: Friction
         return particle;
     }
 
-    createSimulation("randomWalk", {
+    createSimulation({
         controls: ["trajectoryEnabled"],
         graphs: ["energy"],
         particleGenerator: oneMassiveParticleGenerator,

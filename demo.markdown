@@ -7,7 +7,7 @@ title: Demo
 Here is a billiard ball. Try throwing it around.
 
 <script>
-    createSimulation("single", {
+    createSimulation({
         visualizations: ["energy"],
         controls: [],
         parameters: {
@@ -25,7 +25,7 @@ When you release the ball it starts to lose energy because of the friction in th
 I added some more balls. Play around with them!
 
 <script>
-    createSimulation("billiards", {
+    createSimulation({
         visualizations: ["energy"],
         particleGenerator: billiardsParticleGenerator,
         parameters: {
@@ -42,7 +42,7 @@ Balls knocking each other around is actually a pretty good model of how the worl
 One big difference: there is no friction.
 
 <script>
-    createSimulation("frictionlessBilliards", {
+    createSimulation({
         visualizations: ["energy"],
         particleGenerator: billiardsParticleGenerator,
         parameters: {
@@ -58,7 +58,7 @@ The atoms are bouncing all over the place, and they never stop. We have created 
 Notice that the energy stays the same. We've already seen what happens if the energy keeps decreasing: everything stops. What happens if the energy always increases? Try out negative friction!
 
 <script>
-    createSimulation("negativeFriction", {
+    createSimulation({
         visualizations: ["energy"],
         controls: ["resetButton", "friction"],
         particleGenerator: billiardsParticleGenerator,
@@ -75,7 +75,7 @@ Yeah... that would be madness.
 Another big difference: the world isn't made of 11 atoms, there are a lot more!
 
 <script>
-    createSimulation("manyParticles", {
+    createSimulation({
         particleGenerator: uniformParticleGenerator,
         parameters: {
             particleCount: 250,
@@ -112,7 +112,7 @@ Take a look at these two boxes of particles. Which one has more energy?
         return particle;
     }
 
-    var hotColdSim = createSimulation("hotAndCold", {
+    var hotColdSim = createSimulation({
         particleGenerator: hotColdGenerator,
         visualizations: ["energy"],
         parameters: {
@@ -152,7 +152,7 @@ Yep, the right one definitely has more energy. Now compare with this:
         return particle;
     }
 
-    var slowFastBall = createSimulation("slowFast", {
+    var slowFastBall = createSimulation({
         visualizations: ["energy"],
         particleGenerator: slowFastGenerator,
         parameters: {
@@ -183,7 +183,7 @@ To be continued...
 When playing billiards, it's easy to make a mess.
 
 <script>
-    createSimulation("billiards2", {
+    createSimulation({
         particleGenerator: billiardsParticleGenerator,
         parameters: {
             particleCount: 11,
@@ -199,7 +199,7 @@ I mean, try putting the balls back manually. Not my idea of a fun time ...
 Frictionless billiards is even messier!
 
 <script>
-    createSimulation("frictionlessBilliards2", { 
+    createSimulation({ 
         particleGenerator: billiardsParticleGenerator,
         parameters: {
             particleCount: 11,
@@ -214,7 +214,7 @@ Try putting these back together. It's impossible!
 How about something a little easier? Try putting all the particles in the left half of the box.
 
 <script>
-    var halfRegionSim = createSimulation("halfRegion", { 
+    var halfRegionSim = createSimulation({ 
         particleGenerator: uniformParticleGenerator,
         visualizations: ["countsHistogram"],
         parameters: {
@@ -233,7 +233,7 @@ It's quite hard, and they keep wanting to escape! Notice how, if you don't touch
 Don't agree? It's more obvious when there are more particles. You can add even more by holding down _c_ on the keyboard and clicking.
 
 <script>
-    var halfRegionMoreSim = createSimulation("halfRegionMore", { 
+    var halfRegionMoreSim = createSimulation({ 
         particleGenerator: uniformParticleGenerator,
         visualizations: ["countsHistogram"],
         parameters: {
@@ -253,7 +253,7 @@ Don't agree? It's more obvious when there are more particles. You can add even m
 Okay, put them wherever you want (hold _c_ on the keyboard) and then give them a little kick.
 
 <script>
-    var initialConfigSim = createSimulation("initialConfig", {
+    var initialConfigSim = createSimulation({
         controls: ["resetButton"],
         particleGenerator: uniformParticleGenerator,
         visualizations: ["countsHistogram"],
@@ -274,7 +274,7 @@ That didn't take very long, did it?
 It works the same with more regions than just two.
 
 <script>
-    var fourRegionSim = createSimulation("fourRegion", {
+    var fourRegionSim = createSimulation({
         controls: ["resetButton"],
         particleGenerator: uniformParticleGenerator,
         visualizations: ["countsHistogram"],
@@ -309,7 +309,7 @@ It doesn't matter how ordered they start out. As soon as they start moving they 
 How come the particles like to spread out, but not come back together? Let's try to understand.
 
 <script>
-    var entropySim = createSimulation("entropySim", {
+    var entropySim = createSimulation({
         controls: ["resetButton"],
         particleGenerator: uniformParticleGenerator,
         visualizations: ["entropy", "countsHistogram"],
@@ -339,7 +339,7 @@ How come the particles like to spread out, but not come back together? Let's try
         return particle;
     }
 
-    createSimulation("randomWalk", {
+    createSimulation({
         controls: ["trajectoryEnabled"],
         graphs: ["energy"],
         particleGenerator: oneMassiveParticleGenerator,
@@ -355,7 +355,7 @@ How come the particles like to spread out, but not come back together? Let's try
 # States of matter
 
 <script>
-    createSimulation("lattice", {
+    createSimulation({
         controls: ["deltaTemperature"],
         graphs: ["energy"],
         particleGenerator: latticeParticleGenerator,

@@ -579,7 +579,9 @@ function pickParticle(simulation, pickPosition, extraRadius)
     return undefined;
 }
 
-function createSimulation(id, opts)
+var simulationCount = 0;
+
+function createSimulation(opts)
 {
     var simulation = {};
 
@@ -612,12 +614,6 @@ function createSimulation(id, opts)
         }
     });
 
-    document.currentScript.insertAdjacentHTML("afterEnd", '<div id="' + id + '"></div>');
-
-    // TODO: maybe don't have an id? only necessary to distinguish ids of input elements, and doesn't bring much else
-
-    simulation.id = id;
-
     simulation.running = true;
     simulation.time = 0;
     simulation.times = [];
@@ -643,7 +639,11 @@ function createSimulation(id, opts)
     simulation.trajectory = [];
 
     // set up HTML elements
-    simulation.div = document.getElementById(id);
+    simulation.id = "simulation" + simulationCount;
+    simulationCount += 1;
+
+    document.currentScript.insertAdjacentHTML("afterEnd", '<div id="' + simulation.id + '"></div>');
+    simulation.div = document.getElementById(simulation.id);
 
     simulation.canvas = createAndAppend("canvas", simulation.div);
     simulation.canvas.setAttribute("width", opts.width);
