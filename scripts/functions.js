@@ -295,12 +295,12 @@ var tau = 2 * Math.PI;
 
 // Particle object
 
-var Particle = function(position, velocity, color)
+var Particle = function()
 {
-    this.position = position || vec2.create();
-    this.velocity = velocity || vec2.create();
+    this.position = vec2.create();
+    this.velocity = vec2.create();
     this.acceleration = vec2.create();
-    this.color = color || colors.black;
+    this.color = colors.black;
     this.bounds = new Rectangle();
     this.radius = 1;
     this.mass = 1;
@@ -443,64 +443,57 @@ function twoColors(simulation, particleIndex)
 
 function uniformParticleGenerator(simulation, particleIndex)
 {
-    return new Particle(
-        uniformPosition(simulation, particleIndex),
-        uniformVelocity(simulation, particleIndex),
-        colors.black
-    );
+        var particle = new Particle();
+        particle.position = uniformPosition(simulation, particleIndex);
+        particle.velocity = uniformVelocity(simulation, particleIndex);
+        return particle;
 }
 
 function groupedParticleGenerator(simulation, particleIndex)
 {
-    return new Particle(
-        groupedPosition(simulation, particleIndex),
-        uniformVelocity(simulation, particleIndex),
-        colors.black
-    );
+    var particle = new Particle();
+    particle.position = groupedPosition(simulation, particleIndex);
+    particle.velocity = uniformVelocity(simulation, particleIndex);
+    return particle;
 }
 
 function fallingParticleGenerator(simulation, particleIndex)
 {
-    return new Particle(
-        groupedPosition(simulation, particleIndex),
-        identicalVelocity(simulation, particleIndex),
-        colors.black
-    );
+        var particle = new Particle();
+        particle.position = groupedPosition(simulation, particleIndex);
+        particle.velocity = identicalVelocity(simulation, particleIndex);
+        return particle;
 }
 
 function twoColorParticleGenerator(simulation, particleIndex)
 {
-    return new Particle(
-        halvesPosition(simulation, particleIndex),
-        uniformVelocity(simulation, particleIndex),
-        twoColors(simulation, particleIndex)
-    );
+        var particle = new Particle();
+        particle.position = halvesPosition(simulation, particleIndex);
+        particle.velocity = uniformVelocity(simulation, particleIndex);
+        particle.color = twoColors(simulation, particleIndex);
+        return particle;
 }
 
 function latticeParticleGenerator(simulation, particleIndex)
 {
-    return new Particle(
-        hexagonalLatticePosition(simulation, particleIndex),
-        vec2.create(),
-        colors.black
-    );
+    var particle = new Particle();
+    particle.position = hexagonalLatticePosition(simulation, particleIndex);
+    return particle;
 }
 
 
 function billiardsParticleGenerator(simulation, particleIndex)
 {
-    var position;
+    var particle = new Particle();
     if (particleIndex == 0)
     {
-        position = vec2.fromValues(-0.5, 0);
+        particle.position = vec2.fromValues(-0.5, 0);
     }
     else
     {
-        position = triangularLatticePosition(simulation, particleIndex - 1);
-        vec2.add(position, position, vec2.fromValues(0.3, 0))
+        particle.position = triangularLatticePosition(simulation, particleIndex - 1);
+        vec2.add(particle.position, particle.position, vec2.fromValues(0.3, 0))
     }
-    var velocity = vec2.fromValues(0, 0);
-    var particle = new Particle(position, velocity, colors.black);
     return particle;
 }
 

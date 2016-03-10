@@ -95,20 +95,18 @@ Take a look at these two boxes of particles. Which one has more energy?
 <script>
     function hotColdGenerator(simulation, particleIndex)
     {
-        var position;
-        var velocity;
+        var particle = new Particle();
         var maxSpeed = simulation.parameters.maxInitialSpeed;
         if (particleIndex % 2)
         {
-            position = randomPointInRect(simulation.leftRect);
-            velocity = randomVelocity(maxSpeed / 10);
+            particle.position = randomPointInRect(simulation.leftRect);
+            particle.velocity = randomVelocity(maxSpeed / 10);
         }
         else
         {
-            position = randomPointInRect(simulation.rightRect);
-            velocity = randomVelocity(maxSpeed);
+            particle.position = randomPointInRect(simulation.rightRect);
+            particle.velocity = randomVelocity(maxSpeed);
         }
-        var particle = new Particle(position, velocity, colors.black);
         return particle;
     }
 
@@ -133,22 +131,20 @@ Yep, the right one definitely has more energy. Now compare with this:
 <script>
     function slowFastGenerator(simulation, particleIndex)
     {
-        var position;
-        var velocity;
+        var particle = new Particle();
         var maxSpeed = simulation.parameters.maxInitialSpeed;
         if (particleIndex % 2)
         {
-            position = randomPointInRect(simulation.leftRect);
-            velocity = randomUnitVector();
-            vec2.scale(velocity, velocity, maxSpeed / 5);
+            particle.position = randomPointInRect(simulation.leftRect);
+            particle.velocity = randomUnitVector();
+            vec2.scale(particle.velocity, particle.velocity, maxSpeed / 5);
         }
         else
         {
-            position = randomPointInRect(simulation.rightRect);
-            velocity = randomUnitVector();
-            vec2.scale(velocity, velocity, maxSpeed);
+            particle.position = randomPointInRect(simulation.rightRect);
+            particle.velocity = randomUnitVector();
+            vec2.scale(particle.velocity, particle.velocity, maxSpeed);
         }
-        var particle = new Particle(position, velocity, colors.black);
         return particle;
     }
 
@@ -167,7 +163,48 @@ Yep, the right one definitely has more energy. Now compare with this:
     setColdHotRegions(slowFastBall);
 </script>
 
-In both cases, it's obvious that one side has more energy. But with a single ball, there is a clear direction, and you can easily change the direction (try it!). With a lot of tiny particles, direction doesn't make sense, and it's hard to control what happens. Try _decreasing_ the energy of both kinds of system.
+Here it's even more obvious that the right side has more energy.
+
+But with a single ball, there is a clear direction, and you can easily change the direction. With a lot of tiny particles, direction doesn't make sense, and it's hard to control what happens.
+
+To demonstrate: try _decreasing_ the energy of both systems below.
+
+<script>
+    function oneMany(simulation, particleIndex)
+    {
+        var particle = new Particle();
+        var maxSpeed = simulation.parameters.maxInitialSpeed;
+        if (particleIndex == 0)
+        {
+            particle.position = randomPointInRect(simulation.leftRect);
+            particle.velocity = randomUnitVector();
+            vec2.scale(particle.velocity, particle.velocity, maxSpeed);
+            particle.radius = 10;
+            particle.mass = 20;
+        }
+        else
+        {
+            particle.position = randomPointInRect(simulation.rightRect);
+            particle.velocity = randomUnitVector();
+            vec2.scale(particle.velocity, particle.velocity, maxSpeed / 10);
+        }
+        return particle;
+    }
+
+    var oneManySim = createSimulation({
+        visualizations: ["energy"],
+        particleGenerator: oneMany,
+        parameters: {
+            particleCount: 101,
+            radiusScaling: 0.02,
+            bondEnergy: 0,
+            maxInitialSpeed: 0.1,
+        },
+        walls: [{start: vec2.fromValues(0, -1), end: vec2.fromValues(0, 1)}],
+    });
+
+    setColdHotRegions(oneManySim);
+</script>
 
 Both cases are really the same kinetic energy, but the random, bouncy, jiggling energy is of a different character than the moving-in-a-straight-line energy of the single ball.
 
