@@ -1472,7 +1472,7 @@ var updateSimulation = function()
                     colorCounts[particle.color.name] = 1 + (colorCounts[particle.color.name] || 0);
                 }
 
-                particle.kineticEnergy = 0.5 * vec2.squaredLength(particle.velocity);
+                particle.kineticEnergy = 0.5 * particle.mass * vec2.squaredLength(particle.velocity);
 
                 vec2.scaleAndAdd(totalMomentum, totalMomentum, particle.velocity, particle.mass);
 

@@ -178,15 +178,15 @@ To demonstrate: try _decreasing_ the energy of both systems below.
         {
             particle.position = randomPointInRect(simulation.leftRect);
             particle.velocity = randomUnitVector();
-            vec2.scale(particle.velocity, particle.velocity, maxSpeed);
-            particle.radius = 10;
-            particle.mass = 20;
+            vec2.scale(particle.velocity, particle.velocity, 1.9*maxSpeed);
+            particle.radius = 5;
+            particle.mass = squared(5);
         }
         else
         {
             particle.position = randomPointInRect(simulation.rightRect);
             particle.velocity = randomUnitVector();
-            vec2.scale(particle.velocity, particle.velocity, maxSpeed / 10);
+            vec2.scale(particle.velocity, particle.velocity, maxSpeed);
         }
         return particle;
     }
@@ -198,7 +198,7 @@ To demonstrate: try _decreasing_ the energy of both systems below.
             particleCount: 101,
             radiusScaling: 0.02,
             bondEnergy: 0,
-            maxInitialSpeed: 0.1,
+            maxInitialSpeed: 0.01,
         },
         walls: [{start: vec2.fromValues(0, -1), end: vec2.fromValues(0, 1)}],
     });
