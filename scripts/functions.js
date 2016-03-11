@@ -205,29 +205,15 @@ function drawGraph(graph)
 
     var paddingFactor = 0.05;
     var minimumPadding = 0.00001;
-    var paddingX = Math.max(paddingFactor * (limits.xMax - limits.xMin), minimumPadding);
-    var paddingY = Math.max(paddingFactor * (limits.yMax - limits.yMin), minimumPadding);
+    var xPadding = Math.max(paddingFactor * (limits.xMax - limits.xMin), minimumPadding);
+    var yPadding = Math.max(paddingFactor * (limits.yMax - limits.yMin), minimumPadding);
 
-    // TODO: always pad?
-
-    if (graph.limits.xMin == "auto")
-    {
-        limits.xMin += -paddingX;
-    }
-    if (graph.limits.xMax == "auto")
-    {
-        limits.xMax += paddingX;
-    }
-    if (graph.limits.yMin == "auto")
-    {
-        limits.yMin += -paddingY;
-    }
-    if (graph.limits.yMax == "auto")
-    {
-        limits.yMax += paddingY;
-    }
-
-    setLeftTopRightBottom(graph.renderer.worldBounds, limits.xMin, limits.yMax, limits.xMax, limits.yMin);
+    setLeftTopRightBottom(graph.renderer.worldBounds, 
+        limits.xMin - xPadding, 
+        limits.yMax + yPadding,
+        limits.xMax + xPadding,
+        limits.yMin - yPadding
+        );
 
     // Clear and draw
 
