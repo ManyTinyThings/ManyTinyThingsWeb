@@ -54,7 +54,7 @@ How about something a little easier? Try putting all the particles in the left h
 
 It's quite hard, and they keep wanting to escape! Notice how, if you don't touch anything, they tend to spread out so that about half is on the left side and half on the right.
 
-Don't agree? It's more obvious when there are more particles. You can add even more by holding down _c_ on the keyboard and clicking.
+Don't agree? It's more obvious when there are more particles.
 
 <script>
     var halfRegionMoreSim = createSimulation({ 
@@ -74,7 +74,7 @@ Don't agree? It's more obvious when there are more particles. You can add even m
 
 "But you're cheating!", you might say, "you're starting with all particles evenly spread out!"
 
-Okay, put them wherever you want (hold _c_ on the keyboard) and then give them a little kick.
+Okay, put them wherever you want (hold _c_ on the keyboard and use the mouse) and then give them a kick.
 
 <script>
     var initialConfigSim = createSimulation({
@@ -82,7 +82,7 @@ Okay, put them wherever you want (hold _c_ on the keyboard) and then give them a
         particleGenerator: uniformParticleGenerator,
         visualizations: ["countsHistogram"],
         parameters: {
-            maxInitialSpeed: 0.01,
+            maxInitialSpeed: 0,
             particleCount: 0,
             radiusScaling: 0.02,
             bondEnergy: 0,
@@ -93,7 +93,7 @@ Okay, put them wherever you want (hold _c_ on the keyboard) and then give them a
 
 </script>
 
-That didn't take very long, did it?
+It can take a while for them to spread out. If you're impatient, try giving them a harder kick (or more kicks, if you prefer).
 
 It works the same with more regions than just two.
 
@@ -125,8 +125,6 @@ It works the same with more regions than just two.
         fourRegionSim.measurementRegions.push(region);
     }
 </script>
-
-Try putting them in a neat pattern or something. Then give the a little kick. Speed it up if waiting is boring :)
 
 It doesn't matter how ordered they start out. As soon as they start moving they inevitably spread out evenly. What is going on? 
 

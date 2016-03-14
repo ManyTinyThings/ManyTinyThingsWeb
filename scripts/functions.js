@@ -49,7 +49,7 @@ function createGraph(div, label)
     var span = createAndAppend("div", div);
     span.innerHTML = label;
     var canvas = createAndAppend("canvas", div);
-    canvas.width = 500;
+    canvas.width = 400;
     canvas.height = 200;
 
     graph.div = div;
@@ -566,7 +566,7 @@ function createSimulation(opts)
 
     combineWithDefaults(opts,
     {
-        width: 500,
+        width: 400,
         height: 400,
         controls: ["resetButton"],
         visualizations: [],
@@ -585,7 +585,6 @@ function createSimulation(opts)
             simulationSpeed: 1,
             particleCount: 91,
             radiusScaling: 0.08,
-            boxSize: 500,
             friction: 0,
             bondEnergy: 0.0001,
             measurementWindowLength: 100,
@@ -623,12 +622,17 @@ function createSimulation(opts)
 
     document.currentScript.insertAdjacentHTML("afterEnd", '<div id="' + simulation.id + '"></div>');
     simulation.div = document.getElementById(simulation.id);
+    simulation.div.setAttribute("class", "simulation");
 
-    simulation.canvas = createAndAppend("canvas", simulation.div);
+    simulation.leftDiv = createAndAppend("div", simulation.div);
+    simulation.rightDiv = createAndAppend("div", simulation.div);
+
+    simulation.canvas = createAndAppend("canvas", simulation.leftDiv);
     simulation.canvas.setAttribute("width", opts.width);
     simulation.canvas.setAttribute("height", opts.height);
+    simulation.canvas.setAttribute("class", "simulation_canvas");
 
-    simulation.controlsDiv = createAndAppend("div", simulation.div);
+    simulation.controlsDiv = createAndAppend("div", simulation.leftDiv);
     simulation.buttonDiv = createAndAppend("div", simulation.controlsDiv);
     simulation.sliderDiv = createAndAppend("div", simulation.controlsDiv);
     simulation.checkboxDiv = createAndAppend("div", simulation.controlsDiv);
@@ -959,7 +963,7 @@ function createSimulation(opts)
 
     // visualization
 
-    simulation.visualizationDiv = createAndAppend("div", simulation.div);
+    simulation.visualizationDiv = createAndAppend("div", simulation.rightDiv);
     simulation.visualizations = {
         energy: createGraph(createAndAppend("div", simulation.visualizationDiv), "Energy"),
         temperature: createGraph(createAndAppend("div", simulation.visualizationDiv), "Temperature"),
@@ -1025,9 +1029,6 @@ function resetSimulation(simulation)
 
 function updateBounds(simulation)
 {
-
-    simulation.canvas.width = simulation.parameters.boxSize;
-
     // retina stuff
     var canvasWidth = simulation.canvas.width;
     var canvasHeight = simulation.canvas.height;
