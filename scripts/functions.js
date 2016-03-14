@@ -1023,8 +1023,13 @@ function createSimulation(opts)
 
 function resetSimulation(simulation)
 {
+    simulation.parameters.particleCount = 0;
+    updateParticleCount(simulation);
+
     simulation.parameters = {};
-    combineWithDefaults(simulation.parameters, simulation.initialParameters)
+    combineWithDefaults(simulation.parameters, simulation.initialParameters);
+
+    updateParticleCount(simulation);
 }
 
 function updateBounds(simulation)
