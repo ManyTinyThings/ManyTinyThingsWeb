@@ -918,10 +918,10 @@ function createSimulation(opts)
     {
         name: "particleCount",
         label: "Number of particles:",
-        min: 1,
-        minLabel: "1",
-        max: 200,
-        maxLabel: "200",
+        min: 0,
+        minLabel: "0",
+        max: 225,
+        maxLabel: "225",
         step: 1,
         // TODO: make this exponential?
     });

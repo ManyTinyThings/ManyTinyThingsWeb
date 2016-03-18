@@ -140,7 +140,7 @@ When there are just a few particles, our "billiards sense" tells us roughly how 
         parameters: {
             maxInitialSpeed: 0.0,
             particleCount: 3,
-            radiusScaling: 0.2,
+            radiusScaling: 0.1,
             bondEnergy: 0,
         },
     });
@@ -151,13 +151,13 @@ Nothing random about it.
 However, if we add more particles, it becomes much harder to predict what will happen.
 
 <script>
-    var simpleSim = createSimulation({
+    var moreParticlesSim = createSimulation({
         controls: ["resetButton"],
         particleGenerator: uniformParticleGenerator,
         parameters: {
             maxInitialSpeed: 0.0,
             particleCount: 20,
-            radiusScaling: 0.2,
+            radiusScaling: 0.1,
             bondEnergy: 0,
         },
     });
@@ -165,42 +165,61 @@ However, if we add more particles, it becomes much harder to predict what will h
 
 While this simulation follows the exact same rules as the previous one, it's much harder to make predictions, which makes it look random. Let me show you. 
 
-<div class="left_column">
-    Add particles randomly here.
-
-    <script>
-        var randomSim = createSimulation({
-            controls: ["resetButton", "addRandomParticle"],
-            particleGenerator: uniformParticleGenerator,
-            parameters: {
-                maxInitialSpeed: 0.0,
-                particleCount: 0,
-                radiusScaling: 0.03,
-                bondEnergy: 0,
-            },
-        });
-
-        randomSim.pausedByUser = true;
-    </script>
+<div class="two_column">
+Add particles randomly by dragging the slider. As you do, the particles appear randomly, and are equally likely to appear in any free space in the box.
 </div>
 
-<div class="right_column">
-    Run this simulation for a while, then pause it.
-    <script>
-        var frozenSim = createSimulation({
-            controls: ["playPauseButton", "resetButton"],
-            particleGenerator: uniformParticleGenerator,
-            parameters: {
-                maxInitialSpeed: 0.0,
-                particleCount: 100,
-                radiusScaling: 0.03,
-                bondEnergy: 0,
-            },
-        });
-    </script>
+<div class="two_column">
+Kickstart this simulation and run it for a while, then pause.
 </div>
 
 
+<div class="two_column">
+<script>
+    var randomSim = createSimulation({
+        controls: ["resetButton", "particleCount"],
+        particleGenerator: uniformParticleGenerator,
+        parameters: {
+            maxInitialSpeed: 0.0,
+            particleCount: 0,
+            radiusScaling: 0.03,
+            bondEnergy: 0,
+        },
+    });
+</script>
+</div>
+
+<div class="two_column">
+<script>
+
+
+    function gridGenerator(simulation, particleIndex)
+    {
+        var particle = new Particle();
+        particle.position = rectangularLatticePosition(simulation, particleIndex);
+        particle.velocity = uniformVelocity(simulation, particleIndex);
+        return particle;
+    }
+
+
+    var frozenSim = createSimulation({
+        controls: ["playPauseButton", "resetButton"],
+        particleGenerator: gridGenerator,
+        parameters: {
+            maxInitialSpeed: 0,
+            particleCount: 225,
+            radiusScaling: 0.03,
+            bondEnergy: 0,
+        },
+    });
+</script>
+</div>
+
+The two frozen systems are generated in very different ways, yet if you didn't know it, you wouldn't be able to tell which one is which. This brings us to a very useful conclusion:
+
+_After waiting for a certain period of time, the system is practically random._
+
+This means that we can analyse the spreading behavior we observed above by forgetting about the movement of the particles and just think of them as randomly placed.
 
 
 ## Important sentences

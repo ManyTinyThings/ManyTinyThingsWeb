@@ -1,0 +1,65 @@
+body {
+    width: 820px;
+    margin: 10px auto;
+    font-family: sans-serif;
+    font-size: 20px;
+    line-height: 130%;
+}
+
+input[type="range"] {
+    -webkit-appearance: none;
+    width: 300px;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+    height: 10px;
+    background: #ddd;
+    border: none;
+    border-radius: 5px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: black;
+    margin-top: -10px;
+}
+
+input[type=range]:focus {
+    outline: none;
+}
+
+canvas {
+    border: 1px solid black;
+}
+
+canvas:active {
+    cursor: default;
+}
+
+.simulation {
+    width: 820px;
+    display: flex;
+}
+
+.simulation div {
+    margin-right: 10px;
+}
+
+.simulation div div {
+    margin-bottom: 10px;
+}
+
+.verticalText {
+    transform: rotate(-90deg);
+    transform-origin: left top 0;
+    float: left;
+}
+
+.two_column {
+    width: 400px;
+    display: inline-block;
+    margin-right: 5px;
+}
