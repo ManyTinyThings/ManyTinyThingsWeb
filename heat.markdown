@@ -39,11 +39,12 @@ I added some more balls. Play around with them!
 Here I show the total energy, which is what you get by adding up the energy of each particle.
 
 Balls knocking each other around is actually a pretty good model of how the world works at the atomic level.
-One big difference: there is no friction.
+One big difference: _there is no friction_. Lower the friction of the system below and see what happens.
 
 <script>
     createSimulation({
         visualizations: ["energy"],
+        controls: ["friction"],
         particleGenerator: billiardsParticleGenerator,
         parameters: {
             particleCount: 11,
@@ -55,7 +56,9 @@ One big difference: there is no friction.
 
 The atoms are bouncing all over the place, and they never stop. We have created a perpetual motion machine!
 
-Notice that the energy stays the same. We've already seen what happens if the energy keeps decreasing: everything stops. What happens if the energy always increases? Try out negative friction!
+Also, notice that the energy stays the same. Put another way: _energy is never created or destroyed_. This is how the world works at the microscopic level.
+
+We've already seen what happens if the energy keeps decreasing: everything stops. What happens if the energy always increases? Try out negative friction!
 
 <script>
     createSimulation({

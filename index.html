@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Dynamic Thermodynamics</title>
+    <title>Testing Area</title>
     <meta name="viewport" content="width=device-width">
     <script src="scripts/gl-matrix.js" type="text/javascript" charset="utf-8"></script>
     <script src="scripts/functions.js" type="text/javascript"></script>
     <script src="scripts/canvas.js" type="text/javascript" charset="utf-8"></script>
     <style type="text/css" media="screen">
         body {
-            width: 500px;
+            width: 800px;
             margin: 10px auto;
+            font-family: sans-serif;
+            font-size: 20px;
+            line-height: 130%;
         }
 
         input[type="range"] {
@@ -44,24 +47,75 @@
         canvas:active {
             cursor: default;
         }
+
+        .simulation {
+            width: 820px;
+            display: flex;
+        }
+
+        .simulation div {
+            margin-right: 10px;
+        }
+
+        .simulation div div {
+            margin-bottom: 10px;
+        }
+
+        .verticalText {
+            transform: rotate(-90deg);
+            transform-origin: left top 0;
+            float: left;
+        }
     </style>
 </head>
 <body>
-<script>
-    var halfRegionSim = createSimulation({ 
-        particleGenerator: uniformParticleGenerator,
-        visualizations: ["countsHistogram"],
-        parameters: {
-            maxInitialSpeed: 0.01,
-            particleCount: 20,
-            friction: 0,
-            bondEnergy: 0,
-        },
-    });
 
-    setLeftRightRegions(halfRegionSim);
+<div class="left_column">
+    Add particles randomly by dragging the slider. When you drag the slider, particles appear anywhere in the box with equal probability, avoiding overlaps.
 
-</script>
+    <script>
+        var randomSim = createSimulation({
+            controls: ["resetButton", "particleCount"],
+            particleGenerator: uniformParticleGenerator,
+            parameters: {
+                maxInitialSpeed: 0.0,
+                particleCount: 0,
+                radiusScaling: 0.03,
+                bondEnergy: 0,
+            },
+        });
+    </script>
+</div>
+
+<div class="right_column">
+    Run this simulation for a while, then pause it. The particles start out in a grid-formation, not at all randomly.
+
+    <script>
+
+
+        function gridGenerator(simulation, particleIndex)
+        {
+            var particle = new Particle();
+            particle.position = rectangularLatticePosition(simulation, particleIndex);
+            particle.velocity = uniformVelocity(simulation, particleIndex);
+            return particle;
+        }
+
+
+        var frozenSim = createSimulation({
+            controls: ["playPauseButton", "resetButton"],
+            particleGenerator: gridGenerator,
+            parameters: {
+                maxInitialSpeed: 0.01,
+                particleCount: 225,
+                radiusScaling: 0.03,
+                bondEnergy: 0,
+            },
+        });
+
+        frozenSim.pausedByUser = true;
+    </script>
+</div>
 </body>
 
 </html>

@@ -208,12 +208,12 @@ function drawGraph(graph)
     var xPadding = Math.max(paddingFactor * (limits.xMax - limits.xMin), minimumPadding);
     var yPadding = Math.max(paddingFactor * (limits.yMax - limits.yMin), minimumPadding);
 
-    setLeftTopRightBottom(graph.renderer.worldBounds, 
-        limits.xMin - xPadding, 
+    setLeftTopRightBottom(graph.renderer.worldBounds,
+        limits.xMin - xPadding,
         limits.yMax + yPadding,
         limits.xMax + xPadding,
         limits.yMin - yPadding
-        );
+    );
 
     // Clear and draw
 
@@ -349,10 +349,34 @@ var triangularLatticePosition = function()
         var rest = particleIndex - triangularNumber * (triangularNumber + 1) / 2;
         var integerX = rest;
         var integerY = triangularNumber - rest;
-        var latticeSpacing = 2 * simulation.parameters.radiusScaling;
+        var latticeSpacing = 2 * simulation.parameters.radiusScaling * simulation.parameters.separationFactor;
         var overallRotation = -tau / 12;
         vec2.setPolar(latticeX, latticeSpacing * integerX, overallRotation);
         vec2.setPolar(latticeY, latticeSpacing * integerY, overallRotation + tau / 6);
+        return vec2.add(vec2.create(), latticeX, latticeY);
+    }
+}();
+
+var rectangularLatticePosition = function()
+{
+    var latticeX = vec2.create();
+    var latticeY = vec2.create();
+
+    return function(simulation, particleIndex)
+    {
+        if (particleIndex == 0)
+        {
+            return vec2.create();
+        }
+        var layer = Math.floor( (Math.sqrt(particleIndex) + 1) / 2 );
+        var rest = particleIndex - squared(2*layer - 1);
+        var quadrant = Math.floor(rest / (2*layer));
+        var integerX = layer;
+        var integerY = (rest % (2*layer)) - layer + 1;
+        var latticeSpacing = 2 * simulation.parameters.radiusScaling * simulation.parameters.separationFactor;
+        var rotationAngle = quadrant * tau / 4;
+        vec2.setPolar(latticeX, latticeSpacing * integerX, rotationAngle);
+        vec2.setPolar(latticeY, latticeSpacing * integerY, rotationAngle + tau/4);
         return vec2.add(vec2.create(), latticeX, latticeY);
     }
 }();
@@ -429,10 +453,14 @@ function twoColors(simulation, particleIndex)
 
 function uniformParticleGenerator(simulation, particleIndex)
 {
-        var particle = new Particle();
-        particle.position = uniformPosition(simulation, particleIndex);
-        particle.velocity = uniformVelocity(simulation, particleIndex);
-        return particle;
+    var particle = new Particle();
+    do {
+        particle.position = uniformPosition(simulation, particleIndex);    
+    } 
+    while (isColliding(simulation, particle))
+
+    particle.velocity = uniformVelocity(simulation, particleIndex);
+    return particle;
 }
 
 function groupedParticleGenerator(simulation, particleIndex)
@@ -445,19 +473,19 @@ function groupedParticleGenerator(simulation, particleIndex)
 
 function fallingParticleGenerator(simulation, particleIndex)
 {
-        var particle = new Particle();
-        particle.position = groupedPosition(simulation, particleIndex);
-        particle.velocity = identicalVelocity(simulation, particleIndex);
-        return particle;
+    var particle = new Particle();
+    particle.position = groupedPosition(simulation, particleIndex);
+    particle.velocity = identicalVelocity(simulation, particleIndex);
+    return particle;
 }
 
 function twoColorParticleGenerator(simulation, particleIndex)
 {
-        var particle = new Particle();
-        particle.position = halvesPosition(simulation, particleIndex);
-        particle.velocity = uniformVelocity(simulation, particleIndex);
-        particle.color = twoColors(simulation, particleIndex);
-        return particle;
+    var particle = new Particle();
+    particle.position = halvesPosition(simulation, particleIndex);
+    particle.velocity = uniformVelocity(simulation, particleIndex);
+    particle.color = twoColors(simulation, particleIndex);
+    return particle;
 }
 
 function latticeParticleGenerator(simulation, particleIndex)
@@ -486,41 +514,59 @@ function billiardsParticleGenerator(simulation, particleIndex)
 function updateParticleCount(simulation)
 {
     var newParticleCount = simulation.parameters.particleCount;
-    if (newParticleCount == simulation.particleCount)
+    if (newParticleCount == simulation.particles.length)
     {
         return;
     }
-    else if (newParticleCount < simulation.particleCount)
+    else if (newParticleCount < simulation.particles.length)
     {
         simulation.particles.splice(newParticleCount, Number.MAX_VALUE);
     }
     else
     {
-        for (var particleIndex = simulation.particleCount; particleIndex < newParticleCount;
+        for (var particleIndex = simulation.particles.length; particleIndex < newParticleCount;
             ++particleIndex)
         {
             simulation.particles.push(simulation.particleGenerator(simulation, particleIndex))
         }
         // TODO: move particles out of each other so that no overlaps occur
     }
-    simulation.particleCount = newParticleCount;
 }
 
 function addParticle(simulation, position)
 {
     var inside = doesRectContainPoint(simulation.boxBounds, position);
-    var particleIndex = simulation.particleCount;
-    var particle = simulation.particleGenerator(simulation, particleIndex);
-    particle.position = position;
-    simulation.particles.push(particle);
-    simulation.particleCount += 1;
-    simulation.parameters.particleCount += 1;
+    if (inside)
+    {
+        var particleIndex = simulation.particles.length;
+        var particle = simulation.particleGenerator(simulation, particleIndex);
+        particle.position = position;
+        simulation.particles.push(particle);
+        simulation.parameters.particleCount += 1;    
+    }
+}
+
+function isColliding(simulation, particle)
+{
+    var hitParticle = pickParticle(simulation, particle.position, particle.radius);
+    if (hitParticle >= 0)
+    {
+        return true;
+    }
+    for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
+    {
+        var wall = simulation.walls[wallIndex];
+        var collision = wallParticleCollision(simulation, wall, particle);
+        if (collision.overlap > 0)
+        {
+            return true;
+        }
+    }
 }
 
 function removeParticle(simulation, particleIndex)
 {
     simulation.particles.splice(particleIndex, 1);
-    simulation.particleCount -= 1;
     simulation.parameters.particleCount -= 1;
 }
 
@@ -539,12 +585,9 @@ function square(x)
 
 function pickParticle(simulation, pickPosition, extraRadius)
 {
-    if (extraRadius === undefined)
-    {
-        extraRadius = 0;
-    }
+    extraRadius = extraRadius || 0;
 
-    for (var particleIndex = 0; particleIndex < simulation.particleCount;
+    for (var particleIndex = 0; particleIndex < simulation.particles.length;
         ++particleIndex)
     {
         var particle = simulation.particles[particleIndex];
@@ -555,7 +598,7 @@ function pickParticle(simulation, pickPosition, extraRadius)
             return particleIndex;
         }
     }
-    return undefined;
+    return -1;
 }
 
 var simulationCount = 0;
@@ -599,7 +642,6 @@ function createSimulation(opts)
     simulation.previousTimestamp = 0;
 
     simulation.particles = [];
-    simulation.particleCount = 0;
     simulation.particleGenerator = opts.particleGenerator;
 
     simulation.quadTree = undefined;
@@ -636,8 +678,6 @@ function createSimulation(opts)
     simulation.buttonDiv = createAndAppend("div", simulation.controlsDiv);
     simulation.sliderDiv = createAndAppend("div", simulation.controlsDiv);
     simulation.checkboxDiv = createAndAppend("div", simulation.controlsDiv);
-
-    simulation.walls = opts.walls;
 
     // Keyboard stuff
 
@@ -952,9 +992,20 @@ function createSimulation(opts)
         label: "Play/Pause",
         callback: function()
         {
-            simulation.pausedByUser = ! simulation.pausedByUser;
+            simulation.pausedByUser = !simulation.pausedByUser;
         },
     });
+    createButton(
+    {
+        name: "addRandomParticleButton",
+        label: "Add random particle",
+        callback: function ()
+        {
+            var particle = uniformParticleGenerator(simulation, simulation.particles.length);
+            simulation.particles.push(particle);
+            simulation.parameters.particleCount += 1;  
+        }
+    })
 
     for (var i = 0; i < opts.controls.length; i++)
     {
@@ -993,6 +1044,20 @@ function createSimulation(opts)
     simulation.renderer = createRenderer(simulation.canvas);
 
     updateBounds(simulation);
+
+    var b = simulation.boxBounds;
+    var corners = [
+        vec2.fromValues(b.left, b.bottom),
+        vec2.fromValues(b.right, b.bottom),
+        vec2.fromValues(b.right, b.top),
+        vec2.fromValues(b.left, b.top),
+    ];
+
+    simulation.walls = opts.walls;
+
+    for (var i = 0; i < corners.length; i++) {
+        simulation.walls.push({ start: corners[i], end: corners[(i + 1) % corners.length]});
+    }
 
     // Measurements
 
@@ -1231,10 +1296,10 @@ var updateSimulation = function()
         {
             var extraRadius = 1;
             var pickedParticle = pickParticle(simulation, simulation.mouse.worldPosition, extraRadius);
-            var isCloseToParticle = (pickedParticle !== undefined);
+            var isCloseToParticle = (pickedParticle >= 0);
 
             var hitParticle = pickParticle(simulation, simulation.mouse.worldPosition);
-            var isOnParticle = (hitParticle !== undefined);
+            var isOnParticle = (hitParticle >= 0);
 
             if (simulation.mouse.mode === "")
             {
@@ -1312,7 +1377,7 @@ var updateSimulation = function()
             // Equations of motion
 
             var particles = simulation.particles;
-            var particleCount = simulation.particleCount;
+            var particleCount = simulation.particles.length;
 
             for (var particleIndex = 0; particleIndex < particleCount;
                 ++particleIndex)
@@ -1473,48 +1538,13 @@ var updateSimulation = function()
 
                 for (var i = 0; i < simulation.walls.length; i++)
                 {
-                    var wall = simulation.walls[i];
-                    var wallVector = vec2.subtract(vec2.create(), wall.end, wall.start);
-                    var radius = particle.radius * simulation.parameters.radiusScaling;
-                    var fromStart = vec2.subtract(vec2.create(), particle.position, wall.start);
-                    var fromEnd = vec2.subtract(vec2.create(), particle.position, wall.end);
-                    var normal = vec2.rotateCCW(vec2.create(), wallVector);
-                    vec2.normalize(normal, normal);
-                    var rejection = vec2.projectOntoNormal(vec2.create(), fromStart, normal);
-                    var rejectionLengthSquared = vec2.squaredLength(rejection);
-                    var isAfterStart = isSameDirection(fromStart, wallVector);
-                    var isBeforeEnd = !isSameDirection(fromEnd, wallVector);
+                    var collision = wallParticleCollision(simulation, simulation.walls[i], particle);
 
-                    var overlap = 0;
-
-                    var isIntersectingWall = (rejectionLengthSquared < squared(radius)) && isAfterStart && isBeforeEnd;
-                    if (isIntersectingWall)
+                    if (collision.overlap > 0)
                     {
-                        overlap = radius - Math.sqrt(rejectionLengthSquared);
-                        vec2.normalize(normal, rejection);
-                    }
-                    else
-                    {
-                        var distanceFromStart = vec2.length(fromStart);
-                        if (distanceFromStart < radius)
-                        {
-                            overlap = radius - distanceFromStart;
-                            vec2.normalize(normal, fromStart);
-                        }
+                        vec2.scaleAndAdd(particle.position, particle.position, collision.normal, collision.overlap);
 
-                        var distanceFromEnd = vec2.length(fromEnd);
-                        if (distanceFromEnd < radius)
-                        {
-                            overlap = radius - distanceFromEnd;
-                            vec2.normalize(normal, fromEnd);
-                        }
-                    }
-
-                    if (overlap > 0)
-                    {
-                        vec2.scaleAndAdd(particle.position, particle.position, normal, overlap);
-
-                        vec2.projectOntoNormal(projection, particle.velocity, normal);
+                        vec2.projectOntoNormal(projection, particle.velocity, collision.normal);
                         vec2.scaleAndAdd(particle.velocity, particle.velocity, projection, -2);
                     }
 
@@ -1522,47 +1552,6 @@ var updateSimulation = function()
 
                 }
 
-                // Collision with box
-
-                var boxBounds = simulation.boxBounds;
-
-                var overlap = 0;
-                var radius = particle.radius * simulation.parameters.radiusScaling;
-
-                if (particle.position[0] - radius < boxBounds.left)
-                {
-                    overlap = boxBounds.left - particle.position[0] + radius;
-                    vec2.set(wallNormal, 1, 0);
-                }
-                else if (particle.position[0] + radius > boxBounds.right)
-                {
-                    overlap = particle.position[0] + radius - boxBounds.right;
-                    vec2.set(wallNormal, -1, 0);
-                }
-                else if (particle.position[1] - radius < boxBounds.bottom)
-                {
-                    overlap = boxBounds.bottom - particle.position[1] + radius;
-                    vec2.set(wallNormal, 0, 1);
-                }
-                else if (particle.position[1] + radius > boxBounds.top)
-                {
-                    overlap = particle.position[1] + radius - boxBounds.top;
-                    vec2.set(wallNormal, 0, -1);
-                }
-
-                if (overlap > 0)
-                {
-                    // Move out of overlap
-
-                    vec2.scaleAndAdd(particle.position, particle.position, wallNormal, overlap);
-
-                    // Reflect velocity
-
-                    vec2.projectOntoNormal(projection, particle.velocity, wallNormal);
-                    vec2.scaleAndAdd(particle.velocity, particle.velocity, projection, -2);
-
-                    // totalPressure += vec2.length(projection);
-                }
             }
 
             // Collision with other particles
@@ -1594,7 +1583,7 @@ var updateSimulation = function()
 
             // Trajectory
 
-            if (simulation.parameters.trajectoryEnabled && (simulation.particleCount > 0))
+            if (simulation.parameters.trajectoryEnabled && (simulation.particles.length > 0))
             {
                 simulation.trajectory.push(vec2.clone(simulation.particles[0].position));
             }
@@ -1918,6 +1907,50 @@ function intersectionCircleLine(circle, line)
 
 
 // Collision
+
+function wallParticleCollision(simulation, wall, particle)
+{
+    var wallVector = vec2.subtract(vec2.create(), wall.end, wall.start);
+    var radius = particle.radius * simulation.parameters.radiusScaling;
+    var fromStart = vec2.subtract(vec2.create(), particle.position, wall.start);
+    var fromEnd = vec2.subtract(vec2.create(), particle.position, wall.end);
+    var normal = vec2.rotateCCW(vec2.create(), wallVector);
+    vec2.normalize(normal, normal);
+    var rejection = vec2.projectOntoNormal(vec2.create(), fromStart, normal);
+    var rejectionLengthSquared = vec2.squaredLength(rejection);
+    var isAfterStart = isSameDirection(fromStart, wallVector);
+    var isBeforeEnd = !isSameDirection(fromEnd, wallVector);
+
+    var overlap = 0;
+
+    var isIntersectingWall = (rejectionLengthSquared < squared(radius)) && isAfterStart && isBeforeEnd;
+    if (isIntersectingWall)
+    {
+        overlap = radius - Math.sqrt(rejectionLengthSquared);
+        vec2.normalize(normal, rejection);
+    }
+    else
+    {
+        var distanceFromStart = vec2.length(fromStart);
+        if (distanceFromStart < radius)
+        {
+            overlap = radius - distanceFromStart;
+            vec2.normalize(normal, fromStart);
+        }
+
+        var distanceFromEnd = vec2.length(fromEnd);
+        if (distanceFromEnd < radius)
+        {
+            overlap = radius - distanceFromEnd;
+            vec2.normalize(normal, fromEnd);
+        }
+    }
+
+    return {
+        overlap: overlap,
+        normal: normal,
+    };
+}
 
 function isIntersecting(shape, otherShape)
 {

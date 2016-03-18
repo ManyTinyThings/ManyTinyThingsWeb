@@ -126,26 +126,82 @@ It works the same with more regions than just two.
     }
 </script>
 
-It doesn't matter how ordered they start out. As soon as they start moving they inevitably spread out evenly. What is going on? 
+It doesn't matter how ordered they start out. As soon as they start moving they inevitably spread out evenly.
+How come the particles like to spread out, but not come back together? To understand, we need to talk about randomness.
 
-How come the particles like to spread out, but not come back together? Let's try to understand.
+## Randomness
+
+When there are just a few particles, our "billiards sense" tells us roughly how the particles will bounce off each other. We can predict what will happen a few moments from now.
 
 <script>
-    var entropySim = createSimulation({
+    var simpleSim = createSimulation({
         controls: ["resetButton"],
         particleGenerator: uniformParticleGenerator,
-        visualizations: ["entropy", "countsHistogram"],
         parameters: {
-            maxInitialSpeed: 0.01,
-            particleCount: 0,
-            radiusScaling: 0.02,
+            maxInitialSpeed: 0.0,
+            particleCount: 3,
+            radiusScaling: 0.2,
             bondEnergy: 0,
         },
     });
-
-    setColdHotRegions(entropySim);
-
 </script>
+
+Nothing random about it.
+
+However, if we add more particles, it becomes much harder to predict what will happen.
+
+<script>
+    var simpleSim = createSimulation({
+        controls: ["resetButton"],
+        particleGenerator: uniformParticleGenerator,
+        parameters: {
+            maxInitialSpeed: 0.0,
+            particleCount: 20,
+            radiusScaling: 0.2,
+            bondEnergy: 0,
+        },
+    });
+</script>
+
+While this simulation follows the exact same rules as the previous one, it's much harder to make predictions, which makes it look random. Let me show you. 
+
+<div class="left_column">
+    Add particles randomly here.
+
+    <script>
+        var randomSim = createSimulation({
+            controls: ["resetButton", "addRandomParticle"],
+            particleGenerator: uniformParticleGenerator,
+            parameters: {
+                maxInitialSpeed: 0.0,
+                particleCount: 0,
+                radiusScaling: 0.03,
+                bondEnergy: 0,
+            },
+        });
+
+        randomSim.pausedByUser = true;
+    </script>
+</div>
+
+<div class="right_column">
+    Run this simulation for a while, then pause it.
+    <script>
+        var frozenSim = createSimulation({
+            controls: ["playPauseButton", "resetButton"],
+            particleGenerator: uniformParticleGenerator,
+            parameters: {
+                maxInitialSpeed: 0.0,
+                particleCount: 100,
+                radiusScaling: 0.03,
+                bondEnergy: 0,
+            },
+        });
+    </script>
+</div>
+
+
+
 
 ## Important sentences
 
@@ -157,3 +213,4 @@ _Entropy always increases, because it's more probable that things are spread out
 
 * Show how velocities will also spread out
 * Explain thru probabilities
+* Run simulation super fast to show where balls will end up after long time?
