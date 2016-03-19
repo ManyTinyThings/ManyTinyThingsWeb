@@ -454,6 +454,8 @@ function twoColors(simulation, particleIndex)
 function uniformParticleGenerator(simulation, particleIndex)
 {
     var particle = new Particle();
+
+    // TODO: generalize this
     do {
         particle.position = uniformPosition(simulation, particleIndex);    
     } 
@@ -632,7 +634,8 @@ function createSimulation(opts)
             bondEnergy: 0.0001,
             measurementWindowLength: 100,
             separationFactor: 1.2,
-        }
+        },
+        customUpdate: function(simulation) {},
     });
 
     simulation.running = true;
@@ -653,6 +656,8 @@ function createSimulation(opts)
     simulation.parameters = opts.parameters;
     simulation.initialParameters = {};
     combineWithDefaults(simulation.initialParameters, opts.parameters);
+
+    simulation.customUpdate = opts.customUpdate;
 
     // TODO: more than one trajectory
     simulation.trajectoryEnabled = false;
@@ -1001,9 +1006,7 @@ function createSimulation(opts)
         label: "Add random particle",
         callback: function ()
         {
-            var particle = uniformParticleGenerator(simulation, simulation.particles.length);
-            simulation.particles.push(particle);
-            simulation.parameters.particleCount += 1;  
+            simulation.parameters.particleCount += 1;
         }
     })
 
@@ -1073,6 +1076,7 @@ function createSimulation(opts)
         simulation.measurementRegions = [totalRegion];
     }
     simulation.entropy = [];
+    simulation.probability = [];
 
     // Start simulation
 
@@ -1593,6 +1597,9 @@ var updateSimulation = function()
 
 
             var totalEntropy = 0;
+            var probabilities = [];
+            var counts = [];
+            var totalArea = rectangleArea(simulation.boxBounds);
 
             var barWidth = 1 / simulation.measurementRegions.length;
             for (var regionIndex = 0; regionIndex < simulation.measurementRegions.length; regionIndex++)
@@ -1664,10 +1671,15 @@ var updateSimulation = function()
                 });
 
                 totalEntropy += microstateEntropy(regionCount / simulation.particles.length);
+                var area = rectangleArea(region.bounds);
+                probabilities.push(area / totalArea);
+                counts.push(regionCount);
             }
 
             simulation.times.push(simulation.time);
             simulation.entropy.push(totalEntropy);
+            simulation.probability.push(multinomial(probabilities, counts));
+
             var tooOldCount = -1;
             // NOTE: save more data than shown, to avoid weird autoscaling in plots
             while ((simulation.time - simulation.times[++tooOldCount]) > 2 * simulation.parameters.measurementWindowLength)
@@ -1675,6 +1687,7 @@ var updateSimulation = function()
 
             simulation.entropy.splice(0, tooOldCount);
             simulation.times.splice(0, tooOldCount);
+            simulation.probability.splice(0, tooOldCount);
 
             addCurve(simulation.visualizations.entropy,
             {
@@ -1717,6 +1730,7 @@ var updateSimulation = function()
 
         }
 
+        simulation.customUpdate(simulation);
 
         // Drawing
 
@@ -1760,6 +1774,44 @@ function sum(array)
         return x + y;
     });
 }
+
+function binomial(n, k)
+{
+    var product = 1;
+    for (var i = 0; i < k; i++) {
+        product *= (n - 1 - i) / i;
+    }
+    return product;
+}
+
+var factorial = function()
+{
+    var cache = [1];
+
+    return function(n) {
+        if (n < 0) { return; }
+        n = Math.floor(n);
+        if (n >= cache.length)
+        {
+            for (var i = cache.length; i <= n; i++) {
+                cache.push(cache[i - 1] * i);
+            }
+        }
+        return cache[n];
+    }
+}();
+
+
+function multinomial(probabilities, counts)
+{
+    var product = factorial(sum(counts));
+    for (var i = 0; i < counts.length; i++) {
+        product *= Math.pow(probabilities[i], counts[i]);
+        product /= factorial(counts[i]);
+    }
+    return product;
+}
+
 
 // Vector
 
@@ -1875,6 +1927,13 @@ function randomInInterval(a, b)
 {
     return (a + (b - a) * Math.random());
 }
+
+function rectangleArea(rectangle)
+{
+    return (rectangle.width * rectangle.height);
+}
+
+// Intersection
 
 function intersectionCircleLine(circle, line)
 {

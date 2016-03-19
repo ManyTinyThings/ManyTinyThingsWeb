@@ -191,8 +191,6 @@ Kickstart this simulation and run it for a while, then pause.
 
 <div class="two_column">
 <script>
-
-
     function gridGenerator(simulation, particleIndex)
     {
         var particle = new Particle();
@@ -200,7 +198,6 @@ Kickstart this simulation and run it for a while, then pause.
         particle.velocity = uniformVelocity(simulation, particleIndex);
         return particle;
     }
-
 
     var frozenSim = createSimulation({
         controls: ["playPauseButton", "resetButton"],
@@ -220,6 +217,66 @@ The two frozen systems are generated in very different ways, yet if you didn't k
 _After waiting for a certain period of time, the system is practically random._
 
 This means that we can analyse the spreading behavior we observed above by forgetting about the movement of the particles and just think of them as randomly placed.
+
+Now, let's return to the getting all the particles in one half of the box.
+
+<script>
+    function halfGenerator(simulation, particleIndex)
+    {
+        var particle = new Particle();
+        do {
+            particle.position = randomPointInRect(simulation.leftRect);    
+        } 
+        while (isColliding(simulation, particle))
+
+        particle.velocity = uniformVelocity(simulation, particleIndex);
+        return particle;
+    }
+
+    var halfBox = createSimulation({ 
+        particleGenerator: halfGenerator,
+        controls: ["playPauseButton", "resetButton"],
+        visualizations: ["countsHistogram"],
+        parameters: {
+            maxInitialSpeed: 0.01,
+            particleCount: 20,
+            bondEnergy: 0,
+        },
+    });
+
+    setColdHotRegions(halfBox);
+
+    halfBox.pausedByUser = true;
+</script>
+
+What's the probability that the particles would spontaneously end up in one half after a while?
+
+Let's add one at a time. Each time we add a particle, the probability is 50% that it will end up in the left half. Probabilities multiply, so the total probability will be a half of a half of a half ... etc.
+
+<script>
+    var probabilitySim = createSimulation({
+        controls: ["resetButton", "addRandomParticleButton"],
+        particleGenerator: halfGenerator,
+        parameters: {
+            maxInitialSpeed: 0.0,
+            particleCount: 0,
+            bondEnergy: 0,
+        },
+        customUpdate: function(simulation) {
+            var output = document.getElementById("probability");
+            var p = arrayLast(simulation.probability);
+            output.value = (p * 100).toPrecision(3) + "%";
+        },
+    });
+
+    setColdHotRegions(probabilitySim);
+</script>
+
+Total probability: <output id="probability"></output>
+
+It's _very_ unlikely that all of them would end up in that half.
+
+What's most probable? You guessed it: that they end up 
 
 
 ## Important sentences
