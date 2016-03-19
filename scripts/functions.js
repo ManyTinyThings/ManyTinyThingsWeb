@@ -1024,12 +1024,14 @@ function createSimulation(opts)
         counts: createGraph(createAndAppend("div", simulation.visualizationDiv), "Counts"),
         countsHistogram: createGraph(createAndAppend("div", simulation.visualizationDiv), "Counts"),
         entropy: createGraph(createAndAppend("div", simulation.visualizationDiv), "Entropy"),
+        probability: createGraph(createAndAppend("div", simulation.visualizationDiv), "Probability"),
     }
     simulation.timeSeries = [
         simulation.visualizations.energy,
         simulation.visualizations.temperature,
         simulation.visualizations.counts,
         simulation.visualizations.entropy,
+        simulation.visualizations.probability,
     ];
     simulation.histograms = [simulation.visualizations.countHistogram];
 
@@ -1676,6 +1678,8 @@ var updateSimulation = function()
                 counts.push(regionCount);
             }
 
+            // TODO: make a list with global visualizations too
+
             simulation.times.push(simulation.time);
             simulation.entropy.push(totalEntropy);
             simulation.probability.push(multinomial(probabilities, counts));
@@ -1695,6 +1699,12 @@ var updateSimulation = function()
                 y: simulation.entropy,
             });
 
+            addCurve(simulation.visualizations.probability,
+            {
+                x: m.time,
+                y: simulation.probability,
+            });
+
             // Plot things
 
             setGraphLimits(simulation.visualizations.counts,
@@ -1705,6 +1715,11 @@ var updateSimulation = function()
             {
                 yMax: 1
             });
+            setGraphLimits(simulation.visualizations.probability,
+            {
+                yMax: 1
+            });
+
 
             for (var i = 0; i < simulation.timeSeries.length; ++i)
             {

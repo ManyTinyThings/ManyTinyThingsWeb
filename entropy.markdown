@@ -256,6 +256,7 @@ Let's add one at a time. Each time we add a particle, the probability is 50% tha
 <script>
     var probabilitySim = createSimulation({
         controls: ["resetButton", "addRandomParticleButton"],
+        visualizations: ["probability"],
         particleGenerator: halfGenerator,
         parameters: {
             maxInitialSpeed: 0.0,
