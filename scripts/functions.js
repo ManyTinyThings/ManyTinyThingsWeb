@@ -719,7 +719,7 @@ function createSimulation(opts)
             transitionCount: 0,
         },
         mode: "",
-        activeParticleIndex: undefined,
+        activeParticleIndex: -1,
         billiardCue:
         {
             visible: false,
@@ -927,7 +927,7 @@ function createSimulation(opts)
         minLabel: "0",
         max: 225,
         maxLabel: "225",
-        step: 1,
+        step: 1
         // TODO: make this exponential?
     });
     createSlider(
@@ -1342,7 +1342,7 @@ var updateSimulation = function()
             }
             else if (simulation.mouse.mode == "destroyParticles")
             {
-                if (hitParticle !== undefined)
+                if (hitParticle >= 0)
                 {
                     removeParticle(simulation, hitParticle);
                 }
@@ -1510,7 +1510,7 @@ var updateSimulation = function()
 
             // User interaction
 
-            if (simulation.mouse.activeParticleIndex !== undefined)
+            if (simulation.mouse.activeParticleIndex >= 0)
             {
                 var particle = particles[simulation.mouse.activeParticleIndex];
                 if (simulation.mouse.mode === "dragParticle")

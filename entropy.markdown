@@ -138,7 +138,7 @@ When there are just a few particles, our "billiards sense" tells us roughly how 
         controls: ["resetButton"],
         particleGenerator: uniformParticleGenerator,
         parameters: {
-            maxInitialSpeed: 0.0,
+            maxInitialSpeed: 0.05,
             particleCount: 3,
             radiusScaling: 0.1,
             bondEnergy: 0,
@@ -155,7 +155,7 @@ However, if we add more particles, it becomes much harder to predict what will h
         controls: ["resetButton"],
         particleGenerator: uniformParticleGenerator,
         parameters: {
-            maxInitialSpeed: 0.0,
+            maxInitialSpeed: 0.04,
             particleCount: 20,
             radiusScaling: 0.1,
             bondEnergy: 0,
@@ -214,7 +214,7 @@ Kickstart this simulation and run it for a while, then pause.
 
 The two frozen systems are generated in very different ways, yet if you didn't know it, you wouldn't be able to tell which one is which. This brings us to a very useful conclusion:
 
-_After waiting for a certain period of time, the system is practically random._
+_After letting the particles bounce around for a while, they become practically randomly spread out._
 
 This means that we can analyse the spreading behavior we observed above by forgetting about the movement of the particles and just think of them as randomly placed.
 
@@ -279,6 +279,11 @@ It's _very_ unlikely that all of them would end up in that half.
 
 What's most probable? You guessed it: that they end up 
 
+<script>
+	var binomialGraph = createGraph();
+	
+</script>
+
 
 ## Important sentences
 
@@ -290,4 +295,5 @@ _Entropy always increases, because it's more probable that things are spread out
 
 * Show how velocities will also spread out
 * Explain thru probabilities
+    * Make probs concrete thru talking about a percentage of time
 * Run simulation super fast to show where balls will end up after long time?
