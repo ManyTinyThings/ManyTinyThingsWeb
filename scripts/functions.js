@@ -375,12 +375,14 @@ function drawGraph(graph)
     var xPadding = Math.max(paddingFactor * (limits.xMax - limits.xMin), minimumPadding);
     var yPadding = Math.max(paddingFactor * (limits.yMax - limits.yMin), minimumPadding);
 
-    setLeftTopRightBottom(graph.renderer.worldBounds,
+    setLeftTopRightBottom(graph.renderer.bounds,
         limits.xMin - xPadding,
         limits.yMax + yPadding,
         limits.xMax + xPadding,
         limits.yMin - yPadding
     );
+
+    updateRendererBounds(graph.renderer);
 
     // Clear and draw
 
@@ -1229,9 +1231,11 @@ function createSimulation(opts)
     var origin = v2.create(0, 0);
 
     setCenterWidthHeight(
-        simulation.renderer.worldBounds,
+        simulation.renderer.bounds,
         origin, 2 * aspectRatio, 2
     );
+
+    updateRendererBounds(simulation.renderer);
 
     var boxBounds = simulation.boxBounds;
     setCenterWidthHeight(boxBounds,
@@ -1246,8 +1250,6 @@ function createSimulation(opts)
         boxBounds.center[0], boxBounds.bottom);
 
     simulation.quadTree = new Quadtree(boxBounds);
-
-    resizeRenderer(simulation.renderer);
 
     var b = simulation.boxBounds;
     var corners = [
