@@ -280,7 +280,7 @@ It's _very_ unlikely that all of them would end up in that half.
 What's most probable? You guessed it: that they end up 
 
 <script>
-	var binomialGraph = createGraph();
+	//var binomialGraph = createGraph();
 	
 </script>
 

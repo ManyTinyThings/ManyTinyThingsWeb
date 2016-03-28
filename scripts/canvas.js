@@ -20,7 +20,7 @@ function canvasFromWorld(renderer, worldPosition)
     var canvasX = transform(worldPosition[0], bounds.left, bounds.right, renderer.canvas.width);
     var canvasY = renderer.canvas.height - transform(worldPosition[1], bounds.bottom, bounds.top, renderer.canvas.height);
     
-    return vec2.fromValues(canvasX, canvasY);
+    return v2.create(canvasX, canvasY);
 }
 
 function worldFromCanvas(renderer, canvasPosition)
@@ -35,7 +35,7 @@ function worldFromCanvas(renderer, canvasPosition)
     var worldX = transform(canvasPosition[0], bounds.left, bounds.right, renderer.canvas.width);
     var worldY = transform(renderer.canvas.height - canvasPosition[1], bounds.bottom, bounds.top, renderer.canvas.height);
 
-    return vec2.fromValues(worldX, worldY);
+    return v2.create(worldX, worldY);
 }
 
 function drawParticles(renderer, particles, radiusScaling) 
@@ -73,8 +73,8 @@ function drawRectangle(renderer, rectangle, color)
     var context = renderer.context;
 
     context.fillStyle = cssFromRGBA(color.rgba);
-    var topLeft = canvasFromWorld(renderer, vec2.fromValues(rectangle.left, rectangle.top));
-    var bottomRight = canvasFromWorld(renderer, vec2.fromValues(rectangle.right, rectangle.bottom));
+    var topLeft = canvasFromWorld(renderer, v2.create(rectangle.left, rectangle.top));
+    var bottomRight = canvasFromWorld(renderer, v2.create(rectangle.right, rectangle.bottom));
     var width = bottomRight[0] - topLeft[0];
     var height = bottomRight[1] - topLeft[1];
     context.fillRect(topLeft[0], topLeft[1], width, height);
