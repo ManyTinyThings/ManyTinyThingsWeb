@@ -242,34 +242,11 @@ function addCurve(graph, opts)
     });
 
     var curve = {
-        points: [],
+        pointCount: Math.min(opts.x.length, opts.y.length),
+        xs: opts.x,
+        ys: opts.y,
         color: opts.color,
     };
-
-    var x = opts.x;
-    var y = opts.y;
-
-    if (!x)
-    {
-        for (var i = 0; i < y.length; i++)
-        {
-            curve.points.push(v2.create(i, y[i]));
-        }
-    }
-    else if (!y)
-    {
-        for (var i = 0; i < x.length; i++)
-        {
-            curve.points.push(v2.create(x[i], i));
-        }
-    }
-    else
-    {
-        for (var i = 0; i < x.length; i++)
-        {
-            curve.points.push(v2.create(x[i], y[i]));
-        }
-    }
 
     graph.curves.push(curve);
 }
@@ -340,11 +317,11 @@ function drawGraph(graph)
     }
     for (var curveIndex = 0; curveIndex < graph.curves.length; curveIndex++)
     {
-        var points = graph.curves[curveIndex].points;
-        for (var i = 0; i < points.length; i++)
+        var curve = graph.curves[curveIndex];
+        for (var i = 0; i < curve.pointCount; i++)
         {
-            var x = points[i][0];
-            var y = points[i][1];
+            var x = curve.xs[i];
+            var y = curve.ys[i];
             updateAutoLimits(autoLimits, x, y);
         }
     }
@@ -391,7 +368,7 @@ function drawGraph(graph)
     for (var curveIndex = 0; curveIndex < graph.curves.length; curveIndex++)
     {
         var curve = graph.curves[curveIndex];
-        drawTrajectory(graph.renderer, curve.points, curve.color);
+        drawTrajectoryUnzipped(graph.renderer, curve.xs, curve.ys, curve.color);
     }
     if (graph.bars.length > 0)
     {

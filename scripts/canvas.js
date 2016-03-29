@@ -4,6 +4,7 @@ function createRenderer(canvas)
         canvas: canvas,
         context: canvas.getContext("2d"),
         bounds: new Rectangle(),
+        lineWidth: 0.01,
     };
 
     return renderer;
@@ -45,10 +46,25 @@ function drawParticles(renderer, particles, radiusScaling)
     }
 }
 
+function drawTrajectoryUnzipped(renderer, xs, ys, color)
+{
+    var context = renderer.context;
+    context.lineWidth = renderer.lineWidth * renderer.bounds.height;
+    context.strokeStyle = cssFromRGBA(color.rgba);
+
+    context.beginPath();
+    context.moveTo(xs[0], ys[0]);
+    for (var i = 1; i < xs.length; i++)
+    {
+        context.lineTo(xs[i], ys[i]);
+    }
+    context.stroke();   
+}
+
 function drawTrajectory(renderer, trajectory, color)
 {
     var context = renderer.context;
-    context.lineWidth = 0.01 * renderer.bounds.height;
+    context.lineWidth = renderer.lineWidth * renderer.bounds.height;
     context.strokeStyle = cssFromRGBA(color.rgba);
     var startPoint = trajectory[0];
 
