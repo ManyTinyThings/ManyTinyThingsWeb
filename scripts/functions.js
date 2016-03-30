@@ -1,4 +1,4 @@
-// Pool
+// ! Pool
 
 function Pool(constructor)
 {
@@ -26,7 +26,7 @@ function poolFree(pool, object)
 	pool.freeList.push(object);
 }
 
-// Vectors
+// ! Vectors
 
 var v2 = {};
 
@@ -165,7 +165,7 @@ v2.outer = function(a, b)
     return a[0] * b[1] - a[1] * b[0];
 }
 
-// Generally useful
+// ! Generally useful
 
 function combineWithDefaults(opts, defaults)
 {
@@ -188,7 +188,7 @@ function arrayLast(array)
 }
 
 
-// DOM stuff
+// ! DOM stuff
 
 function createAndAppend(elementType, parent)
 {
@@ -207,7 +207,7 @@ function showElement(element)
     element.style.display = "block";
 }
 
-// Graphs/Plots
+// ! Graphs/Plots
 
 function createGraph(div, label)
 {
@@ -387,7 +387,7 @@ function drawGraph(graph)
     graph.bars = [];
 }
 
-// Measurement regions
+// ! Measurement regions
 
 function createMeasurementRegion()
 {
@@ -419,13 +419,11 @@ function setColdHotRegions(simulation)
     simulation.measurementRegions = [leftRegion, rightRegion];
 }
 
-// Constants
+// ! Constants
 
 var tau = 2 * Math.PI;
 
-
-
-// Particle object
+// ! Particle object
 
 var Particle = function()
 {
@@ -444,9 +442,7 @@ Particle.prototype.updateBounds = function()
     return this.bounds;
 }
 
-//
-// Initialization
-//
+// ! Initialization
 
 function groupedPosition(simulation, particleIndex)
 {
