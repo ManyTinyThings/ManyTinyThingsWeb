@@ -10,53 +10,15 @@
 </head>
 <body>
 <h1>Testing in progress!</h1>
-<div class="two_column">
-    Add particles randomly by dragging the slider. As you do, the particles appear randomly, and are equally likely to appear in any free space in the box.
-</div>
-<div class="two_column">
-    Kickstart this simulation and run it for a while, then pause.
-</div>
-
-<div class="two_column">
     <script>
-        var randomSim = createSimulation({
-            controls: ["resetButton", "particleCount"],
-            particleGenerator: uniformParticleGenerator,
-            parameters: {
-                maxInitialSpeed: 0.0,
-                particleCount: 0,
-                radiusScaling: 0.03,
-                bondEnergy: 0,
-            },
-        });
-    </script>
-</div>
-
-<div class="two_column">
-    <script>
-
-
-        function gridGenerator(simulation, particleIndex)
-        {
-            var particle = new Particle();
-            particle.position = rectangularLatticePosition(simulation, particleIndex);
-            particle.velocity = uniformVelocity(simulation, particleIndex);
-            return particle;
-        }
-
-
-        var frozenSim = createSimulation({
+        var sim = createSimulation({
             controls: ["playPauseButton", "resetButton"],
-            particleGenerator: gridGenerator,
             parameters: {
-                maxInitialSpeed: 0,
-                particleCount: 225,
-                radiusScaling: 0.03,
+                particleCount: 19,
                 bondEnergy: 0,
             },
         });
     </script>
-</div>
 </body>
 
 </html>
