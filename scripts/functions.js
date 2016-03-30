@@ -586,9 +586,7 @@ function twoColors(simulation, particleIndex)
     }
 }
 
-//
-// particle generators
-//
+// ! particle generators
 
 function uniformParticleGenerator(simulation, particleIndex)
 {
@@ -804,7 +802,7 @@ function createSimulation(opts)
     simulation.trajectoryEnabled = false;
     simulation.trajectory = [];
 
-    // set up HTML elements
+    // ! set up HTML elements
     simulation.id = "simulation" + simulationCount;
     simulationCount += 1;
 
@@ -825,7 +823,7 @@ function createSimulation(opts)
     simulation.sliderDiv = createAndAppend("div", simulation.controlsDiv);
     simulation.checkboxDiv = createAndAppend("div", simulation.controlsDiv);
 
-    // Keyboard stuff
+    // ! Keyboard stuff
 
     simulation.downKeys = [];
 
@@ -844,7 +842,7 @@ function createSimulation(opts)
         });
     })
 
-    // Mouse stuff
+    // ! Mouse stuff
 
     simulation.mouse = {
         active: false,
@@ -901,7 +899,7 @@ function createSimulation(opts)
     });
     document.addEventListener("mousemove", updateMouseFromEvent);
 
-    // Pause when simulation is not visible
+    // ! Pause when simulation is not visible
 
     function pauseIfHidden(event)
     {
@@ -1035,7 +1033,7 @@ function createSimulation(opts)
         return button;
     }
 
-    // setup UI
+    // ! setup UI
 
     simulation.controls = {};
 
@@ -1156,7 +1154,7 @@ function createSimulation(opts)
         showElement(simulation.controls[opts.controls[i]]);
     }
 
-    // visualization
+    // ! visualization
 
     simulation.visualizationDiv = createAndAppend("div", simulation.rightDiv);
     simulation.visualizations = {
@@ -1202,7 +1200,7 @@ function createSimulation(opts)
     simulation.canvas.width = canvasWidth * devicePixelRatio;
     simulation.canvas.height = canvasHeight * devicePixelRatio;
 
-    // boxes
+    // ! boxes
 
     var aspectRatio = simulation.canvas.width / simulation.canvas.height;
     var origin = v2.create(0, 0);
@@ -1244,7 +1242,7 @@ function createSimulation(opts)
         simulation.walls.push({ start: corners[i], end: corners[(i + 1) % corners.length]});
     }
 
-    // Measurements
+    // ! Measurements
 
 
     if (opts.measurementRegions.length > 0)
@@ -1260,7 +1258,7 @@ function createSimulation(opts)
     simulation.entropy = [];
     simulation.probability = [];
 
-    // Start simulation
+    // ! Start simulation
 
     simulation.updateFunction = function(timestamp)
     {
@@ -1300,7 +1298,7 @@ function lennardJonesForce(invDistance, bondEnergy, separation)
     return bondEnergy * shape;
 }
 
-// Colors
+// ! Colors
 
 colors = {};
 
@@ -1365,7 +1363,7 @@ function withAlpha(color, alpha)
     }
 }
 
-// Simulation
+// ! Simulation
 
 
 function drawSimulation(simulation)
@@ -1420,7 +1418,7 @@ var updateSimulation = function()
 
         var gravityAcceleration = v2.create(0, -simulation.parameters.gravityAcceleration);
 
-        // Process input
+        // ! Process input
 
         if (simulation.mouse.leftButton.transitionCount > 0)
         {
@@ -1507,7 +1505,7 @@ var updateSimulation = function()
 
         if (!simulation.pausedByUser)
         {
-            // Keep track of time
+            // ! Keep track of time
 
             var elapsed = timestamp - simulation.previousTimestamp;
             if ((elapsed > 100) || (elapsed <= 0))
@@ -1519,7 +1517,7 @@ var updateSimulation = function()
             simulation.time += dt;
             simulation.previousTimestamp = timestamp;
 
-            // Equations of motion
+            // ! Equations of motion
 
             var particles = simulation.particles;
             var particleCount = simulation.particles.length;
@@ -1543,13 +1541,13 @@ var updateSimulation = function()
                 particle.potentialEnergy = -v2.dot(particle.position, gravityAcceleration);
             }
 
-            // Calculate forces
+            // ! Calculate forces
 
             for (var i = 0; i < particleCount; ++i)
             {
                 var particle = particles[i];
 
-                // Particle interactions
+                // ! Particle interactions
 
                 for (var j = 0; j < i; ++j)
                 {
@@ -1647,7 +1645,7 @@ var updateSimulation = function()
             }
 
 
-            // User interaction
+            // ! User interaction
 
             if (simulation.mouse.activeParticleIndex >= 0)
             {
@@ -1679,7 +1677,7 @@ var updateSimulation = function()
                 v2.scaleAndAdd(totalMomentum, totalMomentum, particle.velocity, particle.mass);
 
 
-                // Collision with walls
+                // ! Collision with walls
 
                 for (var i = 0; i < simulation.walls.length; i++)
                 {
@@ -1699,7 +1697,7 @@ var updateSimulation = function()
 
             }
 
-            // Collision with other particles
+            // ! Collision with other particles
             if (simulation.parameters.collisionEnabled)
             {
                 if (quadtreeEnabled)
@@ -1725,16 +1723,14 @@ var updateSimulation = function()
                 }
             }
 
-            // Trajectory
+            // ! Trajectory
 
             if (simulation.parameters.trajectoryEnabled && (simulation.particles.length > 0))
             {
                 simulation.trajectory.push(v2.clone(simulation.particles[0].position));
             }
 
-            // Measurements
-
-
+            // ! Measurements
 
             var totalEntropy = 0;
             var probabilities = [];
@@ -1843,7 +1839,7 @@ var updateSimulation = function()
                 y: simulation.probability,
             });
 
-            // Plot things
+            // ! Plot things
 
             setGraphLimits(simulation.visualizations.counts,
             {
@@ -1885,11 +1881,11 @@ var updateSimulation = function()
 
         simulation.customUpdate(simulation);
 
-        // Drawing
+        // ! Drawing
 
         drawSimulation(simulation);
 
-        // Input cleanup
+        // ! Input cleanup
 
         simulation.mouse.leftButton.transitionCount = 0;
         simulation.mouse.rightButton.transitionCount = 0;
@@ -1901,7 +1897,7 @@ var updateSimulation = function()
     }
 }();
 
-// Random stuff
+// ! Math stuff
 
 function microstateEntropy(p)
 {
@@ -1966,7 +1962,7 @@ function multinomial(probabilities, counts)
 }
 
 
-// Rectangle
+// ! Rectangle
 
 
 
@@ -2062,7 +2058,7 @@ function rectangleArea(rectangle)
     return (rectangle.width * rectangle.height);
 }
 
-// Intersection
+// ! Intersection
 
 function intersectionCircleLine(circle, line)
 {
@@ -2094,7 +2090,7 @@ function intersectionCircleLine(circle, line)
 }
 
 
-// Collision
+// ! Collision
 
 function wallParticleCollision(simulation, wall, particle)
 {
@@ -2309,7 +2305,7 @@ function testGJK()
     }
 }
 
-// Quadtree
+// ! Quadtree
 
 Quadtree = function(bounds, maxObjects, maxDepth)
 {

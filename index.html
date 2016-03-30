@@ -10,15 +10,65 @@
 </head>
 <body>
 <h1>Testing in progress!</h1>
+<div class=two_column>
     <script>
+        function sameInitialGenerator(simulation, particleIndex)
+        {
+            var particle = new Particle();
+            particle.position = hexagonalLatticePosition(simulation, particleIndex);
+            if (particleIndex == 0)
+            {
+                v2.set(particle.velocity, 0, simulation.parameters.maxInitialSpeed);
+            }
+            return particle;
+        }
+
+        var particleCount = 70;
+
         var sim = createSimulation({
             controls: ["playPauseButton", "resetButton"],
+            particleGenerator: sameInitialGenerator,
             parameters: {
-                particleCount: 19,
+                particleCount: particleCount,
                 bondEnergy: 0,
             },
         });
     </script>
+    <script>
+        var sim2 = createSimulation({
+            controls: ["playPauseButton", "resetButton"],
+            particleGenerator: sameInitialGenerator,
+            parameters: {
+                particleCount: particleCount,
+                bondEnergy: 0,
+            },
+        });
+    </script>
+</div>
+<div class=two_column>
+
+    <script>
+        var sim3 = createSimulation({
+            controls: ["playPauseButton", "resetButton"],
+            particleGenerator: sameInitialGenerator,
+            parameters: {
+                particleCount: particleCount,
+                bondEnergy: 0,
+            },
+        });
+    </script>
+
+    <script>
+        var sim4 = createSimulation({
+            controls: ["playPauseButton", "resetButton"],
+            particleGenerator: sameInitialGenerator,
+            parameters: {
+                particleCount: particleCount,
+                bondEnergy: 0,
+            },
+        });
+    </script>
+</div>
 </body>
 
 </html>
