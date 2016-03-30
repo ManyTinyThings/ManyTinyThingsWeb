@@ -23,10 +23,10 @@
             return particle;
         }
 
-        var particleCount = 70;
+        var particleCount = 37;
 
         var sim = createSimulation({
-            controls: ["playPauseButton", "resetButton"],
+            controls: ["playPauseButton", "resetButton", "simulationSpeed", "reverseTime"],
             particleGenerator: sameInitialGenerator,
             parameters: {
                 particleCount: particleCount,
@@ -34,41 +34,6 @@
             },
         });
     </script>
-    <script>
-        var sim2 = createSimulation({
-            controls: ["playPauseButton", "resetButton"],
-            particleGenerator: sameInitialGenerator,
-            parameters: {
-                particleCount: particleCount,
-                bondEnergy: 0,
-            },
-        });
-    </script>
-</div>
-<div class=two_column>
-
-    <script>
-        var sim3 = createSimulation({
-            controls: ["playPauseButton", "resetButton"],
-            particleGenerator: sameInitialGenerator,
-            parameters: {
-                particleCount: particleCount,
-                bondEnergy: 0,
-            },
-        });
-    </script>
-
-    <script>
-        var sim4 = createSimulation({
-            controls: ["playPauseButton", "resetButton"],
-            particleGenerator: sameInitialGenerator,
-            parameters: {
-                particleCount: particleCount,
-                bondEnergy: 0,
-            },
-        });
-    </script>
-</div>
 </body>
 
 </html>

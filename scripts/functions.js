@@ -1147,7 +1147,16 @@ function createSimulation(opts)
         {
             simulation.parameters.particleCount += 1;
         }
-    })
+    });
+    createButton(
+    {
+        name: "reverseTime",
+        label: "Reverse time",
+        callback: function ()
+        {
+            simulation.parameters.simulationSpeed *= -1;
+        }
+    });
 
     for (var i = 0; i < opts.controls.length; i++)
     {
