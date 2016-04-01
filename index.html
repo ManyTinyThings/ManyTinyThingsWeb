@@ -23,13 +23,11 @@
             return particle;
         }
 
-        var particleCount = 37;
-
         var sim = createSimulation({
             controls: ["playPauseButton", "resetButton", "simulationSpeed", "reverseTime"],
             particleGenerator: sameInitialGenerator,
             parameters: {
-                particleCount: particleCount,
+                particleCount: 37,
                 bondEnergy: 0,
             },
         });
