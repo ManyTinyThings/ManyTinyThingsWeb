@@ -24,7 +24,9 @@
         }
 
         var sim = createSimulation({
+            width: 500,
             controls: ["playPauseButton", "resetButton", "simulationSpeed", "reverseTime"],
+            visualizations: ["energy"],
             particleGenerator: sameInitialGenerator,
             parameters: {
                 particleCount: 37,

@@ -1432,9 +1432,9 @@ var updateSimulation = function()
     var deltaVelocity = v2.create(0, 0);
     var deltaAcceleration = v2.create(0, 0);
 
-    var totalMomentum = v2.create(0, 0);
     var wallNormal = v2.create(0, 0);
     var projection = v2.create(0, 0);
+    var gravityAcceleration = v2.create(0, 0);
 
     return function(updateFunction, simulation, timestamp)
     {
@@ -1535,17 +1535,14 @@ var updateSimulation = function()
         while (simulation.timeLeftToSimulate > simulation.parameters.frameDuration)
         {
             simulation.timeLeftToSimulate -= simulation.parameters.frameDuration;
-
+            
+            // TODO: make timestep completely fixed? 
+            // and change simulation speed by running more or fewer iterations with interpolation?
             var slowingFactor = 0.01;
             var dt = simulation.parameters.frameDuration * simulation.parameters.simulationSpeed * slowingFactor;
+            simulation.time += dt;
 
-            // TODO: these should go in the measurement region code
-            v2.set(totalMomentum, 0, 0);
-            var colorCounts = {};
-
-            var gravityAcceleration = v2.create(0, -simulation.parameters.gravityAcceleration);
-
-            
+            v2.set(gravityAcceleration, 0, -simulation.parameters.gravityAcceleration);
 
             // Update lots of stuff
             // TODO: put this stuff inline here
@@ -1578,7 +1575,7 @@ var updateSimulation = function()
                     particle.potentialEnergy = -v2.dot(particle.position, gravityAcceleration);
                 }
 
-                // ! Time of impact
+                // ! Collision
 
                 // TODO: make this be a global function instead of a closure if it improves performance
                 function recordCollision(collisions, particle, otherParticle) {
@@ -1825,15 +1822,8 @@ var updateSimulation = function()
                     v2.scaleAndAdd(particle.velocity, particle.velocity, particle.acceleration, 0.5 * dt);
 
                     // calculate quantities
-                    if (doesRectContainPoint(simulation.leftRect, particle.position))
-                    {
-                        colorCounts[particle.color.name] = 1 + (colorCounts[particle.color.name] || 0);
-                    }
 
                     particle.kineticEnergy = 0.5 * particle.mass * v2.square(particle.velocity);
-
-                    v2.scaleAndAdd(totalMomentum, totalMomentum, particle.velocity, particle.mass);
-
 
                     // ! Collision with walls
 

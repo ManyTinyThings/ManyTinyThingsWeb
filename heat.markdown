@@ -18,9 +18,9 @@ Here is a billiard ball. Try throwing it around.
     });
 </script>
 
-As you pick up and throw the ball, you give it speed, and in turn, energy. This kind o energy is called￿
+As you pick up and throw the ball, you give it speed, and in turn, energy. This kind o energy is called
 _kinetic energy_, or _movement energy_.
-When you release the ball it starts to lose energy because of the friction in the ai and in the collisions with the table.￿
+When you release the ball it starts to lose energy because of the friction in the air and in the collisions with the table.
 
 I added some more balls. Play around with them!
 
@@ -36,10 +36,10 @@ I added some more balls. Play around with them!
     });
 </script>
 
-Here I show the total energy, which is what you get by adding up the energy of eac particle.￿
+Here I show the total energy, which is what you get by adding up the energy of eac particle.
 
-Balls knocking each other around is actually a pretty good model of how the world work at the atomic level.￿
-One big difference: _there is no friction_. Lower the friction of the system below an see what happens.￿
+Balls knocking each other around is actually a pretty good model of how the world work at the atomic level.
+One big difference: _there is no friction_. Lower the friction of the system below an see what happens.
 
 <script>
     createSimulation({
@@ -54,9 +54,9 @@ One big difference: _there is no friction_. Lower the friction of the system bel
     });
 </script>
 
-The atoms are bouncing all over the place, and they never stop. We have created  perpetual motion machine!￿
+The atoms are bouncing all over the place, and they never stop. We have created  perpetual motion machine!
 
-Also, notice that the energy stays the same. Put another way: _energy is never created o destroyed_. This is how the world works at the microscopic level.￿
+Also, notice that the energy stays the same. Put another way: _energy is never created o destroyed_. This is how the world works at the microscopic level.
 
 We've already seen what happens if the energy keeps decreasing: everything stops. What happens if the energy always increases? Try out negative friction!
 
@@ -122,7 +122,7 @@ Take a look at these two boxes of particles. Which one has more energy?
             bondEnergy: 0,
             maxInitialSpeed: 0.02,
         },
-        walls: [{start: vec2.fromValues(0, -1), end: vec2.fromValues(0, 1)}],
+        walls: [{start: v2.create(0, -1), end: v2.create(0, 1)}],
     });
 
     setColdHotRegions(hotColdSim);
@@ -140,13 +140,13 @@ Yep, the right one definitely has more energy. Now compare with this:
         {
             particle.position = randomPointInRect(simulation.leftRect);
             particle.velocity = randomUnitVector();
-            vec2.scale(particle.velocity, particle.velocity, maxSpeed / 5);
+            v2.scale(particle.velocity, particle.velocity, maxSpeed / 5);
         }
         else
         {
             particle.position = randomPointInRect(simulation.rightRect);
             particle.velocity = randomUnitVector();
-            vec2.scale(particle.velocity, particle.velocity, maxSpeed);
+            v2.scale(particle.velocity, particle.velocity, maxSpeed);
         }
         return particle;
     }
@@ -160,7 +160,7 @@ Yep, the right one definitely has more energy. Now compare with this:
             bondEnergy: 0,
             maxInitialSpeed: 0.1,
         },
-        walls: [{start: vec2.fromValues(0, -1), end: vec2.fromValues(0, 1)}],
+        walls: [{start: v2.create(0, -1), end: v2.create(0, 1)}],
     });
 
     setColdHotRegions(slowFastBall);
@@ -181,7 +181,7 @@ To demonstrate: try _decreasing_ the energy of both systems below.
         {
             particle.position = randomPointInRect(simulation.leftRect);
             particle.velocity = randomUnitVector();
-            vec2.scale(particle.velocity, particle.velocity, 1.9*maxSpeed);
+            v2.scale(particle.velocity, particle.velocity, 1.9*maxSpeed);
             particle.radius = 5;
             particle.mass = squared(5);
         }
@@ -189,7 +189,7 @@ To demonstrate: try _decreasing_ the energy of both systems below.
         {
             particle.position = randomPointInRect(simulation.rightRect);
             particle.velocity = randomUnitVector();
-            vec2.scale(particle.velocity, particle.velocity, maxSpeed);
+            v2.scale(particle.velocity, particle.velocity, maxSpeed);
         }
         return particle;
     }
@@ -203,7 +203,7 @@ To demonstrate: try _decreasing_ the energy of both systems below.
             bondEnergy: 0,
             maxInitialSpeed: 0.01,
         },
-        walls: [{start: vec2.fromValues(0, -1), end: vec2.fromValues(0, 1)}],
+        walls: [{start: v2.create(0, -1), end: v2.create(0, 1)}],
     });
 
     setColdHotRegions(oneManySim);
