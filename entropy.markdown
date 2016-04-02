@@ -13,6 +13,7 @@ When playing billiards, it's easy to make a mess.
             particleCount: 11,
             friction: 0.1,
             bondEnergy: 0,
+            separationFactor: 1,
         },
     });
 

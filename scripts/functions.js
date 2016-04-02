@@ -1585,11 +1585,12 @@ var updateSimulation = function()
                         particle.position, relativeMovement
                     );
                     v2.free(relativeMovement);
-                    var iscollision = intersection.isIntersected && (0 < intersection.t1) && (intersection.t1 < remainingTime);
+                    var epsilon = 0.0001;
+                    var iscollision = intersection.isIntersected && ((-epsilon) < intersection.t1) && (intersection.t1 < remainingTime);
                     if (iscollision)
                     {
                         var collision = {
-                            time: intersection.t1,
+                            time: Math.max(intersection.t1, 0),
                             first: particle,
                             second: otherParticle,
                         }
