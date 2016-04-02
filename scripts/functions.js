@@ -38,12 +38,12 @@ v2.pool = new Pool(function()
 v2.alloc = function()
 {
     return poolAlloc(v2.pool);
-}
+};
 
 v2.free = function(a)
 {
     poolFree(v2.pool, a);
-}
+};
 
 v2.create = function(x, y)
 {
@@ -51,7 +51,7 @@ v2.create = function(x, y)
     out[0] = x;
     out[1] = y;
     return out;
-}
+};
 
 v2.clone = function(a)
 {
@@ -59,111 +59,111 @@ v2.clone = function(a)
     out[0] = a[0];
     out[1] = a[1];
     return out;
-}
+};
 
 v2.set = function(out, x, y)
 {
     out[0] = x;
     out[1] = y;
     return out;
-}
+};
 
 v2.copy = function(out, a)
 {
     out[0] = a[0];
     out[1] = a[1];
     return out;
-}
+};
 
 v2.add = function(out, a, b)
 {
     out[0] = a[0] + b[0];
     out[1] = a[1] + b[1];
     return out;
-}
+};
 
 v2.subtract = function(out, a, b)
 {
     out[0] = a[0] - b[0];
     out[1] = a[1] - b[1];
     return out;
-}
+};
 
 v2.negate = function(out, a)
 {
     out[0] = -a[0];
     out[1] = -a[1];
     return out;
-}
+};
 
 v2.scale = function(out, a, t)
 {
     out[0] = t * a[0];
     out[1] = t * a[1];
     return out;
-}
+};
 
 v2.scaleAndAdd = function(out, a, b, t)
 {
     out[0] = a[0] + b[0] * t;
     out[1] = a[1] + b[1] * t;
     return out;
-}
+};
 
 v2.dot = function(a, b)
 {
     return a[0] * b[0] + a[1] * b[1];
-}
+};
 
 v2.setPolar = function(out, radius, angle)
 {
     var x = radius * Math.cos(angle);
     var y = radius * Math.sin(angle);
     return v2.set(out, x, y);
-}
+};
 
 v2.square = function(a)
 {
     return a[0] * a[0] + a[1] * a[1];
-}
+};
 
 v2.length = function(a)
 {
     return Math.sqrt(v2.square(a));
-}
+};
 
 v2.normalize = function(out, a)
 {
     var length = v2.length(a);
     v2.scale(out, a, 1 / length);
     return out;
-}
+};
 
 v2.projectOntoNormal = function(out, a, normal)
 {
     var length = v2.dot(a, normal);
     v2.scale(out, normal, length);
     return out;
-}
+};
 
 v2.rotateCCW = function(out, a)
 {
     out[0] = -a[1];
     out[1] = a[0];
     return out;
-}
+};
 
 v2.rotateCW = function(out, a)
 {
     out[0] = a[1];
     out[1] = -a[0];
     return out;
-}
+};
 
 v2.outer = function(a, b)
 {
     return a[0] * b[1] - a[1] * b[0];
-}
+};
 
 // ! Generally useful
 
@@ -789,7 +789,6 @@ function createSimulation(opts)
         customUpdate: function(simulation) {},
     });
 
-    simulation.running = true;
     simulation.time = 0;
     simulation.times = [];
     simulation.pausedByUser = false;
@@ -1439,6 +1438,87 @@ var updateSimulation = function()
 
     return function(updateFunction, simulation, timestamp)
     {
+
+        // ! Process input
+
+        if (simulation.mouse.leftButton.transitionCount > 0)
+        {
+            var billiardCue = simulation.mouse.billiardCue;
+            if ((simulation.mouse.mode === "billiardCue") && billiardCue.visible)
+            {
+                // Let go of billiardCue
+                var activeParticle = simulation.particles[simulation.mouse.activeParticleIndex]
+                v2.subtract(relativePosition, activeParticle.position, simulation.mouse.worldPosition);
+                v2.scaleAndAdd(activeParticle.velocity, activeParticle.velocity,
+                    relativePosition, billiardCue.strength);
+                billiardCue.visible = false;
+            }
+
+            simulation.mouse.mode = "";
+        }
+
+        if (simulation.mouse.leftButton.down)
+        {
+            var extraRadius = 1;
+            var pickedParticle = pickParticle(simulation, simulation.mouse.worldPosition, extraRadius);
+            var isCloseToParticle = (pickedParticle >= 0);
+
+            var hitParticle = pickParticle(simulation, simulation.mouse.worldPosition);
+            var isOnParticle = (hitParticle >= 0);
+
+            if (simulation.mouse.mode === "")
+            {
+                var latestDownKey = arrayLast(simulation.downKeys);
+                if (latestDownKey == "c")
+                {
+                    simulation.mouse.mode = "createParticles";
+                }
+                else if (latestDownKey == "d")
+                {
+                    simulation.mouse.mode = "destroyParticles";
+                }
+                else if (latestDownKey == "b")
+                {
+                    if (isOnParticle)
+                    {
+                        simulation.mouse.mode = "billiardCue";
+                        simulation.mouse.activeParticleIndex = hitParticle;
+                    }
+                }
+                else
+                {
+                    if (isOnParticle)
+                    {
+                        simulation.mouse.mode = "dragParticle";
+                        simulation.mouse.activeParticleIndex = hitParticle;
+                    }
+                }
+            }
+
+            if ((simulation.mouse.mode == "createParticles") && (!isCloseToParticle))
+            {
+                addParticle(simulation, simulation.mouse.worldPosition);
+            }
+            else if (simulation.mouse.mode == "destroyParticles")
+            {
+                if (hitParticle >= 0)
+                {
+                    removeParticle(simulation, hitParticle);
+                }
+            }
+            else if (simulation.mouse.mode == "billiardCue")
+            {
+                var billiardCue = simulation.mouse.billiardCue;
+                var activeParticle = simulation.particles[simulation.mouse.activeParticleIndex]
+                v2.subtract(relativePosition, simulation.mouse.worldPosition, activeParticle.position);
+                var effectiveRadius = activeParticle.radius * simulation.parameters.radiusScaling;
+                billiardCue.visible = v2.square(relativePosition) > squared(effectiveRadius);
+                v2.normalize(relativePosition, relativePosition);
+                v2.copy(billiardCue.start, simulation.mouse.worldPosition);
+                v2.scaleAndAdd(billiardCue.end, billiardCue.start, relativePosition, billiardCue.length);
+            }
+        }
+
         // ! Keep track of time
 
         if (simulation.isFirstFrameAfterPause) {
@@ -1449,6 +1529,8 @@ var updateSimulation = function()
         var elapsedTime = timestamp - simulation.previousTimestamp;
         simulation.previousTimestamp = timestamp;
         simulation.timeLeftToSimulate += elapsedTime;
+
+        // ! Simulation loop with fixed timestep
 
         while (simulation.timeLeftToSimulate > simulation.parameters.frameDuration)
         {
@@ -1463,85 +1545,7 @@ var updateSimulation = function()
 
             var gravityAcceleration = v2.create(0, -simulation.parameters.gravityAcceleration);
 
-            // ! Process input
-
-            if (simulation.mouse.leftButton.transitionCount > 0)
-            {
-                var billiardCue = simulation.mouse.billiardCue;
-                if ((simulation.mouse.mode === "billiardCue") && billiardCue.visible)
-                {
-                    // Let go of billiardCue
-                    var activeParticle = simulation.particles[simulation.mouse.activeParticleIndex]
-                    v2.subtract(relativePosition, activeParticle.position, simulation.mouse.worldPosition);
-                    v2.scaleAndAdd(activeParticle.velocity, activeParticle.velocity,
-                        relativePosition, billiardCue.strength);
-                    billiardCue.visible = false;
-                }
-
-                simulation.mouse.mode = "";
-            }
-
-            if (simulation.mouse.leftButton.down)
-            {
-                var extraRadius = 1;
-                var pickedParticle = pickParticle(simulation, simulation.mouse.worldPosition, extraRadius);
-                var isCloseToParticle = (pickedParticle >= 0);
-
-                var hitParticle = pickParticle(simulation, simulation.mouse.worldPosition);
-                var isOnParticle = (hitParticle >= 0);
-
-                if (simulation.mouse.mode === "")
-                {
-                    var latestDownKey = arrayLast(simulation.downKeys);
-                    if (latestDownKey == "c")
-                    {
-                        simulation.mouse.mode = "createParticles";
-                    }
-                    else if (latestDownKey == "d")
-                    {
-                        simulation.mouse.mode = "destroyParticles";
-                    }
-                    else if (latestDownKey == "b")
-                    {
-                        if (isOnParticle)
-                        {
-                            simulation.mouse.mode = "billiardCue";
-                            simulation.mouse.activeParticleIndex = hitParticle;
-                        }
-                    }
-                    else
-                    {
-                        if (isOnParticle)
-                        {
-                            simulation.mouse.mode = "dragParticle";
-                            simulation.mouse.activeParticleIndex = hitParticle;
-                        }
-                    }
-                }
-
-                if ((simulation.mouse.mode == "createParticles") && (!isCloseToParticle))
-                {
-                    addParticle(simulation, simulation.mouse.worldPosition);
-                }
-                else if (simulation.mouse.mode == "destroyParticles")
-                {
-                    if (hitParticle >= 0)
-                    {
-                        removeParticle(simulation, hitParticle);
-                    }
-                }
-                else if (simulation.mouse.mode == "billiardCue")
-                {
-                    var billiardCue = simulation.mouse.billiardCue;
-                    var activeParticle = simulation.particles[simulation.mouse.activeParticleIndex]
-                    v2.subtract(relativePosition, simulation.mouse.worldPosition, activeParticle.position);
-                    var effectiveRadius = activeParticle.radius * simulation.parameters.radiusScaling;
-                    billiardCue.visible = v2.square(relativePosition) > squared(effectiveRadius);
-                    v2.normalize(relativePosition, relativePosition);
-                    v2.copy(billiardCue.start, simulation.mouse.worldPosition);
-                    v2.scaleAndAdd(billiardCue.end, billiardCue.start, relativePosition, billiardCue.length);
-                }
-            }
+            
 
             // Update lots of stuff
             // TODO: put this stuff inline here
@@ -1850,207 +1854,176 @@ var updateSimulation = function()
                     }
 
                 }
+            }
+        }
 
-                // ! Collision with other particles
-                if (simulation.parameters.collisionEnabled)
-                {
-                    if (quadtreeEnabled)
-                    {
-                        quadtree.clear();
-                        for (var particleIndex = 0; particleIndex < particles.length;
-                            ++particleIndex)
-                        {
-                            var particle = particles[particleIndex];
-                            quadtree.add(particle);
-                        }
-                        quadtree.collideAll(collide);
-                    }
-                    else
-                    {
-                        for (var i = 0; i < particleCount; ++i)
-                        {
-                            for (var j = 0; j < i; ++j)
-                            {
-                                collide(particles[i], particles[j]);
-                            }
-                        }
-                    }
-                }
+        // ! Things done once per frame, not once per simulation step
 
-                // ! Trajectory
+        // ! Input cleanup
 
-                if (simulation.parameters.trajectoryEnabled && (simulation.particles.length > 0))
-                {
-                    simulation.trajectory.push(v2.clone(simulation.particles[0].position));
-                }
+        simulation.mouse.leftButton.transitionCount = 0;
+        simulation.mouse.rightButton.transitionCount = 0;
 
-                // ! Measurements
+        // ! Trajectory
 
-                var totalEntropy = 0;
-                var probabilities = [];
-                var counts = [];
-                var totalArea = rectangleArea(simulation.boxBounds);
+        if (simulation.parameters.trajectoryEnabled && (simulation.particles.length > 0))
+        {
+            simulation.trajectory.push(v2.clone(simulation.particles[0].position));
+        }
 
-                var barWidth = 1 / simulation.measurementRegions.length;
-                for (var regionIndex = 0; regionIndex < simulation.measurementRegions.length; regionIndex++)
-                {
-                    var region = simulation.measurementRegions[regionIndex];
-                    var m = region.measurements;
+        // ! Measurements
 
-                    // Add new value, remove old, crufty ones
-                    m.time.push(simulation.time);
-                    var tooOldCount = -1;
-                    // NOTE: save more data than shown, to avoid weird autoscaling in plots
-                    while ((simulation.time - m.time[++tooOldCount]) > 2 * simulation.parameters.measurementWindowLength)
-                    {};
+        var totalEntropy = 0;
+        var probabilities = [];
+        var counts = [];
+        var totalArea = rectangleArea(simulation.boxBounds);
 
-                    for (var key in m)
-                    {
-                        m[key].splice(0, tooOldCount);
-                    }
+        var barWidth = 1 / simulation.measurementRegions.length;
+        for (var regionIndex = 0; regionIndex < simulation.measurementRegions.length; regionIndex++)
+        {
+            var region = simulation.measurementRegions[regionIndex];
+            var m = region.measurements;
 
-                    var regionEnergy = 0;
-                    var regionTemperature = 0;
-                    var regionCount = 0;
+            // Add new value, remove old, crufty ones
+            m.time.push(simulation.time);
+            var tooOldCount = -1;
+            // NOTE: save more data than shown, to avoid weird autoscaling in plots
+            while ((simulation.time - m.time[++tooOldCount]) > 2 * simulation.parameters.measurementWindowLength)
+            {};
 
-                    for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++)
-                    {
-                        var particle = simulation.particles[particleIndex];
-
-                        if (doesRectContainPoint(region.bounds, particle.position))
-                        {
-                            regionEnergy += (particle.potentialEnergy + particle.kineticEnergy);
-                            regionTemperature += particle.kineticEnergy;
-                            regionCount += 1;
-                        }
-                    }
-
-                    regionTemperature /= simulation.particles.length;
-
-                    m.energy.push(regionEnergy);
-                    m.temperature.push(regionTemperature);
-                    m.count.push(regionCount);
-
-                    addCurve(simulation.visualizations.energy,
-                    {
-                        x: m.time,
-                        y: m.energy,
-                        color: region.color
-                    });
-                    addCurve(simulation.visualizations.temperature,
-                    {
-                        x: m.time,
-                        y: m.temperature,
-                        color: region.color
-                    });
-                    addCurve(simulation.visualizations.counts,
-                    {
-                        x: m.time,
-                        y: m.count,
-                        color: region.color,
-                    });
-                    addBars(simulation.visualizations.countsHistogram,
-                    {
-                        bars: [
-                        {
-                            start: barWidth * regionIndex,
-                            end: barWidth * (regionIndex + 1),
-                            value: regionCount,
-                            color: region.color,
-                        }]
-                    });
-
-                    totalEntropy += microstateEntropy(regionCount / simulation.particles.length);
-                    var area = rectangleArea(region.bounds);
-                    probabilities.push(area / totalArea);
-                    counts.push(regionCount);
-                }
-
-                // TODO: make a list with global visualizations too
-
-                simulation.times.push(simulation.time);
-                simulation.entropy.push(totalEntropy);
-                simulation.probability.push(multinomial(probabilities, counts));
-
-                var tooOldCount = -1;
-                // NOTE: save more data than shown, to avoid weird autoscaling in plots
-                while ((simulation.time - simulation.times[++tooOldCount]) > 2 * simulation.parameters.measurementWindowLength)
-                {};
-
-                simulation.entropy.splice(0, tooOldCount);
-                simulation.times.splice(0, tooOldCount);
-                simulation.probability.splice(0, tooOldCount);
-
-                addCurve(simulation.visualizations.entropy,
-                {
-                    x: m.time,
-                    y: simulation.entropy,
-                });
-
-                addCurve(simulation.visualizations.probability,
-                {
-                    x: m.time,
-                    y: simulation.probability,
-                });
-
-                // ! Plot things
-
-                setGraphLimits(simulation.visualizations.counts,
-                {
-                    yMax: simulation.particles.length
-                });
-                setGraphLimits(simulation.visualizations.entropy,
-                {
-                    yMax: 1
-                });
-                setGraphLimits(simulation.visualizations.probability,
-                {
-                    yMax: 1
-                });
-
-
-                for (var i = 0; i < simulation.timeSeries.length; ++i)
-                {
-                    var graph = simulation.timeSeries[i];
-                    // TODO: make the limits change smoothly, so it's less noticable
-                    setGraphLimits(graph,
-                    {
-                        xMin: simulation.time - simulation.parameters.measurementWindowLength,
-                        xMax: simulation.time,
-                        yMin: 0,
-                    })
-                    drawGraph(graph);
-                }
-
-                setGraphLimits(simulation.visualizations.countsHistogram,
-                {
-                    xMin: 0,
-                    xMax: 1,
-                    yMin: 0,
-                    yMax: simulation.particles.length
-                });
-                drawGraph(simulation.visualizations.countsHistogram);
-
+            for (var key in m)
+            {
+                m[key].splice(0, tooOldCount);
             }
 
-            simulation.customUpdate(simulation);
+            var regionEnergy = 0;
+            var regionTemperature = 0;
+            var regionCount = 0;
 
-            // ! Drawing
+            for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++)
+            {
+                var particle = simulation.particles[particleIndex];
 
-            drawSimulation(simulation);
+                if (doesRectContainPoint(region.bounds, particle.position))
+                {
+                    regionEnergy += (particle.potentialEnergy + particle.kineticEnergy);
+                    regionTemperature += particle.kineticEnergy;
+                    regionCount += 1;
+                }
+            }
 
-            // ! Input cleanup
+            regionTemperature /= simulation.particles.length;
 
-            simulation.mouse.leftButton.transitionCount = 0;
-            simulation.mouse.rightButton.transitionCount = 0;
+            m.energy.push(regionEnergy);
+            m.temperature.push(regionTemperature);
+            m.count.push(regionCount);
 
+            addCurve(simulation.visualizations.energy,
+            {
+                x: m.time,
+                y: m.energy,
+                color: region.color
+            });
+            addCurve(simulation.visualizations.temperature,
+            {
+                x: m.time,
+                y: m.temperature,
+                color: region.color
+            });
+            addCurve(simulation.visualizations.counts,
+            {
+                x: m.time,
+                y: m.count,
+                color: region.color,
+            });
+            addBars(simulation.visualizations.countsHistogram,
+            {
+                bars: [
+                {
+                    start: barWidth * regionIndex,
+                    end: barWidth * (regionIndex + 1),
+                    value: regionCount,
+                    color: region.color,
+                }]
+            });
 
+            totalEntropy += microstateEntropy(regionCount / simulation.particles.length);
+            var area = rectangleArea(region.bounds);
+            probabilities.push(area / totalArea);
+            counts.push(regionCount);
         }
 
-        if (simulation.running)
+        // TODO: make a list with global visualizations too
+
+        simulation.times.push(simulation.time);
+        simulation.entropy.push(totalEntropy);
+        simulation.probability.push(multinomial(probabilities, counts));
+
+        var tooOldCount = -1;
+        // NOTE: save more data than shown, to avoid weird autoscaling in plots
+        while ((simulation.time - simulation.times[++tooOldCount]) > 2 * simulation.parameters.measurementWindowLength)
+        {};
+
+        simulation.entropy.splice(0, tooOldCount);
+        simulation.times.splice(0, tooOldCount);
+        simulation.probability.splice(0, tooOldCount);
+
+        addCurve(simulation.visualizations.entropy,
         {
-            simulation.requestFrameId = window.requestAnimationFrame(updateFunction);
+            x: m.time,
+            y: simulation.entropy,
+        });
+
+        addCurve(simulation.visualizations.probability,
+        {
+            x: m.time,
+            y: simulation.probability,
+        });
+
+        // ! Plot things
+
+        setGraphLimits(simulation.visualizations.counts,
+        {
+            yMax: simulation.particles.length
+        });
+        setGraphLimits(simulation.visualizations.entropy,
+        {
+            yMax: 1
+        });
+        setGraphLimits(simulation.visualizations.probability,
+        {
+            yMax: 1
+        });
+
+        simulation.customUpdate(simulation);
+
+        // ! Drawing
+
+        for (var i = 0; i < simulation.timeSeries.length; ++i)
+        {
+            var graph = simulation.timeSeries[i];
+            // TODO: make the limits change smoothly, so it's less noticable
+            setGraphLimits(graph,
+            {
+                xMin: simulation.time - simulation.parameters.measurementWindowLength,
+                xMax: simulation.time,
+                yMin: 0,
+            })
+            drawGraph(graph);
         }
+
+        setGraphLimits(simulation.visualizations.countsHistogram,
+        {
+            xMin: 0,
+            xMax: 1,
+            yMin: 0,
+            yMax: simulation.particles.length
+        });
+        drawGraph(simulation.visualizations.countsHistogram);
+
+        drawSimulation(simulation);
+
+        simulation.requestFrameId = window.requestAnimationFrame(updateFunction);
     }
 }();
 
