@@ -363,8 +363,8 @@ function drawGraph(graph)
 
     var paddingFactor = 0.05;
     var minimumPadding = 0.00001;
-    var xPadding = Math.max(paddingFactor * (limits.xMax - limits.xMin), minimumPadding);
-    var yPadding = Math.max(paddingFactor * (limits.yMax - limits.yMin), minimumPadding);
+    var xPadding = atLeast(minimumPadding, paddingFactor * (limits.xMax - limits.xMin));
+    var yPadding = atLeast(minimumPadding, paddingFactor * (limits.yMax - limits.yMin));
 
     setLeftTopRightBottom(graph.renderer.bounds,
         limits.xMin - xPadding,
@@ -1590,7 +1590,7 @@ var updateSimulation = function()
                     if (iscollision)
                     {
                         var collision = {
-                            time: Math.max(intersection.t1, 0),
+                            time: atLeast(0, intersection.t1),
                             first: particle,
                             second: otherParticle,
                         }
@@ -1694,6 +1694,9 @@ var updateSimulation = function()
                     var particle = particles[particleIndex];
                     v2.scaleAndAdd(particle.position, particle.position, particle.velocity, remainingTime);
                 }
+
+                // TODO: handle overlap, because it sometimes happens
+                // might be because walls do not use prior collision code
 
 
                 // ! Calculate forces
@@ -1862,6 +1865,8 @@ var updateSimulation = function()
 
         // ! Measurements
 
+        // TODO: record measurements for each simulation step, but only once
+
         var totalEntropy = 0;
         var probabilities = [];
         var counts = [];
@@ -2017,6 +2022,16 @@ var updateSimulation = function()
 }();
 
 // ! Math stuff
+
+function atLeast(a, b)
+{
+    return Math.max(a, b);
+}
+
+function atMost(a, b)
+{
+    return Math.min(a, b);
+}
 
 function microstateEntropy(p)
 {
@@ -2191,18 +2206,18 @@ function intersectionCircleLine(
     lineStart, lineVector
 )
 {
-    var c = v2.subtract(v2.alloc(), circleCenter, lineStart);
+    var c = v2.alloc();
+    v2.subtract(c, circleCenter, lineStart);
     var dotBC = v2.dot(lineVector, c);
     var bSq = v2.square(lineVector);
     var rootInput = square(dotBC) + bSq * (squared(circleRadius) - v2.square(c));
     v2.free(c);
-    if (rootInput > 0)
+    if ((bSq > 0) && (rootInput > 0))
     {
         var root = Math.sqrt(rootInput);
         var bSqInv = 1 / bSq;
         var t1 = (dotBC - root) * bSqInv;
         var t2 = (dotBC + root) * bSqInv;
-
 
         return {
             isIntersected: true,
