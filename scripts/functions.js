@@ -1840,11 +1840,13 @@ var updateSimulation = function()
                             v2.projectOntoNormal(projection, particle.velocity, collision.normal);
                             v2.scaleAndAdd(particle.velocity, particle.velocity, projection, -2);
                         }
-
-
-
                     }
 
+                    // ! Periodic boundary conditions
+
+                    var b = simulation.boxBounds;
+                    particle.position[0] -= b.width * Math.round(particle.position[0] / b.width);
+                    particle.position[1] -= b.height * Math.round(particle.position[1] / b.height);
                 }
             }
         }
