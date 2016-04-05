@@ -165,6 +165,14 @@ v2.outer = function(a, b)
     return a[0] * b[1] - a[1] * b[0];
 };
 
+// TODO: make sure inside rect (right now only cares about width and height)
+v2.periodicize = function(out, a, bounds)
+{
+    out[0] = a[0] - bounds.width * Math.round(a[0] / bounds.width);
+    out[1] = a[1] - bounds.height * Math.round(a[1] / bounds.height);
+    return out;
+};
+
 // ! Generally useful
 
 function combineWithDefaults(opts, defaults)
@@ -1580,9 +1588,11 @@ var updateSimulation = function()
                 // TODO: make this be a global function instead of a closure if it improves performance
                 function recordCollision(collisions, remainingTime, particle, otherParticle) {
                     var relativeMovement = v2.subtract(v2.alloc(), particle.velocity, otherParticle.velocity);
-                    var intersection = intersectionCircleLine(
-                        otherParticle.position, (particle.radius + otherParticle.radius) * simulation.parameters.radiusScaling,
-                        particle.position, relativeMovement
+                    var relativePosition = v2.subtract(v2.alloc(), particle.position, otherParticle.position);
+                    v2.periodicize(relativePosition, relativePosition, simulation.boxBounds);
+                    var intersection = intersectionOriginCircleLine(
+                        (particle.radius + otherParticle.radius) * simulation.parameters.radiusScaling,
+                        relativePosition, relativeMovement
                     );
                     v2.free(relativeMovement);
                     var epsilon = 0.0001;
@@ -1843,10 +1853,7 @@ var updateSimulation = function()
                     }
 
                     // ! Periodic boundary conditions
-
-                    var b = simulation.boxBounds;
-                    particle.position[0] -= b.width * Math.round(particle.position[0] / b.width);
-                    particle.position[1] -= b.height * Math.round(particle.position[1] / b.height);
+                    v2.periodicize(particle.position, particle.position, simulation.boxBounds);
                 }
             }
         }
@@ -2203,23 +2210,20 @@ function rectangleArea(rectangle)
 
 // ! Intersection
 
-function intersectionCircleLine(
-    circleCenter, circleRadius,
+function intersectionOriginCircleLine(
+    circleRadius,
     lineStart, lineVector
 )
 {
-    var c = v2.alloc();
-    v2.subtract(c, circleCenter, lineStart);
-    var dotBC = v2.dot(lineVector, c);
+    var dotAB = v2.dot(lineStart, lineVector);
     var bSq = v2.square(lineVector);
-    var rootInput = square(dotBC) + bSq * (squared(circleRadius) - v2.square(c));
-    v2.free(c);
+    var rootInput = square(dotAB) + bSq * (squared(circleRadius) - v2.square(lineStart));
     if ((bSq > 0) && (rootInput > 0))
     {
         var root = Math.sqrt(rootInput);
         var bSqInv = 1 / bSq;
-        var t1 = (dotBC - root) * bSqInv;
-        var t2 = (dotBC + root) * bSqInv;
+        var t1 = (-dotAB - root) * bSqInv;
+        var t2 = (-dotAB + root) * bSqInv;
 
         return {
             isIntersected: true,
