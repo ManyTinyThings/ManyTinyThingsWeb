@@ -199,7 +199,8 @@ function arrayMinIndex(array, f)
 {
     var minimum = Number.MAX_VALUE;
     var minimumIndex = -1;
-    for (var i = 0; i < array.length; i++) {
+    for (var i = 0; i < array.length; i++)
+    {
         var value = f(array[i]);
         if (value < minimum)
         {
@@ -1449,6 +1450,8 @@ var updateSimulation = function()
 
         // ! Process input
 
+        // TODO: handle periodic boundary conditions
+
         if (simulation.mouse.leftButton.transitionCount > 0)
         {
             var billiardCue = simulation.mouse.billiardCue;
@@ -1532,7 +1535,8 @@ var updateSimulation = function()
         var elapsedTime = timestamp - simulation.previousTimestamp;
         simulation.previousTimestamp = timestamp;
 
-        if (simulation.isFirstFrameAfterPause) {
+        if (simulation.isFirstFrameAfterPause)
+        {
             simulation.isFirstFrameAfterPause = false;
             elapsedTime = simulation.parameters.frameDuration;
         }
@@ -1544,7 +1548,7 @@ var updateSimulation = function()
         while (simulation.timeLeftToSimulate >= simulation.parameters.frameDuration)
         {
             simulation.timeLeftToSimulate -= simulation.parameters.frameDuration;
-            
+
             // TODO: make timestep completely fixed? 
             // and change simulation speed by running more or fewer iterations with interpolation?
             var slowingFactor = 0.01;
@@ -1585,8 +1589,13 @@ var updateSimulation = function()
 
                 // ! Collision
 
+                // TODO: ensure this works with time backwards (dt < 0),
+                // perhaps by using deltaPosition, and a remainingTime that's always positive
+                // or by flipping velocities when time gets < 0 and having dt > 0
+
                 // TODO: make this be a global function instead of a closure if it improves performance
-                function recordCollision(collisions, remainingTime, particle, otherParticle) {
+                function recordCollision(collisions, remainingTime, particle, otherParticle)
+                {
                     var relativeMovement = v2.subtract(v2.alloc(), particle.velocity, otherParticle.velocity);
                     var relativePosition = v2.subtract(v2.alloc(), particle.position, otherParticle.position);
                     v2.periodicize(relativePosition, relativePosition, simulation.boxBounds);
@@ -1595,9 +1604,10 @@ var updateSimulation = function()
                         relativePosition, relativeMovement
                     );
                     v2.free(relativeMovement);
-                    var epsilon = 0.0001;
-                    var iscollision = intersection.isIntersected && ((-epsilon) < intersection.t1) && (intersection.t1 < remainingTime);
-                    if (iscollision)
+                    v2.free(relativePosition);
+                    var epsilon = 0.001;
+                    var isCollision = (intersection.isIntersected && ((-epsilon) < intersection.t1) && (intersection.t1 < remainingTime));
+                    if (isCollision)
                     {
                         var collision = {
                             time: atLeast(0, intersection.t1),
@@ -1622,13 +1632,17 @@ var updateSimulation = function()
                 while (collisions.length != 0)
                 {
                     // take first collision
-                    var firstIndex = arrayMinIndex(collisions, function(c) { return c.time; });
-                    
+                    var firstIndex = arrayMinIndex(collisions, function(c)
+                    {
+                        return c.time;
+                    });
+
                     var firstCollisionTime = collisions[firstIndex].time;
                     remainingTime -= firstCollisionTime;
 
                     var firstCollisions = [];
-                    for (var collisionIndex = 0; collisionIndex < collisions.length; collisionIndex++) {
+                    for (var collisionIndex = 0; collisionIndex < collisions.length; collisionIndex++)
+                    {
                         // TODO: should probably be epsilon here
                         var collision = collisions[collisionIndex];
                         if (collision.time === firstCollisionTime)
@@ -1638,12 +1652,14 @@ var updateSimulation = function()
                     }
 
                     // advance time for everyone
-                    for (var particleIndex = 0; particleIndex < particles.length; particleIndex++) {
+                    for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
+                    {
                         var particle = particles[particleIndex];
                         v2.scaleAndAdd(particle.position, particle.position, particle.velocity, firstCollisionTime);
                     }
 
-                    for (var firstCollisionIndex = 0; firstCollisionIndex < firstCollisions.length; firstCollisionIndex++) {
+                    for (var firstCollisionIndex = 0; firstCollisionIndex < firstCollisions.length; firstCollisionIndex++)
+                    {
 
 
                         // ! Elastic collision
@@ -1665,16 +1681,14 @@ var updateSimulation = function()
                             deltaVelocity, -2 * firstCollision.second.mass / massSum);
                         v2.scaleAndAdd(firstCollision.second.velocity, firstCollision.second.velocity,
                             deltaVelocity, 2 * firstCollision.first.mass / massSum);
-                        
+
                         // remove collisions for involved particles
 
-                        for (var collisionIndex = 0; collisionIndex < collisions.length; collisionIndex++) {
+                        for (var collisionIndex = 0; collisionIndex < collisions.length; collisionIndex++)
+                        {
                             var c = collisions[collisionIndex];
-                            
-                            if ((c.first === firstCollision.first) 
-                                || (c.first === firstCollision.second)
-                                || (c.second === firstCollision.first)
-                                || (c.second === firstCollision.second))
+
+                            if ((c.first === firstCollision.first) || (c.first === firstCollision.second) || (c.second === firstCollision.first) || (c.second === firstCollision.second))
                             {
                                 collisions.splice(collisionIndex--, 1);
                                 continue;
@@ -1683,15 +1697,15 @@ var updateSimulation = function()
 
                         // calculate any new collisions for involved particles
 
-                        for (var particleIndex = 0; particleIndex < particles.length; particleIndex++) {
+                        for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
+                        {
                             // TODO: make firstCollision.first and second be indices
                             var particle = particles[particleIndex];
 
-                            if ((particle !== firstCollision.first) 
-                                && (particle !== firstCollision.second))
+                            if ((particle !== firstCollision.first) && (particle !== firstCollision.second))
                             {
                                 recordCollision(collisions, remainingTime, firstCollision.first, particle);
-                                recordCollision(collisions, remainingTime, firstCollision.second, particle); 
+                                recordCollision(collisions, remainingTime, firstCollision.second, particle);
                             }
                         }
 
@@ -1700,16 +1714,62 @@ var updateSimulation = function()
 
                 // move last bit
 
-                for (var particleIndex = 0; particleIndex < particles.length; particleIndex++) {
+                for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
+                {
                     var particle = particles[particleIndex];
                     v2.scaleAndAdd(particle.position, particle.position, particle.velocity, remainingTime);
                 }
+
 
                 // TODO: handle overlap, because it sometimes happens
                 // might be because walls do not use prior collision code
 
 
                 // ! Calculate forces
+
+                for (var particleIndex = 0; particleIndex < particleCount; particleIndex++)
+                {
+                    var particle = particles[particleIndex];
+
+                    if (simulation.parameters.bondEnergy !== 0)
+                    {
+                        for (var otherParticleIndex = 0; otherParticleIndex < particleIndex; otherParticleIndex++)
+                        {
+                            var otherParticle = particles[otherParticleIndex];
+
+                            var separationFactor = simulation.parameters.separationFactor;
+                            var distanceLimit = simulation.parameters.radiusScaling * (particle.radius + otherParticle.radius);
+                            var separation = separationFactor * distanceLimit;
+
+                            v2.subtract(relativePosition, otherParticle.position, particle.position);
+                            v2.periodicize(relativePosition, relativePosition, simulation.boxBounds);
+                            var distanceBetweenCenters = v2.length(relativePosition);
+
+                            var invDistance = 1 / distanceBetweenCenters;
+                            var potentialEnergy = lennardJonesEnergy(invDistance, simulation.parameters.bondEnergy, separation);
+                            var normal = v2.scale(relativePosition, relativePosition, invDistance);
+
+                            // Potential force
+                            var force = lennardJonesForce(invDistance, simulation.parameters.bondEnergy, separation);
+                            var potentialEnergy = lennardJonesEnergy(invDistance, simulation.parameters.bondEnergy, separation);
+                            // TODO: this is a little weird
+                            particle.potentialEnergy += potentialEnergy / 2;
+                            otherParticle.potentialEnergy += potentialEnergy / 2;
+
+                            var accelerationDirection = normal;
+                            v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                                accelerationDirection, -force / particle.mass);
+                            v2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration,
+                                accelerationDirection, force / otherParticle.mass);
+                        }
+                    }
+
+
+                    // Friction
+                    v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                        particle.velocity, -simulation.parameters.friction / particle.mass);
+                }
+
 
                 // for (var i = 0; i < particleCount; ++i)
                 // {
@@ -1874,7 +1934,7 @@ var updateSimulation = function()
 
         // ! Measurements
 
-        // TODO: record measurements for each simulation step, but only once
+        // TODO: record measurements for each simulation step, but only draw once
 
         var totalEntropy = 0;
         var probabilities = [];
