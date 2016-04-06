@@ -16,7 +16,7 @@
         {
             var particle = new Particle();
             particle.position = hexagonalLatticePosition(simulation, particleIndex);
-            if (particleIndex == 0)
+            if (particleIndex == -1)
             {
                 v2.set(particle.velocity, 0, simulation.parameters.maxInitialSpeed);
             }
@@ -30,7 +30,7 @@
             particleGenerator: sameInitialGenerator,
             parameters: {
                 particleCount: 37,
-                bondEnergy: 0,
+                bondEnergy: 0.001,
             },
         });
 
