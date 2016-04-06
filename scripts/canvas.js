@@ -39,10 +39,17 @@ function drawParticles(renderer, particles, radiusScaling)
         var particle = particles[i];
         var position = particle.position;
 
-        context.beginPath();
         context.fillStyle = cssFromRGBA(particle.color.rgba);
-        context.arc(position[0], position[1], particle.radius * radiusScaling, 0, tau);
-        context.fill();
+        for (var dx = 0; dx < 3; dx++) {
+            for (var dy = 0; dy < 3; dy++) {
+                context.beginPath();
+                var x = position[0] + renderer.bounds.width * (dx - 1);
+                var y = position[1] + renderer.bounds.height * (dy - 1);
+                context.arc(x, y, particle.radius * radiusScaling, 0, tau);
+                context.fill();
+            }
+        }
+        
     }
 }
 
