@@ -423,6 +423,7 @@ function createMeasurementRegion()
         energy: [],
         temperature: [],
         count: [],
+        virialPressure: [],
         pressure: [],
         smoothedPressure: [],
     }
@@ -460,6 +461,7 @@ var Particle = function()
     this.kineticEnergy = 0;
     this.potentialEnergy = 0;
     this.pressure = 0;
+    this.virial = 0;
 
     this.color = colors.black;
     this.bounds = new Rectangle();
@@ -1199,6 +1201,7 @@ function createSimulation(opts)
         temperature: createGraph(createAndAppend("div", simulation.visualizationDiv), "Temperature"),
         counts: createGraph(createAndAppend("div", simulation.visualizationDiv), "Counts"),
         pressure: createGraph(createAndAppend("div", simulation.visualizationDiv), "Pressure"),
+        virialPressure: createGraph(createAndAppend("div", simulation.visualizationDiv), "VirialPressure"),
         countsHistogram: createGraph(createAndAppend("div", simulation.visualizationDiv), "Counts"),
         entropy: createGraph(createAndAppend("div", simulation.visualizationDiv), "Entropy"),
         probability: createGraph(createAndAppend("div", simulation.visualizationDiv), "Probability"),
@@ -1208,6 +1211,7 @@ function createSimulation(opts)
         simulation.visualizations.temperature,
         simulation.visualizations.counts,
         simulation.visualizations.pressure,
+        simulation.visualizations.virialPressure,
         simulation.visualizations.entropy,
         simulation.visualizations.probability,
     ];
@@ -1594,6 +1598,7 @@ var updateSimulation = function()
                     v2.copy(particle.acceleration, gravityAcceleration);
                     particle.potentialEnergy = -v2.dot(particle.position, gravityAcceleration);
                     particle.pressure = 0;
+                    particle.virial = 0;
                 }
 
                 // ! Collision
@@ -1775,6 +1780,11 @@ var updateSimulation = function()
                                 accelerationDirection, -force / particle.mass);
                             v2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration,
                                 accelerationDirection, force / otherParticle.mass);
+
+                            var halfVirial = force * distanceBetweenCenters / 2;
+                            particle.virial += halfVirial;
+                            otherParticle.virial += halfVirial;
+
                         }
                     }
 
@@ -1979,6 +1989,8 @@ var updateSimulation = function()
             var regionTemperature = 0;
             var regionCount = 0;
             var regionPressure = 0;
+            var regionVirialSum = 0;
+            var regionArea = rectangleArea(region.bounds);
 
             for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++)
             {
@@ -1990,15 +2002,20 @@ var updateSimulation = function()
                     regionEnergy += (particle.potentialEnergy + particle.kineticEnergy);
                     regionTemperature += particle.kineticEnergy;
                     regionCount += 1;
+                    regionVirialPressure = particle.virial;
                 }
             }
 
-            regionTemperature /= simulation.particles.length;
+            regionTemperature /= regionCount;
+            var dimension = 2;
+            var regionVirialPressure = (regionVirialSum / dimension + regionTemperature * regionCount) / regionArea;
+
 
             m.energy.push(regionEnergy);
             m.temperature.push(regionTemperature);
             m.count.push(regionCount);
             m.pressure.push(regionPressure);
+            m.virialPressure.push(regionVirialPressure);
 
             var smoothingWindowSize = atMost(50, m.pressure.length);
             var smoothingFactor = 0;
@@ -2039,6 +2056,12 @@ var updateSimulation = function()
                 y: m.smoothedPressure,
                 color: region.color,
             });
+            addCurve(simulation.visualizations.virialPressure,
+            {
+                x: m.time,
+                y: m.virialPressure,
+                color: region.color,
+            });
             addBars(simulation.visualizations.countsHistogram,
             {
                 bars: [
@@ -2051,8 +2074,7 @@ var updateSimulation = function()
             });
 
             totalEntropy += microstateEntropy(regionCount / simulation.particles.length);
-            var area = rectangleArea(region.bounds);
-            probabilities.push(area / totalArea);
+            probabilities.push(regionArea / totalArea);
             counts.push(regionCount);
         }
 
