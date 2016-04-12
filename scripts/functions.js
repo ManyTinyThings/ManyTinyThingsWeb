@@ -253,6 +253,7 @@ function createGraph(div, label)
         yMin: "auto",
         yMax: "auto",
     };
+    graph.isVisible = true;
 
     return graph;
 }
@@ -289,6 +290,19 @@ function setGraphLimits(graph, limits)
     for (var key in limits)
     {
         graph.limits[key] = limits[key];
+    }
+}
+
+function setGraphVisible(graph, isVisible)
+{
+    graph.isVisible = isVisible;
+    if (isVisible)
+    {
+        showElement(graph.div);
+    }
+    else
+    {
+        hideElement(graph.div);
     }
 }
 
@@ -330,77 +344,80 @@ function updateAutoLimits(autoLimits, x, y)
 
 function drawGraph(graph)
 {
-    // Figure out limits
-
-    var autoLimits = {
-        xMin: Number.MAX_VALUE,
-        xMax: -Number.MAX_VALUE,
-        yMin: Number.MAX_VALUE,
-        yMax: -Number.MAX_VALUE,
-    }
-    for (var curveIndex = 0; curveIndex < graph.curves.length; curveIndex++)
+    if (graph.isVisible)
     {
-        var curve = graph.curves[curveIndex];
-        for (var i = 0; i < curve.pointCount; i++)
-        {
-            var x = curve.xs[i];
-            var y = curve.ys[i];
-            updateAutoLimits(autoLimits, x, y);
+        // Figure out limits
+
+        var autoLimits = {
+            xMin: Number.MAX_VALUE,
+            xMax: -Number.MAX_VALUE,
+            yMin: Number.MAX_VALUE,
+            yMax: -Number.MAX_VALUE,
         }
-    }
-
-    for (var barIndex = 0; barIndex < graph.bars.length; barIndex++)
-    {
-        var bar = graph.bars[barIndex];
-        updateAutoLimits(autoLimits, bar.start, 0);
-        updateAutoLimits(autoLimits, bar.end, bar.value);
-    }
-
-    var limits = {};
-
-    for (var key in graph.limits)
-    {
-        if (graph.limits[key] == "auto")
+        for (var curveIndex = 0; curveIndex < graph.curves.length; curveIndex++)
         {
-            limits[key] = autoLimits[key];
+            var curve = graph.curves[curveIndex];
+            for (var i = 0; i < curve.pointCount; i++)
+            {
+                var x = curve.xs[i];
+                var y = curve.ys[i];
+                updateAutoLimits(autoLimits, x, y);
+            }
         }
-        else
-        {
-            limits[key] = graph.limits[key];
-        }
-    }
 
-    var paddingFactor = 0.05;
-    var minimumPadding = 0.00001;
-    var xPadding = atLeast(minimumPadding, paddingFactor * (limits.xMax - limits.xMin));
-    var yPadding = atLeast(minimumPadding, paddingFactor * (limits.yMax - limits.yMin));
-
-    setLeftTopRightBottom(graph.renderer.bounds,
-        limits.xMin - xPadding,
-        limits.yMax + yPadding,
-        limits.xMax + xPadding,
-        limits.yMin - yPadding
-    );
-
-    updateRendererBounds(graph.renderer);
-
-    // Clear and draw
-
-    clearRenderer(graph.renderer);
-
-    for (var curveIndex = 0; curveIndex < graph.curves.length; curveIndex++)
-    {
-        var curve = graph.curves[curveIndex];
-        drawTrajectoryUnzipped(graph.renderer, curve.xs, curve.ys, curve.color);
-    }
-    if (graph.bars.length > 0)
-    {
-        var barWidth = (limits.xMax - limits.xMin) / graph.bars.length;
         for (var barIndex = 0; barIndex < graph.bars.length; barIndex++)
         {
             var bar = graph.bars[barIndex];
-            var barRect = setLeftTopRightBottom(new Rectangle(), bar.start, 0, bar.end, bar.value);
-            drawRectangle(graph.renderer, barRect, bar.color);
+            updateAutoLimits(autoLimits, bar.start, 0);
+            updateAutoLimits(autoLimits, bar.end, bar.value);
+        }
+
+        var limits = {};
+
+        for (var key in graph.limits)
+        {
+            if (graph.limits[key] == "auto")
+            {
+                limits[key] = autoLimits[key];
+            }
+            else
+            {
+                limits[key] = graph.limits[key];
+            }
+        }
+
+        var paddingFactor = 0.05;
+        var minimumPadding = 0.00001;
+        var xPadding = atLeast(minimumPadding, paddingFactor * (limits.xMax - limits.xMin));
+        var yPadding = atLeast(minimumPadding, paddingFactor * (limits.yMax - limits.yMin));
+
+        setLeftTopRightBottom(graph.renderer.bounds,
+            limits.xMin - xPadding,
+            limits.yMax + yPadding,
+            limits.xMax + xPadding,
+            limits.yMin - yPadding
+        );
+
+        updateRendererBounds(graph.renderer);
+
+        // Clear and draw
+
+        clearRenderer(graph.renderer);
+
+        for (var curveIndex = 0; curveIndex < graph.curves.length; curveIndex++)
+        {
+            var curve = graph.curves[curveIndex];
+            drawTrajectoryUnzipped(graph.renderer, curve.xs, curve.ys, curve.color);
+        }
+        if (graph.bars.length > 0)
+        {
+            var barWidth = (limits.xMax - limits.xMin) / graph.bars.length;
+            for (var barIndex = 0; barIndex < graph.bars.length; barIndex++)
+            {
+                var bar = graph.bars[barIndex];
+                var barRect = setLeftTopRightBottom(new Rectangle(), bar.start, 0, bar.end, bar.value);
+                drawRectangle(graph.renderer, barRect, bar.color);
+            }
         }
     }
 
@@ -1196,35 +1213,34 @@ function createSimulation(opts)
     // ! visualization
 
     simulation.visualizationDiv = createAndAppend("div", simulation.rightDiv);
-    simulation.visualizations = {
-        energy: createGraph(createAndAppend("div", simulation.visualizationDiv), "Energy"),
-        temperature: createGraph(createAndAppend("div", simulation.visualizationDiv), "Temperature"),
-        counts: createGraph(createAndAppend("div", simulation.visualizationDiv), "Counts"),
-        pressure: createGraph(createAndAppend("div", simulation.visualizationDiv), "Pressure"),
-        virialPressure: createGraph(createAndAppend("div", simulation.visualizationDiv), "VirialPressure"),
-        countsHistogram: createGraph(createAndAppend("div", simulation.visualizationDiv), "Counts"),
-        entropy: createGraph(createAndAppend("div", simulation.visualizationDiv), "Entropy"),
-        probability: createGraph(createAndAppend("div", simulation.visualizationDiv), "Probability"),
-    }
-    simulation.timeSeries = [
-        simulation.visualizations.energy,
-        simulation.visualizations.temperature,
-        simulation.visualizations.counts,
-        simulation.visualizations.pressure,
-        simulation.visualizations.virialPressure,
-        simulation.visualizations.entropy,
-        simulation.visualizations.probability,
-    ];
-    simulation.histograms = [simulation.visualizations.countHistogram];
+    simulation.visualizations = {};
+    simulation.timeSeries = [];
+    simulation.histograms = [];
 
-    for (var key in simulation.visualizations)
+    var timeSeriesNames = ["energy", "temperature", "counts", "pressure", "virialPressure", "entropy", "probability"];
+    var histogramNames = ["countsHistogram"];
+
+    for (var i = 0; i < timeSeriesNames.length; i++)
     {
-        hideElement(simulation.visualizations[key].div);
+        var name = timeSeriesNames[i];
+        var graph = createGraph(createAndAppend("div", simulation.visualizationDiv), name);
+        setGraphVisible(graph, false);
+        simulation.visualizations[name] = graph;
+        simulation.timeSeries.push(graph);
+    }
+
+    for (var i = 0; i < histogramNames.length; i++)
+    {
+        var name = histogramNames[i];
+        var graph = createGraph(createAndAppend("div", simulation.visualizationDiv), name);
+        setGraphVisible(graph, false);
+        simulation.visualizations[name] = graph;
+        simulation.histograms.push(graph);
     }
 
     for (var i = 0; i < opts.visualizations.length; i++)
     {
-        showElement(simulation.visualizations[opts.visualizations[i]].div);
+        setGraphVisible(simulation.visualizations[opts.visualizations[i]], true);
     }
 
 
@@ -2017,7 +2033,8 @@ var updateSimulation = function()
             m.pressure.push(regionPressure);
             m.virialPressure.push(regionVirialPressure);
 
-            var smoothingWindowSize = atMost(50, m.pressure.length);
+
+            var smoothingWindowSize = atMost(2, m.pressure.length);
             var smoothingFactor = 0;
             // TODO: optimize this when adding just one sample, by only computing delta from previous smoothed value
             var cosFactor = tau / (smoothingWindowSize - 1);
