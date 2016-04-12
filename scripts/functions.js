@@ -466,6 +466,8 @@ function setColdHotRegions(simulation)
 
 var tau = 2 * Math.PI;
 
+var bonkSound = new Audio("../assets/bonk.wav");
+
 // ! Particle object
 
 var Particle = function()
@@ -806,7 +808,7 @@ function createSimulation(opts)
         parameters:
         {
             maxInitialSpeed: 0.1,
-            collisionEnabled: false,
+            collisionEnabled: true,
             pressureWindowSize: 1000,
             quadtreeEnabled: true,
             frameDuration: 1000 / 60,
@@ -819,6 +821,7 @@ function createSimulation(opts)
             bondEnergy: 0.0001,
             measurementWindowLength: 100,
             separationFactor: 1.2,
+            soundEnabled: false,
         },
         customUpdate: function(simulation) {},
     });
@@ -1165,6 +1168,11 @@ function createSimulation(opts)
         name: "trajectoryEnabled",
         label: "Draw trajectory",
     });
+    createCheckbox(
+    {
+        name: "soundEnabled",
+        label: "Sound",
+    });
 
     // buttons
 
@@ -1302,7 +1310,7 @@ function createSimulation(opts)
         simulation.walls.push(
         {
             start: corners[i],
-            end: corners[(i + 1) % corners.length]
+            end: corners[(i + 1) % corners.length],
         });
     }
 
@@ -1951,6 +1959,13 @@ var updateSimulation = function()
                             v2.scaleAndAdd(particle.velocity, particle.velocity, projection, -2);
 
                             particle.pressure += 2 * v2.length(projection) * particle.mass / dt;
+
+                            if (simulation.parameters.soundEnabled)
+                            {
+                                bonkSound.pause();
+                                bonkSound.currentTime = 0;
+                                bonkSound.play();
+                            }
                         }
                     }
 
