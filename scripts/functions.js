@@ -1254,19 +1254,6 @@ function createSimulation(opts)
 
     simulation.renderer = createRenderer(simulation.canvas);
 
-    // Retina stuff
-    // TODO: internal resolution needs to be separate variable so that input works 
-    // on retina
-    var canvasWidth = simulation.canvas.width;
-    var canvasHeight = simulation.canvas.height;
-
-    simulation.canvas.style.width = canvasWidth + "px";
-    simulation.canvas.style.height = canvasHeight + "px";
-
-    var devicePixelRatio = window.devicePixelRatio || 1;
-    simulation.canvas.width = canvasWidth * devicePixelRatio;
-    simulation.canvas.height = canvasHeight * devicePixelRatio;
-
     // ! boxes
 
     var aspectRatio = simulation.canvas.width / simulation.canvas.height;

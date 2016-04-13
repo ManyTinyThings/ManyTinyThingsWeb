@@ -2,10 +2,19 @@ function createRenderer(canvas)
 {
     var renderer = {
         canvas: canvas,
+		cssWidth: canvas.width,
+		cssHeight: canvas.height,
         context: canvas.getContext("2d"),
         bounds: new Rectangle(),
-        lineWidth: 0.01,
     };
+	
+    // Retina stuff
+    canvas.style.width = renderer.cssWidth + "px";
+    canvas.style.height = renderer.cssHeight + "px";
+
+    var devicePixelRatio = window.devicePixelRatio || 1;
+    canvas.width = renderer.cssWidth * devicePixelRatio;
+    canvas.height = renderer.cssHeight * devicePixelRatio;
 
     return renderer;
 }
@@ -15,8 +24,8 @@ function worldFromCanvas(renderer, canvasPosition)
     var p = canvasPosition;
     var b = renderer.bounds;
     var c = renderer.canvas;
-    var worldX = b.width / c.width * p[0] + b.left;
-    var worldY = -b.height / c.height * p[1] + b.top;
+    var worldX = b.width / renderer.cssWidth * p[0] + b.left;
+    var worldY = -b.height / renderer.cssHeight * p[1] + b.top;
     return v2.create(worldX, worldY);
 }
 
@@ -24,7 +33,7 @@ function updateRendererBounds(renderer)
 {
     var context = renderer.context;
     var bounds = renderer.bounds;
-    context.resetTransform();
+    context.setTransform(1, 0, 0, 1, 0, 0);
     var w = renderer.canvas.width;
     var h = renderer.canvas.height;
     context.scale(w / bounds.width, -h / bounds.height);
