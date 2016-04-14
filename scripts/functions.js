@@ -168,8 +168,8 @@ v2.outer = function(a, b)
 // TODO: make sure inside rect (right now only cares about width and height)
 v2.periodicize = function(out, a, bounds)
 {
-    out[0] = a[0] - bounds.width * Math.round(a[0] / bounds.width);
-    out[1] = a[1] - bounds.height * Math.round(a[1] / bounds.height);
+    out[0] = a[0] - bounds.width * Math.floor(a[0] / bounds.width + 0.5);
+    out[1] = a[1] - bounds.height * Math.floor(a[1] / bounds.height + 0.5);
     return out;
 };
 
@@ -1438,6 +1438,7 @@ function drawSimulation(simulation)
     for (var i = 0; i < simulation.walls.length; i++)
     {
         var wall = simulation.walls[i];
+        // TODO: one drawWalls call, to reduce number of draw calls
         drawTrajectory(simulation.renderer, [wall.start, wall.end], colors.black);
     }
 
