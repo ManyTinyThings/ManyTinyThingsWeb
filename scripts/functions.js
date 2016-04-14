@@ -2446,70 +2446,87 @@ function wallParticleCollision(simulation, wall, particle)
 
 function isIntersecting(shape, otherShape)
 {
-    var direction = v2.create(1, 0);
-    var s = support(direction, shape);
-    var s2 = support(v2.scale(v2.create(0, 0), direction, -1), otherShape);
-    var minkowskiPoint = v2.subtract(v2.create(0, 0), s, s2);
-    var simplex = [minkowskiPoint];
-    var direction = v2.scale(direction, minkowskiPoint, -1);
+    var isIntersected;
+    var direction = v2.alloc();
+    var simplex0 = v2.alloc();
+    var simplex1 = v2.alloc();
+    var simplex2 = v2.alloc();
+    var ab = v2.alloc();
+    var ao = v2.alloc();
+    var ac = v2.alloc();
+    var abNormal = v2.alloc();
+    var acNormal = v2.alloc();
+
+    v2.set(direction, 1, 0);
+    var a = simplex0;
+    doubleSupport(a, direction, shape, otherShape);
+    var simplex = [a, simplex1, simplex2];
+    var simplexCount = 1;
+    v2.scale(direction, a, -1);
+
     while (true)
     {
-        // TODO: do this more efficiently if we know the pair of shapes
-        var s = support(direction, shape);
-        var s2 = support(v2.scale(v2.create(0, 0), direction, -1), otherShape);
-        var a = v2.subtract(v2.create(0, 0), s, s2);
+        var a = simplex[simplexCount++];
+        doubleSupport(a, direction, shape, otherShape);
         if (v2.dot(a, direction) < 0)
         {
-            return false;
+            isIntersected = false;
+            break;
         }
-        simplex.push(a);
+
         // do simplex
 
-        if (simplex.length <= 1)
+        if (simplexCount <= 1)
         {
             // assert
         }
 
-        if (simplex.length == 2)
+        if (simplexCount == 2)
         {
             var a = simplex[1];
             var b = simplex[0];
-            var ab = v2.subtract(v2.create(0, 0), b, a);
-            var ao = v2.scale(v2.create(0, 0), a, -1);
+            v2.subtract(ab, b, a);
+            v2.scale(ao, a, -1);
             if (isSameDirection(ab, ao))
             {
-                simplex = [a, b];
+                simplex[0] = a;
+                simplex[1] = b;
+                simplexCount = 2;
                 v2.rotateCCW(direction, ab);
                 v2.scale(direction, direction, v2.outer(ab, ao));
             }
             else
             {
-                simplex = [a];
+                simplex[0] = a;
+                simplexCount = 1;
                 v2.copy(direction, ao);
             }
         }
 
-        if (simplex.length == 3)
+        if (simplexCount == 3)
         {
             var a = simplex[2];
             var b = simplex[1];
             var c = simplex[0];
-            var ab = v2.subtract(v2.create(0, 0), b, a);
-            var ac = v2.subtract(v2.create(0, 0), c, a);
+            v2.subtract(ab, b, a);
+            v2.subtract(ac, c, a);
 
+            // "cross product" stuff
             var orientation = v2.outer(ab, ac);
-            var abNormal = v2.rotateCW(v2.create(0, 0), ab);
+            v2.rotateCW(abNormal, ab);
             v2.scale(abNormal, abNormal, orientation);
-            var acNormal = v2.rotateCCW(v2.create(0, 0), ac);
+            v2.rotateCCW(acNormal, ac);
             v2.scale(acNormal, acNormal, orientation);
-            var ao = v2.scale(v2.create(0, 0), a, -1);
+            v2.scale(ao, a, -1);
 
             var inStarRegion = false;
             if (isSameDirection(acNormal, ao))
             {
                 if (isSameDirection(ac, ao))
                 {
-                    simplex = [a, c];
+                    simplex[0] = a;
+                    simplex[1] = c;
+                    simplexCount = 2;
                     v2.copy(direction, acNormal);
                 }
                 else
@@ -2524,7 +2541,8 @@ function isIntersecting(shape, otherShape)
             else
             {
                 // origin is inside simplex
-                return true;
+                isIntersected = true;
+                break;
             }
 
 
@@ -2532,30 +2550,58 @@ function isIntersecting(shape, otherShape)
             {
                 if (isSameDirection(ab, ao))
                 {
-                    simplex = [a, b];
+                    simplex[0] = a;
+                    simplex[1] = b;
+                    simplexCount = 2;
                     v2.copy(direction, abNormal);
                 }
                 else
                 {
-                    simplex = [a];
+                    simplex[0] = a;
+                    simplexCount = 1;
                     v2.copy(direction, ao);
                 }
             }
         }
     }
+    v2.free(ab);
+    v2.free(ac);
+    v2.free(ao);
+    v2.free(abNormal);
+    v2.free(acNormal);
+    v2.free(simplex0);
+    v2.free(simplex1);
+    v2.free(simplex2);
+    v2.free(direction);
+    return isIntersected;
 }
+
 
 function isSameDirection(a, b)
 {
     return v2.dot(a, b) > 0;
 }
 
-function support(direction, shape)
+
+function doubleSupport(supportVector, direction, shape, otherShape)
+{
+    // TODO: do this more efficiently if we know the pair of shapes
+    support(supportVector, direction, shape);
+    var s = v2.alloc();
+    var oppositeDirection = v2.scale(s, direction, -1);
+    support(s, oppositeDirection, otherShape);
+    v2.subtract(supportVector, supportVector, s);
+    v2.free(s);
+    return supportVector;
+}
+
+function support(supportVector, direction, shape)
 {
     if (shape.type == "circle")
     {
+        // TODO: should not assumes this!!!
         // NOTE: Assumes direction is a unit vector
-        return v2.scale(v2.create(0, 0), direction, shape.radius);
+        return v2.scale(supportVector, direction, shape.radius);
     }
 
     if (shape.type == "polygon")
@@ -2572,7 +2618,7 @@ function support(direction, shape)
                 maximumVertex = vertex;
             }
         }
-        return v2.clone(maximumVertex);
+        return v2.copy(supportVector, maximumVertex);
     }
 }
 
@@ -2604,13 +2650,20 @@ function testGJK()
     }
 
     var tests = [testBothWays(h, v, true), testBothWays(h, t, false), testBothWays(v, t, true), testBothWays(c, t, false), testBothWays(c, h, true), testBothWays(c, v, true)];
+    var successCount = 0;
     for (var i = 0; i < tests.length; i++)
     {
-        if (!tests[i])
+        var message;
+        if (tests[i])
+        {
+            successCount += 1;
+        }
+        else
         {
             console.log("Test " + i + " failed.");
         }
     }
+    console.log(successCount + "/" + tests.length + " tests were successful.");
 }
 
 // ! Quadtree
