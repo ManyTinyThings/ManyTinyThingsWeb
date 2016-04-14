@@ -2386,6 +2386,17 @@ function intersectionOriginCircleLine(
     }
 }
 
+function intersectionOriginLineLine(originVector, start, vector)
+{
+    var outer = v2.outer(originVector, vector);
+    var t1 = v2.outer(start, originVector) / outer;
+    var t2 = v2.outer(start, vector) / outer;
+    return {
+        t1: t1,
+        t2: t2
+    };
+}
+
 
 // ! Collision
 
