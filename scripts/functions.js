@@ -110,7 +110,7 @@ v2.scaleAndAdd = function(out, a, b, t)
     return out;
 };
 
-v2.dot = function(a, b)
+v2.inner = function(a, b)
 {
     return a[0] * b[0] + a[1] * b[1];
 };
@@ -132,6 +132,12 @@ v2.length = function(a)
     return Math.sqrt(v2.square(a));
 };
 
+v2.isAlmostZero = function(a)
+{
+    var tolerance = 0.000001;
+    return (v2.square(a) < tolerance);
+}
+
 v2.normalize = function(out, a)
 {
     var length = v2.length(a);
@@ -141,7 +147,7 @@ v2.normalize = function(out, a)
 
 v2.projectOntoNormal = function(out, a, normal)
 {
-    var length = v2.dot(a, normal);
+    var length = v2.inner(a, normal);
     v2.scale(out, normal, length);
     return out;
 };
@@ -1608,7 +1614,7 @@ var updateSimulation = function()
 
                     // reset stuff before next loop
                     v2.copy(particle.acceleration, gravityAcceleration);
-                    particle.potentialEnergy = -v2.dot(particle.position, gravityAcceleration);
+                    particle.potentialEnergy = -v2.inner(particle.position, gravityAcceleration);
                     particle.pressure = 0;
                     particle.virial = 0;
                 }
@@ -2362,7 +2368,7 @@ function intersectionOriginCircleLine(
     lineStart, lineVector
 )
 {
-    var dotAB = v2.dot(lineStart, lineVector);
+    var dotAB = v2.inner(lineStart, lineVector);
     var bSq = v2.square(lineVector);
     var rootInput = square(dotAB) + bSq * (squared(circleRadius) - v2.square(lineStart));
     if ((bSq > 0) && (rootInput > 0))
@@ -2468,7 +2474,7 @@ function isIntersecting(shape, otherShape)
     {
         var a = simplex[simplexCount++];
         doubleSupport(a, direction, shape, otherShape);
-        if (v2.dot(a, direction) < 0)
+        if (v2.inner(a, direction) < 0)
         {
             isIntersected = false;
             break;
@@ -2576,10 +2582,90 @@ function isIntersecting(shape, otherShape)
     return isIntersected;
 }
 
+function closestDistanceGJK(shape, otherShape)
+{
+    // TODO: test this!
+    var distance;
+    var direction = v2.alloc();
+    var a = v2.alloc();
+    var b = v2.alloc();
+    var c = v2.alloc();
+    var aCandidate = v2.alloc();
+    var bCandidate = v2.alloc();
+
+    v2.set(direction, 1, 0);
+    doubleSupport(a, direction, shape, otherShape);
+    doubleSupport(b, v2.scale(direction, direction, -1), shape, otherShape);
+    closestToOriginBetween(direction, a, b);
+    v2.scale(direction, direction, -1);
+
+    while (true)
+    {
+        if (v2.isAlmostZero(direction))
+        {
+            // NOTE: touching
+            distance = 0;
+            break;
+        }
+
+        doubleSupport(c, direction, shape, otherShape);
+
+        var cd = v2.inner(c, direction);
+        var ad = v2.inner(a, direction);
+
+        var tolerance = 0.00001;
+        if ((cd - ad) < tolerance)
+        {
+            // too small of a step
+            distance = v2.length(direction);
+            break;
+        }
+
+        closestToOriginBetween(aCandidate, a, c);
+        closestToOriginBetween(bCandidate, b, c);
+
+        if (v2.square(aCandidate) < v2.square(bCandidate))
+        {
+            v2.copy(b, c);
+            v2.scale(direction, aCandidate, -1);
+        }
+        else
+        {
+            v2.copy(a, c);
+            v2.scale(direction, bCandidate, -1);
+        }
+
+    }
+
+    v2.free(a);
+    v2.free(b);
+    v2.free(c);
+    v2.free(aCandidate);
+    v2.free(bCandidate);
+    v2.free(direction);
+    // TODO: return normal too
+    return distance;
+}
+
+function closestToOriginBetween(out, a, b)
+{
+    v2.subtract(out, b, a);
+    var t = -v2.inner(a, out) / v2.square(out);
+    if (t <= 0)
+    {
+        return v2.copy(out, a);
+    }
+    if (t >= 1)
+    {
+        return v2.copy(out, b);
+    }
+    v2.scaleAndAdd(out, a, out, t);
+    return out;
+}
 
 function isSameDirection(a, b)
 {
-    return v2.dot(a, b) > 0;
+    return v2.inner(a, b) > 0;
 }
 
 
@@ -2611,7 +2697,7 @@ function support(supportVector, direction, shape)
         for (var vertexIndex = 0; vertexIndex < shape.vertices.length; vertexIndex++)
         {
             var vertex = shape.vertices[vertexIndex];
-            var distance = v2.dot(vertex, direction);
+            var distance = v2.inner(vertex, direction);
             if (distance > maximumDistance)
             {
                 maximumDistance = distance;
@@ -2648,6 +2734,8 @@ function testGJK()
         var b = isIntersecting(otherShape, shape);
         return (a == b) && (a == expected);
     }
+
+    console.log(distanceGJK(h, t))
 
     var tests = [testBothWays(h, v, true), testBothWays(h, t, false), testBothWays(v, t, true), testBothWays(c, t, false), testBothWays(c, h, true), testBothWays(c, v, true)];
     var successCount = 0;
