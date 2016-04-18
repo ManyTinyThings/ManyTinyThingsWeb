@@ -132,6 +132,11 @@ v2.length = function(a)
     return Math.sqrt(v2.square(a));
 };
 
+v2.isZero = function(a)
+{
+    return (a[0] == 0) && (a[1] == 0);
+}
+
 v2.isAlmostZero = function(a)
 {
     var tolerance = 0.000001;
@@ -2707,6 +2712,16 @@ function closestDistanceGJK(shape, otherShape)
     return distance;
 }
 
+function towardOriginFromLine(direction, lineStart, lineVector, factor)
+{
+    v2.rotateCCW(direction, lineVector);
+    var outer = v2.outer(lineStart, lineVector) * factor;
+    var tolerance = 0.00001;
+    if (Math.abs(outer) > tolerance)
+    {
+        v2.scale(direction, direction, outer);
+    }
+}
 
 
 function ratioToContact(stillShape, movingShape, movement)
@@ -2730,9 +2745,7 @@ function ratioToContact(stillShape, movingShape, movement)
     var isIntersecting = (0 < t) && (t < 1);
     if (isIntersecting)
     {
-        // search toward origin from line
-        v2.rotateCCW(direction, ab);
-        v2.scale(direction, direction, v2.outer(a, ab));
+        towardOriginFromLine(direction, a, ab, 1);
 
         while (true)
         {
@@ -2759,23 +2772,24 @@ function ratioToContact(stillShape, movingShape, movement)
 
             var acIntersection = intersectionOriginLineLine(movement, a, ac);
             var t = acIntersection.tLine;
-            var acIsIntersecting = (0 < t) && (t < 1) && (acIntersection.tOriginLine > 0);
+            var acIsIntersecting = (0 <= t) && (t <= 1);
 
             if (acIsIntersecting)
             {
                 v2.copy(b, c);
-                v2.rotateCCW(direction, ac);
-                v2.scale(direction, direction, v2.outer(a, ac));
-                continue;
-            }
-            else
-            {
-                v2.copy(a, c);
-                v2.rotateCCW(direction, bc);
-                v2.scale(direction, direction, v2.outer(b, bc));
+                towardOriginFromLine(direction, a, ac, acIntersection.tOriginLine);
                 continue;
             }
 
+            var bcIntersection = intersectionOriginLineLine(movement, b, bc);
+            var t = bcIntersection.tLine;
+            var bcIsIntersecting = (0 <= t) && (t < 1);
+
+            if (bcIsIntersecting)
+            {
+                v2.copy(a, c);
+                towardOriginFromLine(direction, b, bc, bcIntersection.tOriginLine);
+            }
         }
     }
 
@@ -2790,6 +2804,40 @@ function ratioToContact(stillShape, movingShape, movement)
     return ratio;
 }
 
+function isEqual(a, b)
+{
+    return (a == b);
+}
+
+function isApproximatelyEqual(a, b)
+{
+    var errorMargin = 0.001 * Math.max(Math.abs(a), Math.abs(b));
+    return (Math.abs(a - b) < errorMargin);
+}
+
+
+function test(testFunction, tests)
+{
+    var successCount = 0;
+    var testCount = tests.length / 2;
+    for (var i = 0; i < testCount; ++i)
+    {
+        var output = tests[2 * i];
+        var expectedOutput = tests[2 * i + 1];
+        var message;
+        if (testFunction(output, expectedOutput))
+        {
+            successCount += 1;
+        }
+        else
+        {
+            console.log("Test " + i + " failed.");
+            console.log("Expected [" + expectedOutput + "] but got [" + output + "].");
+        }
+    }
+    console.log(successCount + "/" + testCount + " tests were successful.");
+}
+
 function testRatioToContact()
 {
     var a = {
@@ -2802,18 +2850,37 @@ function testRatioToContact()
         center: v2.create(-2, 0),
         radius: 1,
     };
-
+    var c = {
+        type: "circle",
+        center: v2.create(0, 0),
+        radius: 2,
+    };
     var v = {
         type: "polygon",
         vertices: [v2.create(0, -1), v2.create(0, 1)]
     };
-    var movement = v2.create(2, 0);
-    console.log(ratioToContact(a, b, movement));
-    console.log(ratioToContact(v, b, movement));
-    // console.log(ratioToContact(v, v, movement));
+    var t = {
+        type: "polygon",
+        vertices: [v2.create(-2, 0), v2.create(2, 1)]
+    };
+    var movement = v2.create(1, 0);
+    // Tested these with geogebra, seems okay
+    var tests = [
+        ratioToContact(a, b, movement), 2,
+        ratioToContact(v, b, movement), 1,
+        ratioToContact(a, c, movement), -1,
+        ratioToContact(v, c, movement), -2,
+        ratioToContact(v, t, movement), -2,
+        ratioToContact(c, t, movement), -3.732,
+        ratioToContact(t, c, v2.create(0, 1)), -1.56,
+    ];
+    test(isApproximatelyEqual, tests);
+    // TODO: Make this test reasonable
+    console.log(ratioToContact(b, a, movement));
 
-    // TEST MORE!!!!
+
 }
+
 
 function testGJK()
 {
@@ -2835,30 +2902,21 @@ function testGJK()
         radius: 0.01
     };
 
-    var testBothWays = function(shapeshape, otherShape, expected)
+    var tests = [];
+    var testBothWays = function(shape, otherShape, expected)
     {
-        var a = isIntersecting(shape, otherShape);
-        var b = isIntersecting(otherShape, shape);
-        return (a == b) && (a == expected);
+        tests.push(isIntersecting(shape, otherShape), expected);
+        tests.push(isIntersecting(shape, otherShape), expected);
     }
 
-    console.log(distanceGJK(h, t))
+    testBothWays(h, v, true);
+    testBothWays(h, t, false);
+    testBothWays(v, t, true);
+    testBothWays(c, t, false);
+    testBothWays(c, h, true);
+    testBothWays(c, v, true);
 
-    var tests = [testBothWays(h, v, true), testBothWays(h, t, false), testBothWays(v, t, true), testBothWays(c, t, false), testBothWays(c, h, true), testBothWays(c, v, true)];
-    var successCount = 0;
-    for (var i = 0; i < tests.length; i++)
-    {
-        var message;
-        if (tests[i])
-        {
-            successCount += 1;
-        }
-        else
-        {
-            console.log("Test " + i + " failed.");
-        }
-    }
-    console.log(successCount + "/" + tests.length + " tests were successful.");
+    test(isEqual, tests);
 }
 
 // ! Quadtree
