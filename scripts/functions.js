@@ -2395,11 +2395,11 @@ function intersectionOriginCircleLine(
 function intersectionOriginLineLine(originVector, start, vector)
 {
     var outer = v2.outer(originVector, vector);
-    var t1 = v2.outer(start, originVector) / outer;
-    var t2 = v2.outer(start, vector) / outer;
+    var tOriginLine = v2.outer(start, vector) / outer;
+    var tLine = v2.outer(start, originVector) / outer;
     return {
-        t1: t1,
-        t2: t2
+        tOriginLine: tOriginLine,
+        tLine: tLine,
     };
 }
 
@@ -2450,6 +2450,66 @@ function wallParticleCollision(simulation, wall, particle)
     };
 }
 
+function closestToOriginBetween(out, a, b)
+{
+    v2.subtract(out, b, a);
+    var t = -v2.inner(a, out) / v2.square(out);
+    if (t <= 0)
+    {
+        return v2.copy(out, a);
+    }
+    if (t >= 1)
+    {
+        return v2.copy(out, b);
+    }
+    v2.scaleAndAdd(out, a, out, t);
+    return out;
+}
+
+function isSameDirection(a, b)
+{
+    return v2.inner(a, b) > 0;
+}
+
+function support(supportVector, direction, shape)
+{
+    if (shape.type == "circle")
+    {
+        v2.scaleAndAdd(supportVector, shape.center, direction, shape.radius / v2.length(direction));
+        return supportVector;
+    }
+
+    if (shape.type == "polygon")
+    {
+        var maximumDistance = -Number.MAX_VALUE;
+        var maximumVertex;
+        for (var vertexIndex = 0; vertexIndex < shape.vertices.length; vertexIndex++)
+        {
+            var vertex = shape.vertices[vertexIndex];
+            var distance = v2.inner(vertex, direction);
+            if (distance > maximumDistance)
+            {
+                maximumDistance = distance;
+                maximumVertex = vertex;
+            }
+        }
+        return v2.copy(supportVector, maximumVertex);
+    }
+}
+
+function doubleSupport(supportVector, direction, shape, otherShape)
+{
+    // TODO: do this more efficiently if we know the pair of shapes
+    support(supportVector, direction, shape);
+    var s = v2.alloc();
+    var oppositeDirection = v2.scale(s, direction, -1);
+    support(s, oppositeDirection, otherShape);
+    v2.subtract(supportVector, supportVector, s);
+    v2.free(s);
+    return supportVector;
+}
+
+// Distance and intersection algorithms could probably be the same
 function isIntersecting(shape, otherShape)
 {
     var isIntersected;
@@ -2647,65 +2707,112 @@ function closestDistanceGJK(shape, otherShape)
     return distance;
 }
 
-function closestToOriginBetween(out, a, b)
+
+
+function ratioToContact(stillShape, movingShape, movement)
 {
-    v2.subtract(out, b, a);
-    var t = -v2.inner(a, out) / v2.square(out);
-    if (t <= 0)
+    var ratio = 1; // No collision during this movement
+    var direction = v2.alloc();
+    var a = v2.alloc();
+    var b = v2.alloc();
+    var c = v2.alloc();
+    var ab = v2.alloc();
+    var ac = v2.alloc();
+    var bc = v2.alloc();
+
+    v2.rotateCCW(direction, movement);
+    doubleSupport(a, direction, stillShape, movingShape);
+    doubleSupport(b, v2.scale(direction, direction, -1), stillShape, movingShape);
+    v2.subtract(ab, b, a);
+
+    var intersection = intersectionOriginLineLine(movement, a, ab);
+    var t = intersection.tLine;
+    var isIntersecting = (0 < t) && (t < 1);
+    if (isIntersecting)
     {
-        return v2.copy(out, a);
-    }
-    if (t >= 1)
-    {
-        return v2.copy(out, b);
-    }
-    v2.scaleAndAdd(out, a, out, t);
-    return out;
-}
+        // search toward origin from line
+        v2.rotateCCW(direction, ab);
+        v2.scale(direction, direction, v2.outer(a, ab));
 
-function isSameDirection(a, b)
-{
-    return v2.inner(a, b) > 0;
-}
-
-
-function doubleSupport(supportVector, direction, shape, otherShape)
-{
-    // TODO: do this more efficiently if we know the pair of shapes
-    support(supportVector, direction, shape);
-    var s = v2.alloc();
-    var oppositeDirection = v2.scale(s, direction, -1);
-    support(s, oppositeDirection, otherShape);
-    v2.subtract(supportVector, supportVector, s);
-    v2.free(s);
-    return supportVector;
-}
-
-function support(supportVector, direction, shape)
-{
-    if (shape.type == "circle")
-    {
-        // TODO: should not assumes this!!!
-        // NOTE: Assumes direction is a unit vector
-        return v2.scale(supportVector, direction, shape.radius);
-    }
-
-    if (shape.type == "polygon")
-    {
-        var maximumDistance = -Number.MAX_VALUE;
-        var maximumVertex;
-        for (var vertexIndex = 0; vertexIndex < shape.vertices.length; vertexIndex++)
+        while (true)
         {
-            var vertex = shape.vertices[vertexIndex];
-            var distance = v2.inner(vertex, direction);
-            if (distance > maximumDistance)
+            doubleSupport(c, direction, stillShape, movingShape);
+
+            // TODO: compare the distance to intersection instead?
+            var cd = v2.inner(c, direction);
+            var ad = v2.inner(a, direction);
+            var progressTowardOrigin = (cd - ad) / v2.length(direction);
+
+            var tolerance = 0.00001;
+            if (progressTowardOrigin < tolerance)
             {
-                maximumDistance = distance;
-                maximumVertex = vertex;
+                v2.subtract(ab, b, a);
+                var abIntersection = intersectionOriginLineLine(movement, a, ab);
+                ratio = abIntersection.tOriginLine;
+                break;
             }
+
+            v2.subtract(ac, c, a);
+            v2.subtract(bc, c, b);
+
+            // TODO: project c onto ab and compare intersection parameter to find region instead?
+
+            var acIntersection = intersectionOriginLineLine(movement, a, ac);
+            var t = acIntersection.tLine;
+            var acIsIntersecting = (0 < t) && (t < 1) && (acIntersection.tOriginLine > 0);
+
+            if (acIsIntersecting)
+            {
+                v2.copy(b, c);
+                v2.rotateCCW(direction, ac);
+                v2.scale(direction, direction, v2.outer(a, ac));
+                continue;
+            }
+            else
+            {
+                v2.copy(a, c);
+                v2.rotateCCW(direction, bc);
+                v2.scale(direction, direction, v2.outer(b, bc));
+                continue;
+            }
+
         }
-        return v2.copy(supportVector, maximumVertex);
     }
+
+    v2.free(a);
+    v2.free(b);
+    v2.free(c);
+    v2.free(ab);
+    v2.free(bc);
+    v2.free(ac);
+    v2.free(direction);
+    // TODO: return normal too
+    return ratio;
+}
+
+function testRatioToContact()
+{
+    var a = {
+        type: "circle",
+        center: v2.create(2, 0),
+        radius: 1,
+    };
+    var b = {
+        type: "circle",
+        center: v2.create(-2, 0),
+        radius: 1,
+    };
+
+    var v = {
+        type: "polygon",
+        vertices: [v2.create(0, -1), v2.create(0, 1)]
+    };
+    var movement = v2.create(2, 0);
+    console.log(ratioToContact(a, b, movement));
+    console.log(ratioToContact(v, b, movement));
+    // console.log(ratioToContact(v, v, movement));
+
+    // TEST MORE!!!!
 }
 
 function testGJK()
@@ -2728,7 +2835,7 @@ function testGJK()
         radius: 0.01
     };
 
-    var testBothWays = function(shape, otherShape, expected)
+    var testBothWays = function(shapeshape, otherShape, expected)
     {
         var a = isIntersecting(shape, otherShape);
         var b = isIntersecting(otherShape, shape);
