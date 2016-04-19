@@ -2724,12 +2724,12 @@ function towardOriginFromLine(direction, lineStart, lineVector, factor)
 }
 
 
-function ratioToContact(stillShape, movingShape, movement)
+function searchForContact(stillShape, movingShape, velocity)
 {
     var result = {
         isOverlapping: false,
-        ratio: 1,
-        normal: v2.alloc(),
+        time: Infinity,
+        normal: undefined,
     };
 
     var direction = v2.alloc();
@@ -2743,12 +2743,12 @@ function ratioToContact(stillShape, movingShape, movement)
     // TODO: could probably do this algorithm without divides (intersections)
     // instead only use dot products
 
-    v2.rotateCCW(direction, movement);
+    v2.rotateCCW(direction, velocity);
     doubleSupport(a, direction, stillShape, movingShape);
     doubleSupport(b, v2.scale(direction, direction, -1), stillShape, movingShape);
     v2.subtract(ab, b, a);
 
-    var intersection = intersectionOriginLineLine(movement, a, ab);
+    var intersection = intersectionOriginLineLine(velocity, a, ab);
     var t = intersection.tLine;
     var isIntersecting = (0 < t) && (t < 1);
     var isBehind = (intersection.tOriginLine < 0);
@@ -2769,17 +2769,18 @@ function ratioToContact(stillShape, movingShape, movement)
             if (progressTowardOrigin < tolerance)
             {
                 v2.subtract(ab, b, a);
-                var abIntersection = intersectionOriginLineLine(movement, a, ab);
+                var abIntersection = intersectionOriginLineLine(velocity, a, ab);
+                result.normal = v2.alloc();
                 towardOriginFromLine(result.normal, a, ab, -1);
                 v2.normalize(result.normal, result.normal);
-                result.ratio = (abIntersection.tOriginLine > 0) ? abIntersection.tOriginLine : 1;
+                result.time = (abIntersection.tOriginLine > 0) ? abIntersection.tOriginLine : Infinity;
                 break;
             }
 
             // TODO: put the following in a function?
 
             v2.subtract(ac, c, a);
-            var acIntersection = intersectionOriginLineLine(movement, a, ac);
+            var acIntersection = intersectionOriginLineLine(velocity, a, ac);
             var t = acIntersection.tLine;
             var acIsIntersecting = (0 <= t) && (t <= 1);
 
@@ -2799,7 +2800,7 @@ function ratioToContact(stillShape, movingShape, movement)
             }
 
             v2.subtract(bc, c, b);
-            var bcIntersection = intersectionOriginLineLine(movement, b, bc);
+            var bcIntersection = intersectionOriginLineLine(velocity, b, bc);
             var t = bcIntersection.tLine;
             var bcIsIntersecting = (0 <= t) && (t <= 1);
             
@@ -2865,7 +2866,7 @@ function test(testFunction, tests)
     console.log(successCount + "/" + testCount + " tests were successful.");
 }
 
-function testRatioToContact()
+function testSearchForContact()
 {
     var a = {
         type: "circle",
@@ -2893,18 +2894,18 @@ function testRatioToContact()
     var movement = v2.create(1, 0);
     // Tested these with geogebra, seems okay
     var tests = [
-        ratioToContact(a, b, movement).ratio, 2,
-        ratioToContact(a, b, movement).normal[0], 1, 
-        ratioToContact(v, b, movement).ratio, 1,
-        ratioToContact(a, c, movement).isOverlapping, true,
-        ratioToContact(v, c, movement).isOverlapping, true,
-        ratioToContact(v, t, movement).isOverlapping, false,
-        ratioToContact(c, t, movement).isOverlapping, false,
-        ratioToContact(t, c, v2.create(0, 1)).ratio, 0.4384,
+        searchForContact(a, b, movement).time, 2,
+        searchForContact(a, b, movement).normal[0], 1, 
+        searchForContact(v, b, movement).time, 1,
+        searchForContact(a, c, movement).isOverlapping, true,
+        searchForContact(v, c, movement).isOverlapping, true,
+        searchForContact(v, t, movement).isOverlapping, false,
+        searchForContact(c, t, movement).isOverlapping, false,
+        searchForContact(t, c, v2.create(0, 1)).time, 0.4384,
     ];
     test(isApproximatelyEqual, tests);
     // TODO: Make this test reasonable
-    console.log(ratioToContact(b, a, movement));
+    console.log(searchForContact(b, a, movement));
 
 
 }
