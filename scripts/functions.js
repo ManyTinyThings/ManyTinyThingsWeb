@@ -2399,9 +2399,9 @@ function intersectionOriginCircleLine(
 
 function intersectionOriginLineLine(originVector, start, vector)
 {
-    var outer = v2.outer(originVector, vector);
-    var tOriginLine = v2.outer(start, vector) / outer;
-    var tLine = v2.outer(start, originVector) / outer;
+    var invOuter = 1 / v2.outer(originVector, vector);
+    var tOriginLine = v2.outer(start, vector) * invOuter;
+    var tLine = v2.outer(start, originVector) * invOuter;
     return {
         tOriginLine: tOriginLine,
         tLine: tLine,
@@ -2726,7 +2726,12 @@ function towardOriginFromLine(direction, lineStart, lineVector, factor)
 
 function ratioToContact(stillShape, movingShape, movement)
 {
-    var ratio = 1; // No collision during this movement
+    var result = {
+        isOverlapping: false,
+        ratio: 1,
+        normal: v2.alloc(),
+    };
+
     var direction = v2.alloc();
     var a = v2.alloc();
     var b = v2.alloc();
@@ -2734,6 +2739,9 @@ function ratioToContact(stillShape, movingShape, movement)
     var ab = v2.alloc();
     var ac = v2.alloc();
     var bc = v2.alloc();
+
+    // TODO: could probably do this algorithm without divides (intersections)
+    // instead only use dot products
 
     v2.rotateCCW(direction, movement);
     doubleSupport(a, direction, stillShape, movingShape);
@@ -2743,6 +2751,7 @@ function ratioToContact(stillShape, movingShape, movement)
     var intersection = intersectionOriginLineLine(movement, a, ab);
     var t = intersection.tLine;
     var isIntersecting = (0 < t) && (t < 1);
+    var isBehind = (intersection.tOriginLine < 0);
     if (isIntersecting)
     {
         towardOriginFromLine(direction, a, ab, 1);
@@ -2761,34 +2770,53 @@ function ratioToContact(stillShape, movingShape, movement)
             {
                 v2.subtract(ab, b, a);
                 var abIntersection = intersectionOriginLineLine(movement, a, ab);
-                ratio = abIntersection.tOriginLine;
+                towardOriginFromLine(result.normal, a, ab, -1);
+                v2.normalize(result.normal, result.normal);
+                result.ratio = (abIntersection.tOriginLine > 0) ? abIntersection.tOriginLine : 1;
                 break;
             }
 
+            // TODO: put the following in a function?
+
             v2.subtract(ac, c, a);
-            v2.subtract(bc, c, b);
-
-            // TODO: project c onto ab and compare intersection parameter to find region instead?
-
             var acIntersection = intersectionOriginLineLine(movement, a, ac);
             var t = acIntersection.tLine;
             var acIsIntersecting = (0 <= t) && (t <= 1);
 
             if (acIsIntersecting)
             {
+                var isInFront = (0 < acIntersection.tOriginLine);
+
+                if (isBehind == isInFront) 
+                {
+                    result.isOverlapping = true;
+                    break;
+                }
+
                 v2.copy(b, c);
-                towardOriginFromLine(direction, a, ac, acIntersection.tOriginLine);
+                towardOriginFromLine(direction, a, ac, 1);
                 continue;
             }
 
+            v2.subtract(bc, c, b);
             var bcIntersection = intersectionOriginLineLine(movement, b, bc);
             var t = bcIntersection.tLine;
-            var bcIsIntersecting = (0 <= t) && (t < 1);
+            var bcIsIntersecting = (0 <= t) && (t <= 1);
+            
 
             if (bcIsIntersecting)
             {
+                var isInFront = (0 < bcIntersection.tOriginLine);
+
+                if (isBehind == isInFront) 
+                {
+                    result.isOverlapping = true;
+                    break;
+                }
+
                 v2.copy(a, c);
-                towardOriginFromLine(direction, b, bc, bcIntersection.tOriginLine);
+                towardOriginFromLine(direction, b, bc, 1);
+                continue;
             }
         }
     }
@@ -2800,8 +2828,7 @@ function ratioToContact(stillShape, movingShape, movement)
     v2.free(bc);
     v2.free(ac);
     v2.free(direction);
-    // TODO: return normal too
-    return ratio;
+    return result;
 }
 
 function isEqual(a, b)
@@ -2812,7 +2839,7 @@ function isEqual(a, b)
 function isApproximatelyEqual(a, b)
 {
     var errorMargin = 0.001 * Math.max(Math.abs(a), Math.abs(b));
-    return (Math.abs(a - b) < errorMargin);
+    return (Math.abs(a - b) <= errorMargin);
 }
 
 
@@ -2861,18 +2888,19 @@ function testRatioToContact()
     };
     var t = {
         type: "polygon",
-        vertices: [v2.create(-2, 0), v2.create(2, 1)]
+        vertices: [v2.create(-2, 2), v2.create(2, 3)]
     };
     var movement = v2.create(1, 0);
     // Tested these with geogebra, seems okay
     var tests = [
-        ratioToContact(a, b, movement), 2,
-        ratioToContact(v, b, movement), 1,
-        ratioToContact(a, c, movement), -1,
-        ratioToContact(v, c, movement), -2,
-        ratioToContact(v, t, movement), -2,
-        ratioToContact(c, t, movement), -3.732,
-        ratioToContact(t, c, v2.create(0, 1)), -1.56,
+        ratioToContact(a, b, movement).ratio, 2,
+        ratioToContact(a, b, movement).normal[0], 1, 
+        ratioToContact(v, b, movement).ratio, 1,
+        ratioToContact(a, c, movement).isOverlapping, true,
+        ratioToContact(v, c, movement).isOverlapping, true,
+        ratioToContact(v, t, movement).isOverlapping, false,
+        ratioToContact(c, t, movement).isOverlapping, false,
+        ratioToContact(t, c, v2.create(0, 1)).ratio, 0.4384,
     ];
     test(isApproximatelyEqual, tests);
     // TODO: Make this test reasonable
