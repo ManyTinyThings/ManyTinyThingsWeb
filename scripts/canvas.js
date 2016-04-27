@@ -2,12 +2,12 @@ function createRenderer(canvas)
 {
     var renderer = {
         canvas: canvas,
-		cssWidth: canvas.width,
-		cssHeight: canvas.height,
+        cssWidth: canvas.width,
+        cssHeight: canvas.height,
         context: canvas.getContext("2d"),
         bounds: new Rectangle(),
     };
-	
+
     // Retina stuff
     canvas.style.width = renderer.cssWidth + "px";
     canvas.style.height = renderer.cssHeight + "px";
@@ -40,7 +40,7 @@ function updateRendererBounds(renderer)
     context.translate(-bounds.left, -bounds.top);
 }
 
-function drawParticles(renderer, particles, radiusScaling)
+function drawParticles(renderer, particles)
 {
     var context = renderer.context;
     for (var i = 0; i < particles.length; ++i)
@@ -49,16 +49,18 @@ function drawParticles(renderer, particles, radiusScaling)
         var position = particle.position;
 
         context.fillStyle = cssFromRGBA(particle.color.rgba);
-        for (var dx = 0; dx < 3; dx++) {
-            for (var dy = 0; dy < 3; dy++) {
+        for (var dx = 0; dx < 3; dx++)
+        {
+            for (var dy = 0; dy < 3; dy++)
+            {
                 context.beginPath();
                 var x = position[0] + renderer.bounds.width * (dx - 1);
                 var y = position[1] + renderer.bounds.height * (dy - 1);
-                context.arc(x, y, particle.radius * radiusScaling, 0, tau);
+                context.arc(x, y, particle.radius, 0, tau);
                 context.fill();
             }
         }
-        
+
     }
 }
 
