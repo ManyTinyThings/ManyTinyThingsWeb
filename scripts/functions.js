@@ -479,19 +479,43 @@ var tau = 2 * Math.PI;
 
 var bonkSound = new Audio("../assets/bonk.wav");
 
-// ! Shape enum
+// ! Shapes
 
-var Shape = {
+var ShapeType = Object.freeze(
+{
     circle: 0,
     polygon: 1,
+});
+
+var Circle = function()
+{
+    this.type = ShapeType.circle;
+    this.centerPosition = v2.create(0, 0);
+    this.radius = 1;
+}
+
+var Polygon = function()
+{
+    this.type = ShapeType.polygon;
+    this.vertices = [];
+}
+
+var PhysicalObject = function(shape)
+{
+    this.shape = shape;
+    this.mass = Infinity;
+    this.velocity = v2.create(0, 0);
 }
 
 // ! Walls
 
-var Polygon = function()
+function Wall(start, end)
 {
-    this.type = Shape.polygon;
-    this.vertices = [];
+    this.shapeType = ShapeType.polygon;
+    this.vertices = [start, end];
+
+    this.mass = Infinity;
+    this.velocity = v2.create(0, 0);
 }
 
 // ! Particle object
@@ -513,7 +537,7 @@ var Particle = function()
     this.radius = 1;
     this.mass = 1;
 
-    this.type = Shape.circle;
+    this.shapeType = ShapeType.circle;
 }
 
 // ! Initialization
@@ -1322,9 +1346,7 @@ function createSimulation(opts)
 
     for (var i = 0; i < corners.length; i++)
     {
-        var wall = new Polygon();
-        wall.vertices.push(corners[i]);
-        wall.vertices.push(corners[(i + 1) % corners.length])
+        var wall = new Wall(corners[i], corners[(i + 1) % corners.length]);
         simulation.walls.push(wall);
     }
 
@@ -1659,7 +1681,7 @@ var updateSimulation = function()
                 // TDODODODODODO!!!! Replace with searchForContact
                 function recordCollision(collisions, remainingTime, object, otherObject, relativeVelocity)
                 {
-                    var contact = searchForContact(particle, otherParticle, relativeVelocity);
+                    var contact = searchForContact(object, otherObject, relativeVelocity);
 
                     if (contact.isOverlapping)
                     {
@@ -1674,8 +1696,9 @@ var updateSimulation = function()
                         var collision = {
                             // TODO: do we need an atLeast(0, contact.time) here?
                             time: contact.time,
-                            first: particle,
-                            second: otherParticle,
+                            first: object,
+                            second: otherObject,
+                            normal: contact.normal,
                         }
                         collisions.push(collision);
                     }
@@ -1694,15 +1717,18 @@ var updateSimulation = function()
                         {
                             var otherParticle = particles[otherParticleIndex];
                             v2.subtract(relativeVelocity, otherParticle.velocity, particle.velocity);
+
                             recordCollision(collisions, remainingTime,
-                                particle, otherParticle, relativeVelocity);
+                                particle, otherParticle,
+                                relativeVelocity);
                         }
 
                         for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
                         {
                             var wall = simulation.walls[wallIndex];
                             recordCollision(collisions, remainingTime,
-                                wall, particle, particle.velocity);
+                                wall, particle,
+                                particle.velocity);
                         }
                     }
 
@@ -1745,19 +1771,20 @@ var updateSimulation = function()
                             var firstCollision = firstCollisions[firstCollisionIndex];
 
                             var normal = v2.alloc();
-                            v2.subtract(normal, firstCollision.first.position, firstCollision.second.position);
-                            v2.normalize(normal, normal);
                             var massSum = firstCollision.first.mass + firstCollision.second.mass;
 
                             v2.subtract(relativeVelocity, firstCollision.first.velocity, firstCollision.second.velocity);
-                            v2.projectOntoNormal(deltaVelocity, relativeVelocity, normal);
+                            v2.projectOntoNormal(deltaVelocity, relativeVelocity, firstCollision.normal);
 
-                            v2.free(normal);
+                            var velocityScalingFirst = (firstCollision.second.mass == Infinity) ?
+                                1 : (firstCollision.second.mass / massSum);
+                            var velocityScalingSecond = (firstCollision.first.mass == Infinity) ?
+                                1 : (firstCollision.first.mass / massSum);
 
                             v2.scaleAndAdd(firstCollision.first.velocity, firstCollision.first.velocity,
-                                deltaVelocity, -2 * firstCollision.second.mass / massSum);
+                                deltaVelocity, -2 * velocityScalingFirst);
                             v2.scaleAndAdd(firstCollision.second.velocity, firstCollision.second.velocity,
-                                deltaVelocity, 2 * firstCollision.first.mass / massSum);
+                                deltaVelocity, 2 * velocityScalingSecond);
 
                             // remove collisions for involved particles
 
@@ -1783,10 +1810,12 @@ var updateSimulation = function()
                                 {
                                     v2.subtract(relativeVelocity, particle.velocity, firstCollision.first.velocity);
                                     recordCollision(collisions, remainingTime,
-                                        firstCollision.first, particle, relativeVelocity);
+                                        firstCollision.first, particle,
+                                        relativeVelocity);
                                     v2.subtract(relativeVelocity, particle.velocity, firstCollision.second.velocity);
                                     recordCollision(collisions, remainingTime,
-                                        firstCollision.second, particle, relativeVelocity);
+                                        firstCollision.second, particle,
+                                        relativeVelocity);
                                 }
                             }
 
@@ -2452,13 +2481,13 @@ function isSameDirection(a, b)
 
 function support(supportVector, direction, shape)
 {
-    if (shape.type == Shape.circle)
+    if (shape.shapeType == ShapeType.circle)
     {
         v2.scaleAndAdd(supportVector, shape.position, direction, shape.radius / v2.length(direction));
         return supportVector;
     }
 
-    if (shape.type == Shape.polygon)
+    if (shape.shapeType == ShapeType.polygon)
     {
         var maximumDistance = -Number.MAX_VALUE;
         var maximumVertex;
@@ -2778,26 +2807,21 @@ function searchForContact(stillShape, movingShape, velocity)
                 continue;
             }
 
+            // NOTE: it has to intersect bc
+
             v2.subtract(bc, c, b);
             var bcIntersection = intersectionOriginLineLine(velocity, b, bc);
-            var t = bcIntersection.tLine;
-            var bcIsIntersecting = (0 <= t) && (t <= 1);
 
+            var isInFront = (0 < bcIntersection.tOriginLine);
 
-            if (bcIsIntersecting)
+            if (isBehind == isInFront)
             {
-                var isInFront = (0 < bcIntersection.tOriginLine);
-
-                if (isBehind == isInFront)
-                {
-                    result.isOverlapping = true;
-                    break;
-                }
-
-                v2.copy(a, c);
-                towardOriginFromLine(direction, b, bc, 1);
-                continue;
+                result.isOverlapping = true;
+                break;
             }
+
+            v2.copy(a, c);
+            towardOriginFromLine(direction, b, bc, 1);
         }
     }
 

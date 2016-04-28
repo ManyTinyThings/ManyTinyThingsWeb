@@ -29,12 +29,16 @@
             visualizations: ["energy"],
             particleGenerator: sameInitialGenerator,
             parameters: {
-                particleCount: 37,
-                bondEnergy: 0.001,
+                radiusScaling: 0.1,
+                particleCount: 1,
+                bondEnergy: 0,
             },
         });
 
-       sim.walls = [];
+       sim.walls.push(
+        new Wall(v2.create(0, 1), v2.create(0, 0.2)),
+        new Wall(v2.create(0, -1), v2.create(0, -0.2))
+    );
     </script>
 </body>
 
