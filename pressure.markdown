@@ -27,11 +27,35 @@ Okay, let's do the usual thing: ADD A TON OF PARTICLES!!!
         visualizations: ["pressure"],
         particleGenerator: uniformParticleGenerator,
         parameters: {
-            particleCount: 50,
-            radiusScaling: 0.1,
+            particleCount: 5,
+            radiusScaling: 0.02,
             bondEnergy: 0,
             collisionEnabled: false,
         },
     });
+</script>
+
+
+
+## Hard-to-open jar
+
+<script>
+    var sim = createSimulation({
+        controls: ["resetButton"],
+        visualizations: ["pressure"],
+        particleGenerator: uniformParticleGenerator,
+        parameters: {
+            particleCount: 1,
+            radiusScaling: 0.1,
+            bondEnergy: 0,
+        },
+    });
+
+
+    sim.walls.push(
+        new Wall(v2(-0.5, -1), v2(-0.5, 0.5)),
+        new Wall(v2(-0.5, 0.5), v2(0.5, 0.5)),
+        new Wall(v2(0.5, 0.5), v2(0.5, -1))
+    );
 </script>
 

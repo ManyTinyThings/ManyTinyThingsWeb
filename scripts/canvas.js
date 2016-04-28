@@ -26,7 +26,7 @@ function worldFromCanvas(renderer, canvasPosition)
     var c = renderer.canvas;
     var worldX = b.width / renderer.cssWidth * p[0] + b.left;
     var worldY = -b.height / renderer.cssHeight * p[1] + b.top;
-    return v2.create(worldX, worldY);
+    return v2(worldX, worldY);
 }
 
 function updateRendererBounds(renderer)
@@ -104,8 +104,8 @@ function drawRectangle(renderer, rectangle, color)
 {
     var context = renderer.context;
     context.fillStyle = cssFromRGBA(color.rgba);
-    var topLeft = v2.create(rectangle.left, rectangle.top);
-    var bottomRight = v2.create(rectangle.right, rectangle.bottom);
+    var topLeft = v2(rectangle.left, rectangle.top);
+    var bottomRight = v2(rectangle.right, rectangle.bottom);
     var width = bottomRight[0] - topLeft[0];
     var height = bottomRight[1] - topLeft[1];
     context.fillRect(topLeft[0], topLeft[1], width, height);

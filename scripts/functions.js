@@ -28,7 +28,14 @@ function poolFree(pool, object)
 
 // ! Vectors
 
-var v2 = {};
+
+var v2 = function(x, y)
+{
+    var out = new Float32Array(2);
+    out[0] = x;
+    out[1] = y;
+    return out;
+};
 
 v2.pool = new Pool(function()
 {
@@ -45,13 +52,6 @@ v2.free = function(a)
     poolFree(v2.pool, a);
 };
 
-v2.create = function(x, y)
-{
-    var out = new Float32Array(2);
-    out[0] = x;
-    out[1] = y;
-    return out;
-};
 
 v2.clone = function(a)
 {
@@ -127,7 +127,7 @@ v2.square = function(a)
     return a[0] * a[0] + a[1] * a[1];
 };
 
-v2.length = function(a)
+v2.magnitude = function(a)
 {
     return Math.sqrt(v2.square(a));
 };
@@ -145,7 +145,7 @@ v2.isAlmostZero = function(a)
 
 v2.normalize = function(out, a)
 {
-    var length = v2.length(a);
+    var length = v2.magnitude(a);
     v2.scale(out, a, 1 / length);
     return out;
 };
@@ -490,7 +490,7 @@ var ShapeType = Object.freeze(
 var Circle = function()
 {
     this.type = ShapeType.circle;
-    this.centerPosition = v2.create(0, 0);
+    this.centerPosition = v2(0, 0);
     this.radius = 1;
 }
 
@@ -504,7 +504,7 @@ var PhysicalObject = function(shape)
 {
     this.shape = shape;
     this.mass = Infinity;
-    this.velocity = v2.create(0, 0);
+    this.velocity = v2(0, 0);
 }
 
 // ! Walls
@@ -515,17 +515,17 @@ function Wall(start, end)
     this.vertices = [start, end];
 
     this.mass = Infinity;
-    this.velocity = v2.create(0, 0);
+    this.velocity = v2(0, 0);
 }
 
 // ! Particle object
 
 var Particle = function()
 {
-    this.position = v2.create(0, 0);
-    this.velocity = v2.create(0, 0);
-    this.acceleration = v2.create(0, 0);
-    this.deltaPosition = v2.create(0, 0);
+    this.position = v2(0, 0);
+    this.velocity = v2(0, 0);
+    this.acceleration = v2(0, 0);
+    this.deltaPosition = v2(0, 0);
 
     this.kineticEnergy = 0;
     this.potentialEnergy = 0;
@@ -572,8 +572,8 @@ function halvesPosition(simulation, particleIndex)
 var triangularLatticePosition = function()
 {
 
-    var latticeX = v2.create(0, 0);
-    var latticeY = v2.create(0, 0);
+    var latticeX = v2(0, 0);
+    var latticeY = v2(0, 0);
 
     return function(simulation, particleIndex)
     {
@@ -586,20 +586,20 @@ var triangularLatticePosition = function()
         var overallRotation = -tau / 12;
         v2.setPolar(latticeX, latticeSpacing * integerX, overallRotation);
         v2.setPolar(latticeY, latticeSpacing * integerY, overallRotation + tau / 6);
-        return v2.add(v2.create(0, 0), latticeX, latticeY);
+        return v2.add(v2(0, 0), latticeX, latticeY);
     }
 }();
 
 var rectangularLatticePosition = function()
 {
-    var latticeX = v2.create(0, 0);
-    var latticeY = v2.create(0, 0);
+    var latticeX = v2(0, 0);
+    var latticeY = v2(0, 0);
 
     return function(simulation, particleIndex)
     {
         if (particleIndex == 0)
         {
-            return v2.create(0, 0);
+            return v2(0, 0);
         }
         var layer = Math.floor((Math.sqrt(particleIndex) + 1) / 2);
         var rest = particleIndex - squared(2 * layer - 1);
@@ -610,15 +610,15 @@ var rectangularLatticePosition = function()
         var rotationAngle = quadrant * tau / 4;
         v2.setPolar(latticeX, latticeSpacing * integerX, rotationAngle);
         v2.setPolar(latticeY, latticeSpacing * integerY, rotationAngle + tau / 4);
-        return v2.add(v2.create(0, 0), latticeX, latticeY);
+        return v2.add(v2(0, 0), latticeX, latticeY);
     }
 }();
 
 var hexagonalLatticePosition = function()
 {
 
-    var latticeX = v2.create(0, 0);
-    var latticeY = v2.create(0, 0);
+    var latticeX = v2(0, 0);
+    var latticeY = v2(0, 0);
 
     return function(simulation, particleIndex)
     {
@@ -626,7 +626,7 @@ var hexagonalLatticePosition = function()
         // one of 6 triangular lattices
         if (particleIndex == 0)
         {
-            return v2.create(0, 0);
+            return v2(0, 0);
         }
         var k = particleIndex - 1;
         var layer = Math.floor((Math.sqrt(8 * (k / 6) + 1) - 1) / 2) + 1; // NOTE: 1-indexed
@@ -639,7 +639,7 @@ var hexagonalLatticePosition = function()
         v2.setPolar(latticeX, latticeSpacing * integerX, rotationAngle);
         var shape = 2; // 1: spiral, 2: hexagon
         v2.setPolar(latticeY, latticeSpacing * integerY, rotationAngle + shape * tau / 6);
-        return v2.add(v2.create(0, 0), latticeX, latticeY);
+        return v2.add(v2(0, 0), latticeX, latticeY);
     }
 }();
 
@@ -653,7 +653,7 @@ function randomVelocity(maxSpeed)
 function randomUnitVector()
 {
     var angle = randomInInterval(0, tau);
-    return v2.create(Math.cos(angle), Math.sin(angle));
+    return v2(Math.cos(angle), Math.sin(angle));
 }
 
 function uniformVelocity(simulation, particleIndex)
@@ -665,7 +665,7 @@ function uniformVelocity(simulation, particleIndex)
 
 function identicalVelocity(simulation, particleIndex)
 {
-    return v2.create(0, -simulation.parameters.maxInitialSpeed);
+    return v2(0, -simulation.parameters.maxInitialSpeed);
 }
 
 function twoColors(simulation, particleIndex)
@@ -734,12 +734,12 @@ function billiardsParticleGenerator(simulation, particleIndex)
     var particle = new Particle();
     if (particleIndex == 0)
     {
-        particle.position = v2.create(-0.5, 0);
+        particle.position = v2(-0.5, 0);
     }
     else
     {
         particle.position = triangularLatticePosition(simulation, particleIndex - 1);
-        v2.add(particle.position, particle.position, v2.create(0.3, 0))
+        v2.add(particle.position, particle.position, v2(0.3, 0))
     }
     return particle;
 }
@@ -793,7 +793,7 @@ function isColliding(simulation, particle)
     for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
     {
         var wall = simulation.walls[wallIndex];
-        var result = searchForContact(wall, particle, v2.create(0, 0));
+        var result = searchForContact(wall, particle, v2(0, 0));
         if (result.isOverlapping)
         {
             return true;
@@ -813,7 +813,7 @@ function worldFromPage(renderer, pagePosition)
     var canvasBounds = renderer.canvas.getBoundingClientRect();
     var canvasX = pagePosition[0] - canvasBounds.left;
     var canvasY = pagePosition[1] - canvasBounds.top;
-    return worldFromCanvas(renderer, v2.create(canvasX, canvasY));
+    return worldFromCanvas(renderer, v2(canvasX, canvasY));
 }
 
 function square(x)
@@ -830,7 +830,7 @@ function pickParticle(simulation, pickPosition, extraRadius)
     {
         var particle = simulation.particles[particleIndex];
         var squaredRadius = square(particle.radius + extraRadius);
-        var between = v2.create();
+        var between = v2();
         v2.subtract(between, pickPosition, particle.position);
         var inside = v2.square(between) < squaredRadius;
         if (inside)
@@ -948,7 +948,7 @@ function createSimulation(opts)
 
     simulation.mouse = {
         active: false,
-        worldPosition: v2.create(0, 0),
+        worldPosition: v2(0, 0),
         leftButton:
         {
             down: false,
@@ -964,8 +964,8 @@ function createSimulation(opts)
         billiardCue:
         {
             visible: false,
-            start: v2.create(0, 0),
-            end: v2.create(0, 0),
+            start: v2(0, 0),
+            end: v2(0, 0),
             strength: 1,
             length: 0.8,
         }
@@ -981,7 +981,7 @@ function createSimulation(opts)
     {
         if (simulation.mouse.active)
         {
-            simulation.mouse.worldPosition = worldFromPage(simulation.renderer, v2.create(event.clientX, event.clientY));
+            simulation.mouse.worldPosition = worldFromPage(simulation.renderer, v2(event.clientX, event.clientY));
             updateMouseButton(simulation.mouse.leftButton, (event.buttons & 1) != 0);
             updateMouseButton(simulation.mouse.rightButton, (event.buttons & 2) != 0);
             event.preventDefault();
@@ -1309,7 +1309,7 @@ function createSimulation(opts)
     // ! boxes
 
     var aspectRatio = simulation.canvas.width / simulation.canvas.height;
-    var origin = v2.create(0, 0);
+    var origin = v2(0, 0);
 
     setCenterWidthHeight(
         simulation.renderer.bounds,
@@ -1334,10 +1334,10 @@ function createSimulation(opts)
 
     var b = simulation.boxBounds;
     var corners = [
-        v2.create(b.left, b.bottom),
-        v2.create(b.right, b.bottom),
-        v2.create(b.right, b.top),
-        v2.create(b.left, b.top),
+        v2(b.left, b.bottom),
+        v2(b.right, b.bottom),
+        v2(b.right, b.top),
+        v2(b.left, b.top),
     ];
 
     // Walls
@@ -1509,14 +1509,14 @@ function drawSimulation(simulation)
 var updateSimulation = function()
 {
 
-    var relativePosition = v2.create(0, 0);
-    var relativeVelocity = v2.create(0, 0);
-    var deltaVelocity = v2.create(0, 0);
-    var deltaAcceleration = v2.create(0, 0);
+    var relativePosition = v2(0, 0);
+    var relativeVelocity = v2(0, 0);
+    var deltaVelocity = v2(0, 0);
+    var deltaAcceleration = v2(0, 0);
 
-    var wallNormal = v2.create(0, 0);
-    var projection = v2.create(0, 0);
-    var gravityAcceleration = v2.create(0, 0);
+    var wallNormal = v2(0, 0);
+    var projection = v2(0, 0);
+    var gravityAcceleration = v2(0, 0);
 
     return function(updateFunction, simulation, timestamp)
     {
@@ -1855,7 +1855,7 @@ var updateSimulation = function()
 
                             v2.subtract(relativePosition, otherParticle.position, particle.position);
                             v2.periodicize(relativePosition, relativePosition, simulation.boxBounds);
-                            var distanceBetweenCenters = v2.length(relativePosition);
+                            var distanceBetweenCenters = v2.magnitude(relativePosition);
 
                             var invDistance = 1 / distanceBetweenCenters;
                             var potentialEnergy = lennardJonesEnergy(invDistance, simulation.parameters.bondEnergy, separation);
@@ -1905,7 +1905,7 @@ var updateSimulation = function()
                 //         var separation = separationFactor * distanceLimit;
 
                 //         v2.subtract(relativePosition, otherParticle.position, particle.position);
-                //         var distanceBetweenCenters = v2.length(relativePosition);
+                //         var distanceBetweenCenters = v2.magnitude(relativePosition);
 
                 //         var invDistance = 1 / distanceBetweenCenters;
                 //         var potentialEnergy = lennardJonesEnergy(invDistance, simulation.parameters.bondEnergy, separation);
@@ -2328,7 +2328,7 @@ function Rectangle()
     this.bottom = 0;
     this.width = 0;
     this.height = 0;
-    this.center = v2.create(0, 0);
+    this.center = v2(0, 0);
     return this;
 }
 
@@ -2398,7 +2398,7 @@ function doesRectContainPoint(rectangle, point)
 
 function randomPointInRect(rect)
 {
-    return v2.create(randomInInterval(rect.left, rect.right),
+    return v2(randomInInterval(rect.left, rect.right),
         randomInInterval(rect.top, rect.bottom));
 }
 
@@ -2483,7 +2483,7 @@ function support(supportVector, direction, shape)
 {
     if (shape.shapeType == ShapeType.circle)
     {
-        v2.scaleAndAdd(supportVector, shape.position, direction, shape.radius / v2.length(direction));
+        v2.scaleAndAdd(supportVector, shape.position, direction, shape.radius / v2.magnitude(direction));
         return supportVector;
     }
 
@@ -2685,7 +2685,7 @@ function closestDistanceGJK(shape, otherShape)
         if ((cd - ad) < tolerance)
         {
             // too small of a step
-            distance = v2.length(direction);
+            distance = v2.magnitude(direction);
             break;
         }
 
@@ -2873,28 +2873,28 @@ function testSearchForContact()
 {
     var a = {
         type: "circle",
-        center: v2.create(2, 0),
+        center: v2(2, 0),
         radius: 1,
     };
     var b = {
         type: "circle",
-        center: v2.create(-2, 0),
+        center: v2(-2, 0),
         radius: 1,
     };
     var c = {
         type: "circle",
-        center: v2.create(0, 0),
+        center: v2(0, 0),
         radius: 2,
     };
     var v = {
         type: "polygon",
-        vertices: [v2.create(0, -1), v2.create(0, 1)]
+        vertices: [v2(0, -1), v2(0, 1)]
     };
     var t = {
         type: "polygon",
-        vertices: [v2.create(-2, 2), v2.create(2, 3)]
+        vertices: [v2(-2, 2), v2(2, 3)]
     };
-    var movement = v2.create(1, 0);
+    var movement = v2(1, 0);
     // Tested these with geogebra, seems okay
     var tests = [
         searchForContact(a, b, movement).time, 2,
@@ -2904,7 +2904,7 @@ function testSearchForContact()
         searchForContact(v, c, movement).isOverlapping, true,
         searchForContact(v, t, movement).isOverlapping, false,
         searchForContact(c, t, movement).isOverlapping, false,
-        searchForContact(t, c, v2.create(0, 1)).time, 0.4384,
+        searchForContact(t, c, v2(0, 1)).time, 0.4384,
     ];
     test(isApproximatelyEqual, tests);
     // TODO: Make this test reasonable
@@ -2918,19 +2918,19 @@ function testGJK()
 {
     var h = {
         type: "polygon",
-        vertices: [v2.create(-1, 0), v2.create(1, 0)]
+        vertices: [v2(-1, 0), v2(1, 0)]
     };
     var v = {
         type: "polygon",
-        vertices: [v2.create(0, -1), v2.create(0, 1)]
+        vertices: [v2(0, -1), v2(0, 1)]
     };
     var t = {
         type: "polygon",
-        vertices: [v2.create(-2, 0), v2.create(2, 1)]
+        vertices: [v2(-2, 0), v2(2, 1)]
     };
     var c = {
         type: "circle",
-        center: v2.create(0, 0),
+        center: v2(0, 0),
         radius: 0.01
     };
 
