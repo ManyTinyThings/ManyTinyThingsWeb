@@ -25,16 +25,20 @@
 
         var sim = createSimulation({
             width: 500,
-            controls: ["playPauseButton", "resetButton", "simulationSpeed", "reverseTime"],
+            controls: ["playPauseButton", "resetButton", "simulationSpeed", "reverseTime", "deltaTemperature"],
             visualizations: ["energy"],
             particleGenerator: sameInitialGenerator,
             parameters: {
+                radiusScaling: 0.1,
                 particleCount: 37,
-                bondEnergy: 0.001,
+                bondEnergy: 0.0001,
             },
         });
 
-       sim.walls = [];
+    //    sim.walls.push(
+    //     new Wall(v2(0, 1), v2(0, 0.2)),
+    //     new Wall(v2(0, -1), v2(0, -0.2))
+    // );
     </script>
 </body>
 

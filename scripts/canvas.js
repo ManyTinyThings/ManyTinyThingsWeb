@@ -2,12 +2,12 @@ function createRenderer(canvas)
 {
     var renderer = {
         canvas: canvas,
-		cssWidth: canvas.width,
-		cssHeight: canvas.height,
+        cssWidth: canvas.width,
+        cssHeight: canvas.height,
         context: canvas.getContext("2d"),
         bounds: new Rectangle(),
     };
-	
+
     // Retina stuff
     canvas.style.width = renderer.cssWidth + "px";
     canvas.style.height = renderer.cssHeight + "px";
@@ -26,7 +26,7 @@ function worldFromCanvas(renderer, canvasPosition)
     var c = renderer.canvas;
     var worldX = b.width / renderer.cssWidth * p[0] + b.left;
     var worldY = -b.height / renderer.cssHeight * p[1] + b.top;
-    return v2.create(worldX, worldY);
+    return v2(worldX, worldY);
 }
 
 function updateRendererBounds(renderer)
@@ -40,7 +40,7 @@ function updateRendererBounds(renderer)
     context.translate(-bounds.left, -bounds.top);
 }
 
-function drawParticles(renderer, particles, radiusScaling)
+function drawParticles(renderer, particles)
 {
     var context = renderer.context;
     for (var i = 0; i < particles.length; ++i)
@@ -49,16 +49,18 @@ function drawParticles(renderer, particles, radiusScaling)
         var position = particle.position;
 
         context.fillStyle = cssFromRGBA(particle.color.rgba);
-        for (var dx = 0; dx < 3; dx++) {
-            for (var dy = 0; dy < 3; dy++) {
+        for (var dx = 0; dx < 3; dx++)
+        {
+            for (var dy = 0; dy < 3; dy++)
+            {
                 context.beginPath();
                 var x = position[0] + renderer.bounds.width * (dx - 1);
                 var y = position[1] + renderer.bounds.height * (dy - 1);
-                context.arc(x, y, particle.radius * radiusScaling, 0, tau);
+                context.arc(x, y, particle.radius, 0, tau);
                 context.fill();
             }
         }
-        
+
     }
 }
 
@@ -102,8 +104,8 @@ function drawRectangle(renderer, rectangle, color)
 {
     var context = renderer.context;
     context.fillStyle = cssFromRGBA(color.rgba);
-    var topLeft = v2.create(rectangle.left, rectangle.top);
-    var bottomRight = v2.create(rectangle.right, rectangle.bottom);
+    var topLeft = v2(rectangle.left, rectangle.top);
+    var bottomRight = v2(rectangle.right, rectangle.bottom);
     var width = bottomRight[0] - topLeft[0];
     var height = bottomRight[1] - topLeft[1];
     context.fillRect(topLeft[0], topLeft[1], width, height);
