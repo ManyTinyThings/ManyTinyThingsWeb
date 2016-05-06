@@ -866,7 +866,10 @@ function createSimulation(opts)
             collisionEnabled: true,
             pressureWindowSize: 1000,
             quadtreeEnabled: true,
+            // TODO: reduce this to simulated time per real time (the quotient)?
             frameDuration: 1000 / 60,
+            simulatedTimePerFrame: 0.05,
+            dt: 0.005,
             deltaTemperature: 1,
             gravityAcceleration: 0,
             simulationSpeed: 1,
@@ -876,11 +879,12 @@ function createSimulation(opts)
             measurementWindowLength: 100,
             separationFactor: 1.2,
             soundEnabled: false,
-            bondEnergy: 0.0001,
-            ljSoftness: 0.1,
+            bondEnergy: 1.0,
+            ljSoftness: 0,
             ljn: 6,
             ljm: 1,
-            aprioriCollision: false,
+            aprioriCollision: true,
+            coefficientOfRestitution: 1,
         },
         customUpdate: function(simulation) {},
     });
@@ -1153,9 +1157,9 @@ function createSimulation(opts)
     {
         name: "deltaTemperature",
         label: "Control temperature:",
-        min: 0.97,
+        min: 0.997,
         minLabel: "Colder",
-        max: 1.03,
+        max: 1.003,
         maxLabel: "Warmer",
         snapBack: true,
     });
@@ -1639,27 +1643,27 @@ var updateSimulation = function()
 
         // ! Keep track of time
 
-        var elapsedTime = timestamp - simulation.previousTimestamp;
+        var elapsedFrameCount = (timestamp - simulation.previousTimestamp) / simulation.parameters.frameDuration;
         simulation.previousTimestamp = timestamp;
 
         if (simulation.isFirstFrameAfterPause)
         {
             simulation.isFirstFrameAfterPause = false;
-            elapsedTime = simulation.parameters.frameDuration;
+            elapsedFrameCount = 1;
         }
 
-        simulation.timeLeftToSimulate += elapsedTime;
+        simulation.timeLeftToSimulate += elapsedFrameCount * simulation.parameters.simulatedTimePerFrame;
 
         // ! Simulation loop with fixed timestep
 
-        while (simulation.timeLeftToSimulate >= simulation.parameters.frameDuration)
+        dt = simulation.parameters.dt;
+
+        while (simulation.timeLeftToSimulate >= dt)
         {
-            simulation.timeLeftToSimulate -= simulation.parameters.frameDuration;
+            simulation.timeLeftToSimulate -= dt;
 
             // TODO: make timestep completely fixed? 
             // and change simulation speed by running more or fewer iterations with interpolation?
-            var slowingFactor = 0.01;
-            var dt = simulation.parameters.frameDuration * simulation.parameters.simulationSpeed * slowingFactor;
             simulation.time += dt;
 
             v2.set(gravityAcceleration, 0, -simulation.parameters.gravityAcceleration);
@@ -1797,7 +1801,7 @@ var updateSimulation = function()
                             {
 
 
-                                // ! Elastic collision
+                                // ! Collision
                                 // TODO: energy corrections (to conserve energy)
 
                                 var firstCollision = firstCollisions[firstCollisionIndex];
@@ -1813,10 +1817,12 @@ var updateSimulation = function()
                                 var velocityScalingSecond = (firstCollision.first.mass == Infinity) ?
                                     1 : (firstCollision.first.mass / massSum);
 
+                                var restitutionFactor = 1 + simulation.parameters.coefficientOfRestitution;
+
                                 v2.scaleAndAdd(firstCollision.first.velocity, firstCollision.first.velocity,
-                                    deltaVelocity, -2 * velocityScalingFirst);
+                                    deltaVelocity, -restitutionFactor * velocityScalingFirst);
                                 v2.scaleAndAdd(firstCollision.second.velocity, firstCollision.second.velocity,
-                                    deltaVelocity, 2 * velocityScalingSecond);
+                                    deltaVelocity, restitutionFactor * velocityScalingSecond);
 
                                 // remove collisions for involved particles
 
@@ -1879,6 +1885,8 @@ var updateSimulation = function()
                         {
                             for (var otherParticleIndex = 0; otherParticleIndex < particleIndex; otherParticleIndex++)
                             {
+                                // TODO: maybe ignore potential for particles with too high velocity?
+
                                 var otherParticle = particles[otherParticleIndex];
 
                                 var separationFactor = simulation.parameters.separationFactor;
@@ -1956,7 +1964,7 @@ var updateSimulation = function()
                             var normal = v2.normalize(relativePosition, relativePosition);
                             var isHardCollision = distanceBetweenCenters < distanceLimit;
 
-                            if (isHardCollision)
+                            if (isHardCollision && simulation.parameters.collisionEnabled)
                             {
 
 
@@ -2040,6 +2048,7 @@ var updateSimulation = function()
                     var particle = particles[simulation.mouse.activeParticleIndex];
                     if (simulation.mouse.mode === "dragParticle")
                     {
+                        // TODO: friction while dragging?
                         var dragStrength = 0.1;
                         v2.subtract(relativePosition, simulation.mouse.worldPosition, particle.position);
                         v2.scaleAndAdd(particle.acceleration, particle.acceleration,
@@ -2810,6 +2819,8 @@ function searchForContact(stillShape, movingShape, velocity)
 
         while (true)
         {
+            // TODO: maximum number of iterations to avoid locking up
+
             doubleSupport(c, direction, stillShape, movingShape);
 
             // TODO: compare the distance to intersection instead?
