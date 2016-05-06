@@ -25,13 +25,15 @@
 
         var sim = createSimulation({
             width: 500,
-            controls: ["playPauseButton", "resetButton", "simulationSpeed", "reverseTime", "deltaTemperature"],
-            visualizations: ["energy"],
+            controls: ["playPauseButton", "resetButton"],
+            visualizations: [],
             particleGenerator: sameInitialGenerator,
             parameters: {
                 radiusScaling: 0.1,
                 particleCount: 37,
-                bondEnergy: 0.0001,
+                bondEnergy: 0.01,
+                aprioriCollision: false,
+                collisionEnabled: false,
             },
         });
 
@@ -39,6 +41,57 @@
     //     new Wall(v2(0, 1), v2(0, 0.2)),
     //     new Wall(v2(0, -1), v2(0, -0.2))
     // );
+    </script>
+
+    <div id="testGraph"></div>
+    <script>
+        var testDiv = document.getElementById("testGraph");
+        var histogram = createGraph(testDiv, "gaussian test");
+        var randoms = [];
+        for (var i = 0; i < 10000; i++) {
+            randoms.push(randomGaussian());
+        }
+        randoms.sort(function(a, b) { return (a - b); });
+        var barCount = 20;
+        var barMin = -3;
+        var barMax = 3;
+        var barWidth = (barMax - barMin) / barCount;
+        var bars = [];
+        for (var i = 0; i < barCount; i++) {
+            var bar = {
+                start: barMin + i * barWidth,
+                end: barMin + (i + 1) * barWidth,
+                value: 0,
+                color: colors.black,
+            };
+            bars.push(bar);
+        }
+        var barIndex = 0;
+        for (var i = 0; (i < randoms.length) && (barIndex < barCount); i++) {
+            var r = randoms[i];
+            var bar = bars[barIndex];
+            if (r < barMin)
+            {
+                continue;
+            }
+            if (r < bar.end) 
+            {
+                bar.value += 1;
+            }
+            else
+            {
+                barIndex++;
+            }
+        }
+
+        addBars(histogram, {bars: bars});
+        // setGraphLimits(histogram,
+        // {
+        //     xMin: barMin,
+        //     xMax: barMax,
+        //     yMin: 0,
+        // });
+        drawGraph(histogram);
     </script>
 </body>
 

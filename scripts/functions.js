@@ -2460,6 +2460,33 @@ function randomInInterval(a, b)
     return lerp(a, Math.random(), b);
 }
 
+var randomGaussian = function()
+{
+    var returnX = true;
+    var outX, outY;
+
+    return function() {
+        returnX = !returnX;
+
+        if (returnX) {
+            return outX;
+        }
+
+        var x, y;
+        do {
+            x = 2 * Math.random() - 1;
+            y = 2 * Math.random() - 1;
+            w = x * x + y * y;
+        } while (w >= 1.0)
+
+        w = Math.sqrt( (-2 * Math.log(w)) / w );    
+        outX = x * w;
+        outY = y * w;
+
+        return outY;
+    }
+}();
+
 function rectangleArea(rectangle)
 {
     return (rectangle.width * rectangle.height);
