@@ -296,6 +296,42 @@ function addBars(graph, opts)
     graph.bars = graph.bars.concat(opts.bars);
 }
 
+function addHistogram(graph, opts)
+{
+    var values = opts.values.slice();
+    values.sort(function(a, b) { return (a - b); });
+    var barWidth = (opts.max - opts.min) / opts.barCount;
+    var bars = [];
+    for (var i = 0; i < opts.barCount; i++) {
+        var bar = {
+            start: opts.min + i * barWidth,
+            end: opts.min + (i + 1) * barWidth,
+            value: 0,
+            color: colors.red,
+        };
+        bars.push(bar);
+    }
+    var barIndex = 0;
+    for (var i = 0; (i < values.length) && (barIndex < opts.barCount); i++) {
+        var value = values[i];
+        var bar = bars[barIndex];
+        if (value < opts.min)
+        {
+            continue;
+        }
+        if (value < bar.end) 
+        {
+            bar.value += 1;
+        }
+        else
+        {
+            barIndex++;
+        }
+    }
+
+    addBars(histogram, {bars: bars});
+}
+
 function setGraphLimits(graph, limits)
 {
     for (var key in limits)
