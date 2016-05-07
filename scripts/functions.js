@@ -222,6 +222,16 @@ function arrayMinIndex(array, f)
     return minimumIndex;
 }
 
+function numericCompare(a, b)
+{
+    return (a - b);
+}
+
+function arraySort(array)
+{
+    array.sort(numericCompare);
+}
+
 // ! DOM stuff
 
 function createAndAppend(elementType, parent)
@@ -299,10 +309,11 @@ function addBars(graph, opts)
 function addHistogram(graph, opts)
 {
     var values = opts.values.slice();
-    values.sort(function(a, b) { return (a - b); });
+    arraySort(values);
     var barWidth = (opts.max - opts.min) / opts.barCount;
     var bars = [];
-    for (var i = 0; i < opts.barCount; i++) {
+    for (var i = 0; i < opts.barCount; i++)
+    {
         var bar = {
             start: opts.min + i * barWidth,
             end: opts.min + (i + 1) * barWidth,
@@ -312,14 +323,16 @@ function addHistogram(graph, opts)
         bars.push(bar);
     }
     var barIndex = 0;
-    for (var i = 0; (i < values.length) && (barIndex < opts.barCount); i++) {
+    for (var i = 0;
+        (i < values.length) && (barIndex < opts.barCount); i++)
+    {
         var value = values[i];
         var bar = bars[barIndex];
         if (value < opts.min)
         {
             continue;
         }
-        if (value < bar.end) 
+        if (value < bar.end)
         {
             bar.value += 1;
         }
@@ -329,7 +342,10 @@ function addHistogram(graph, opts)
         }
     }
 
-    addBars(histogram, {bars: bars});
+    addBars(histogram,
+    {
+        bars: bars
+    });
 }
 
 function setGraphLimits(graph, limits)
@@ -913,6 +929,7 @@ function createSimulation(opts)
             radiusScaling: 0.08,
             friction: 0,
             measurementWindowLength: 100,
+            measurementEnabled: true,
             separationFactor: 1.2,
             soundEnabled: false,
             bondEnergy: 1.0,
@@ -1679,6 +1696,8 @@ var updateSimulation = function()
 
         // ! Keep track of time
 
+        // TODO: this seems a bit unecessarily complex
+
         var elapsedFrameCount = (timestamp - simulation.previousTimestamp) / simulation.parameters.frameDuration;
         simulation.previousTimestamp = timestamp;
 
@@ -2126,191 +2145,195 @@ var updateSimulation = function()
 
         // ! Measurements
 
-        // TODO: record measurements for each simulation step, but only draw once
-
-        var totalEntropy = 0;
-        var probabilities = [];
-        var counts = [];
-        var totalArea = rectangleArea(simulation.boxBounds);
-
-        var barWidth = 1 / simulation.measurementRegions.length;
-        for (var regionIndex = 0; regionIndex < simulation.measurementRegions.length; regionIndex++)
+        if (simulation.parameters.measurementEnabled)
         {
-            var region = simulation.measurementRegions[regionIndex];
-            var m = region.measurements;
+            // TODO: record measurements for each simulation step, but only draw once?
+            // maybe not, once per frame should be enough for showing
 
-            // Add new value, remove old, crufty ones
-            m.time.push(simulation.time);
+            var totalEntropy = 0;
+            var probabilities = [];
+            var counts = [];
+            var totalArea = rectangleArea(simulation.boxBounds);
+
+            var barWidth = 1 / simulation.measurementRegions.length;
+            for (var regionIndex = 0; regionIndex < simulation.measurementRegions.length; regionIndex++)
+            {
+                var region = simulation.measurementRegions[regionIndex];
+                var m = region.measurements;
+
+                // Add new value, remove old, crufty ones
+                m.time.push(simulation.time);
+                var tooOldCount = -1;
+                // NOTE: save more data than shown, to avoid weird autoscaling in plots
+                while ((simulation.time - m.time[++tooOldCount]) > 2 * simulation.parameters.measurementWindowLength)
+                {};
+
+                for (var key in m)
+                {
+                    m[key].splice(0, tooOldCount);
+                }
+
+                var regionEnergy = 0;
+                var regionTemperature = 0;
+                var regionCount = 0;
+                var regionPressure = 0;
+                var regionVirialSum = 0;
+                var regionArea = rectangleArea(region.bounds);
+
+                for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++)
+                {
+                    var particle = simulation.particles[particleIndex];
+
+                    if (doesRectContainPoint(region.bounds, particle.position))
+                    {
+                        regionPressure += particle.pressure;
+                        regionEnergy += (particle.potentialEnergy + particle.kineticEnergy);
+                        regionTemperature += particle.kineticEnergy;
+                        regionCount += 1;
+                        regionVirialPressure = particle.virial;
+                    }
+                }
+
+                regionTemperature /= regionCount;
+                var dimension = 2;
+                var regionVirialPressure = (regionVirialSum / dimension + regionTemperature * regionCount) / regionArea;
+
+
+                m.energy.push(regionEnergy);
+                m.temperature.push(regionTemperature);
+                m.count.push(regionCount);
+                m.pressure.push(regionPressure);
+                m.virialPressure.push(regionVirialPressure);
+
+
+                var smoothingWindowSize = atMost(2, m.pressure.length);
+                var smoothingFactor = 0;
+                // TODO: optimize this when adding just one sample, by only computing delta from previous smoothed value
+                var cosFactor = tau / (smoothingWindowSize - 1);
+                var windowSum = 0;
+                for (var i = 0; i < smoothingWindowSize; i++)
+                {
+                    var w = lerp(1, smoothingFactor, Math.cos(i * cosFactor));
+                    windowSum += w * m.pressure[m.pressure.length - 1 - i];
+                }
+                var windowAverage = windowSum / smoothingWindowSize;
+                m.smoothedPressure.push(windowAverage);
+
+
+
+                addCurve(simulation.visualizations.energy,
+                {
+                    x: m.time,
+                    y: m.energy,
+                    color: region.color
+                });
+                addCurve(simulation.visualizations.temperature,
+                {
+                    x: m.time,
+                    y: m.temperature,
+                    color: region.color
+                });
+                addCurve(simulation.visualizations.counts,
+                {
+                    x: m.time,
+                    y: m.count,
+                    color: region.color,
+                });
+                addCurve(simulation.visualizations.pressure,
+                {
+                    x: m.time,
+                    y: m.smoothedPressure,
+                    color: region.color,
+                });
+                addCurve(simulation.visualizations.virialPressure,
+                {
+                    x: m.time,
+                    y: m.virialPressure,
+                    color: region.color,
+                });
+                addBars(simulation.visualizations.countsHistogram,
+                {
+                    bars: [
+                    {
+                        start: barWidth * regionIndex,
+                        end: barWidth * (regionIndex + 1),
+                        value: regionCount,
+                        color: region.color,
+                    }]
+                });
+
+                totalEntropy += microstateEntropy(regionCount / simulation.particles.length);
+                probabilities.push(regionArea / totalArea);
+                counts.push(regionCount);
+            }
+
+            // TODO: make a list with global visualizations too
+
+            simulation.times.push(simulation.time);
+            simulation.entropy.push(totalEntropy);
+            simulation.probability.push(multinomial(probabilities, counts));
+
             var tooOldCount = -1;
             // NOTE: save more data than shown, to avoid weird autoscaling in plots
-            while ((simulation.time - m.time[++tooOldCount]) > 2 * simulation.parameters.measurementWindowLength)
+            while ((simulation.time - simulation.times[++tooOldCount]) > 2 * simulation.parameters.measurementWindowLength)
             {};
 
-            for (var key in m)
+            simulation.entropy.splice(0, tooOldCount);
+            simulation.times.splice(0, tooOldCount);
+            simulation.probability.splice(0, tooOldCount);
+
+            addCurve(simulation.visualizations.entropy,
             {
-                m[key].splice(0, tooOldCount);
-            }
+                x: m.time,
+                y: simulation.entropy,
+            });
 
-            var regionEnergy = 0;
-            var regionTemperature = 0;
-            var regionCount = 0;
-            var regionPressure = 0;
-            var regionVirialSum = 0;
-            var regionArea = rectangleArea(region.bounds);
-
-            for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++)
+            addCurve(simulation.visualizations.probability,
             {
-                var particle = simulation.particles[particleIndex];
+                x: m.time,
+                y: simulation.probability,
+            });
 
-                if (doesRectContainPoint(region.bounds, particle.position))
+            // ! Plot things
+
+            setGraphLimits(simulation.visualizations.counts,
+            {
+                yMax: simulation.particles.length
+            });
+            setGraphLimits(simulation.visualizations.entropy,
+            {
+                yMax: 1
+            });
+            setGraphLimits(simulation.visualizations.probability,
+            {
+                yMax: 1
+            });
+
+            simulation.customUpdate(simulation);
+
+            // ! Drawing
+
+            for (var i = 0; i < simulation.timeSeries.length; ++i)
+            {
+                var graph = simulation.timeSeries[i];
+                // TODO: make the limits change smoothly, so it's less noticable
+                setGraphLimits(graph,
                 {
-                    regionPressure += particle.pressure;
-                    regionEnergy += (particle.potentialEnergy + particle.kineticEnergy);
-                    regionTemperature += particle.kineticEnergy;
-                    regionCount += 1;
-                    regionVirialPressure = particle.virial;
-                }
+                    xMin: simulation.time - simulation.parameters.measurementWindowLength,
+                    xMax: simulation.time,
+                })
+                drawGraph(graph);
             }
 
-            regionTemperature /= regionCount;
-            var dimension = 2;
-            var regionVirialPressure = (regionVirialSum / dimension + regionTemperature * regionCount) / regionArea;
-
-
-            m.energy.push(regionEnergy);
-            m.temperature.push(regionTemperature);
-            m.count.push(regionCount);
-            m.pressure.push(regionPressure);
-            m.virialPressure.push(regionVirialPressure);
-
-
-            var smoothingWindowSize = atMost(2, m.pressure.length);
-            var smoothingFactor = 0;
-            // TODO: optimize this when adding just one sample, by only computing delta from previous smoothed value
-            var cosFactor = tau / (smoothingWindowSize - 1);
-            var windowSum = 0;
-            for (var i = 0; i < smoothingWindowSize; i++)
+            setGraphLimits(simulation.visualizations.countsHistogram,
             {
-                var w = lerp(1, smoothingFactor, Math.cos(i * cosFactor));
-                windowSum += w * m.pressure[m.pressure.length - 1 - i];
-            }
-            var windowAverage = windowSum / smoothingWindowSize;
-            m.smoothedPressure.push(windowAverage);
-
-
-
-            addCurve(simulation.visualizations.energy,
-            {
-                x: m.time,
-                y: m.energy,
-                color: region.color
+                xMin: 0,
+                xMax: 1,
+                yMin: 0,
+                yMax: simulation.particles.length
             });
-            addCurve(simulation.visualizations.temperature,
-            {
-                x: m.time,
-                y: m.temperature,
-                color: region.color
-            });
-            addCurve(simulation.visualizations.counts,
-            {
-                x: m.time,
-                y: m.count,
-                color: region.color,
-            });
-            addCurve(simulation.visualizations.pressure,
-            {
-                x: m.time,
-                y: m.smoothedPressure,
-                color: region.color,
-            });
-            addCurve(simulation.visualizations.virialPressure,
-            {
-                x: m.time,
-                y: m.virialPressure,
-                color: region.color,
-            });
-            addBars(simulation.visualizations.countsHistogram,
-            {
-                bars: [
-                {
-                    start: barWidth * regionIndex,
-                    end: barWidth * (regionIndex + 1),
-                    value: regionCount,
-                    color: region.color,
-                }]
-            });
-
-            totalEntropy += microstateEntropy(regionCount / simulation.particles.length);
-            probabilities.push(regionArea / totalArea);
-            counts.push(regionCount);
+            drawGraph(simulation.visualizations.countsHistogram);
         }
-
-        // TODO: make a list with global visualizations too
-
-        simulation.times.push(simulation.time);
-        simulation.entropy.push(totalEntropy);
-        simulation.probability.push(multinomial(probabilities, counts));
-
-        var tooOldCount = -1;
-        // NOTE: save more data than shown, to avoid weird autoscaling in plots
-        while ((simulation.time - simulation.times[++tooOldCount]) > 2 * simulation.parameters.measurementWindowLength)
-        {};
-
-        simulation.entropy.splice(0, tooOldCount);
-        simulation.times.splice(0, tooOldCount);
-        simulation.probability.splice(0, tooOldCount);
-
-        addCurve(simulation.visualizations.entropy,
-        {
-            x: m.time,
-            y: simulation.entropy,
-        });
-
-        addCurve(simulation.visualizations.probability,
-        {
-            x: m.time,
-            y: simulation.probability,
-        });
-
-        // ! Plot things
-
-        setGraphLimits(simulation.visualizations.counts,
-        {
-            yMax: simulation.particles.length
-        });
-        setGraphLimits(simulation.visualizations.entropy,
-        {
-            yMax: 1
-        });
-        setGraphLimits(simulation.visualizations.probability,
-        {
-            yMax: 1
-        });
-
-        simulation.customUpdate(simulation);
-
-        // ! Drawing
-
-        for (var i = 0; i < simulation.timeSeries.length; ++i)
-        {
-            var graph = simulation.timeSeries[i];
-            // TODO: make the limits change smoothly, so it's less noticable
-            setGraphLimits(graph,
-            {
-                xMin: simulation.time - simulation.parameters.measurementWindowLength,
-                xMax: simulation.time,
-            })
-            drawGraph(graph);
-        }
-
-        setGraphLimits(simulation.visualizations.countsHistogram,
-        {
-            xMin: 0,
-            xMax: 1,
-            yMin: 0,
-            yMax: simulation.particles.length
-        });
-        drawGraph(simulation.visualizations.countsHistogram);
 
         drawSimulation(simulation);
 
@@ -2332,7 +2355,7 @@ function atMost(a, b)
 
 function lerp(a, t, b)
 {
-    return (a + (b - a) * t)
+    return (a + (b - a) * t);
 }
 
 function microstateEntropy(p)
@@ -2501,10 +2524,12 @@ var randomGaussian = function()
     var returnX = true;
     var outX, outY;
 
-    return function() {
+    return function()
+    {
         returnX = !returnX;
 
-        if (returnX) {
+        if (returnX)
+        {
             return outX;
         }
 
@@ -2515,7 +2540,7 @@ var randomGaussian = function()
             w = x * x + y * y;
         } while (w >= 1.0)
 
-        w = Math.sqrt( (-2 * Math.log(w)) / w );    
+        w = Math.sqrt((-2 * Math.log(w)) / w);
         outX = x * w;
         outY = y * w;
 
