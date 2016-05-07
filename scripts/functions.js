@@ -918,11 +918,9 @@ function createSimulation(opts)
             collisionEnabled: true,
             pressureWindowSize: 1000,
             quadtreeEnabled: true,
-            // TODO: reduce this to simulated time per real time (the quotient)?
-            frameDuration: 1000 / 60,
-            simulatedTimePerFrame: 0.05,
+            simulationTimePerSecond: 5,
             dt: 0.005,
-            deltaTemperature: 1,
+            velocityAmplification: 1,
             gravityAcceleration: 0,
             simulationSpeed: 1,
             particleCount: 91,
@@ -1208,11 +1206,11 @@ function createSimulation(opts)
 
     createSlider(
     {
-        name: "deltaTemperature",
+        name: "velocityAmplification",
         label: "Control temperature:",
-        min: 0.997,
+        min: 0.9,
         minLabel: "Colder",
-        max: 1.003,
+        max: 1.1,
         maxLabel: "Warmer",
         snapBack: true,
     });
@@ -1696,18 +1694,16 @@ var updateSimulation = function()
 
         // ! Keep track of time
 
-        // TODO: this seems a bit unecessarily complex
-
-        var elapsedFrameCount = (timestamp - simulation.previousTimestamp) / simulation.parameters.frameDuration;
+        var elapsedSeconds = (timestamp - simulation.previousTimestamp) / 1000;
         simulation.previousTimestamp = timestamp;
 
         if (simulation.isFirstFrameAfterPause)
         {
             simulation.isFirstFrameAfterPause = false;
-            elapsedFrameCount = 1;
+            elapsedSeconds = 0;
         }
 
-        simulation.timeLeftToSimulate += elapsedFrameCount * simulation.parameters.simulatedTimePerFrame;
+        simulation.timeLeftToSimulate += elapsedSeconds * simulation.parameters.simulationTimePerSecond;
 
         // ! Simulation loop with fixed timestep
 
@@ -1742,7 +1738,8 @@ var updateSimulation = function()
 
                     // Scale velocities with delta temperature
 
-                    v2.scale(particle.velocity, particle.velocity, simulation.parameters.deltaTemperature);
+                    v2.scale(particle.velocity, particle.velocity,
+                        Math.pow(simulation.parameters.velocityAmplification, dt));
 
                     // velocity verlet
 
@@ -2056,15 +2053,15 @@ var updateSimulation = function()
                                 var squaredVelocity = v2.square(particle.velocity);
                                 if (squaredVelocity !== 0)
                                 {
-                                    var velocityFactor = Math.sqrt(1 + potentialEnergyDifference / (particle.mass * v2.square(particle.velocity)));
-                                    v2.scale(particle.velocity, particle.velocity, velocityFactor);
+                                    var velocityAmplification = Math.sqrt(1 + potentialEnergyDifference / (particle.mass * v2.square(particle.velocity)));
+                                    v2.scale(particle.velocity, particle.velocity, velocityAmplification);
                                 }
 
                                 var squaredVelocity = v2.square(otherParticle.velocity);
                                 if (squaredVelocity !== 0)
                                 {
-                                    var velocityFactor = Math.sqrt(1 + potentialEnergyDifference / (otherParticle.mass * v2.square(otherParticle.velocity)));
-                                    v2.scale(otherParticle.velocity, otherParticle.velocity, velocityFactor);
+                                    var velocityAmplification = Math.sqrt(1 + potentialEnergyDifference / (otherParticle.mass * v2.square(otherParticle.velocity)));
+                                    v2.scale(otherParticle.velocity, otherParticle.velocity, velocityAmplification);
                                 }
                             }
                             else if (simulation.parameters.bondEnergy !== 0)
