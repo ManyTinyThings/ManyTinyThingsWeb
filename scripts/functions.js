@@ -926,7 +926,7 @@ function createSimulation(opts)
             particleCount: 91,
             radiusScaling: 0.08,
             friction: 0,
-            measurementWindowLength: 100,
+            measurementWindowLength: 1000,
             measurementEnabled: true,
             separationFactor: 1.2,
             soundEnabled: false,
@@ -1454,6 +1454,7 @@ function resetSimulation(simulation)
     updateParticleCount(simulation);
 }
 
+// TODO: calculate both energy and force at the same time
 function lennardJonesEnergy(invR)
 {
     // TODO: truncate and shift, see wikipedia
@@ -1690,7 +1691,12 @@ var updateSimulation = function()
         }
         simulation.radiusScaling = simulation.parameters.radiusScaling;
 
+        updateParticleCount(simulation);
+
+
         // ! Keep track of time
+
+        dt = simulation.parameters.dt;
 
         var elapsedSeconds = (timestamp - simulation.previousTimestamp) / 1000;
         simulation.previousTimestamp = timestamp;
@@ -1698,14 +1704,12 @@ var updateSimulation = function()
         if (simulation.isFirstFrameAfterPause)
         {
             simulation.isFirstFrameAfterPause = false;
-            elapsedSeconds = 0;
+            elapsedSeconds = dt / simulation.parameters.simulationTimePerSecond;
         }
 
         simulation.timeLeftToSimulate += elapsedSeconds * simulation.parameters.simulationTimePerSecond;
 
         // ! Simulation loop with fixed timestep
-
-        dt = simulation.parameters.dt;
 
         while (simulation.timeLeftToSimulate >= dt)
         {
@@ -1719,8 +1723,6 @@ var updateSimulation = function()
 
             // Update lots of stuff
             // TODO: put this stuff inline here
-
-            updateParticleCount(simulation);
 
             if (!simulation.pausedByUser)
             {

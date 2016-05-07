@@ -26,7 +26,7 @@
         var sim = createSimulation({
             width: 500,
             controls: ["playPauseButton", "resetButton", "velocityAmplification"],
-            visualizations: [],
+            visualizations: ["energy"],
             particleGenerator: sameInitialGenerator,
             parameters: {
                 radiusScaling: 0.05,
@@ -34,7 +34,7 @@
                 bondEnergy: 0.01,
                 aprioriCollision: false,
                 collisionEnabled: false,
-                measurementEnabled: false,
+                measurementEnabled: true,
             },
         });
 
