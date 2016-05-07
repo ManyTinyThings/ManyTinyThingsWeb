@@ -1208,9 +1208,9 @@ function createSimulation(opts)
     {
         name: "velocityAmplification",
         label: "Control temperature:",
-        min: 0.9,
+        min: 0.5,
         minLabel: "Colder",
-        max: 1.1,
+        max: 1.5,
         maxLabel: "Warmer",
         snapBack: true,
     });
@@ -1454,17 +1454,15 @@ function resetSimulation(simulation)
     updateParticleCount(simulation);
 }
 
-function lennardJonesEnergy(r)
+function lennardJonesEnergy(invR)
 {
     // TODO: truncate and shift, see wikipedia
-    var invR = 1 / r;
     var a6 = Math.pow(invR, 6);
-    return (a6 * a6 - 2 * a6);
+    return (a6 - 2) * a6;
 }
 
-function lennardJonesForce(r)
+function lennardJonesForce(invR)
 {
-    var invR = 1 / r;
     var a6 = Math.pow(invR, 6);
     return (12 * invR * (a6 * a6 - a6));
 }
@@ -1949,14 +1947,12 @@ var updateSimulation = function()
                                 v2.periodicize(relativePosition, relativePosition, simulation.boxBounds);
                                 var distanceBetweenCenters = v2.magnitude(relativePosition);
 
-                                var r = distanceBetweenCenters / separation;
-                                var p = simulation.parameters;
-                                var potentialEnergy = p.bondEnergy * softLennardJonesEnergy(r, p.ljSoftness, p.ljn, p.ljm);
-                                var force = p.bondEnergy * softLennardJonesForce(r, p.ljSoftness, p.ljn, p.ljm);
+                                var invR = separation / distanceBetweenCenters;
+                                var potentialEnergy = p.bondEnergy * lennardJonesEnergy(invR);
+                                var force = p.bondEnergy * lennardJonesForce(invR);
 
                                 var normal = v2.normalize(relativePosition, relativePosition);
 
-                                // TODO: this is a little weird
                                 particle.potentialEnergy += potentialEnergy / 2;
                                 otherParticle.potentialEnergy += potentialEnergy / 2;
 
@@ -1999,88 +1995,33 @@ var updateSimulation = function()
                         {
                             var otherParticle = particles[j];
                             // TODO: use quadtree with given cutoff distance
+                            var p = simulation.parameters;
+                            var separation = p.separationFactor * (particle.radius + otherParticle.radius);
 
-                            var separationFactor = simulation.parameters.separationFactor;
-
-                            var distanceLimit = (particle.radius + otherParticle.radius);
-                            var separation = separationFactor * distanceLimit;
+                            var relativePosition = v2.alloc();
 
                             v2.subtract(relativePosition, otherParticle.position, particle.position);
                             v2.periodicize(relativePosition, relativePosition, simulation.boxBounds);
                             var distanceBetweenCenters = v2.magnitude(relativePosition);
+                            var normal = v2.scale(relativePosition, relativePosition, 1 / distanceBetweenCenters);
 
-                            var p = simulation.parameters;
-                            var r = distanceBetweenCenters / separation;
-                            var potentialEnergy = p.bondEnergy * softLennardJonesEnergy(r, p.ljSoftness, p.ljn, p.ljm);
+                            // Potential force
+                            var invR = separation / distanceBetweenCenters;
+                            var potentialEnergy = p.bondEnergy * lennardJonesEnergy(invR);
 
-                            var normal = v2.normalize(relativePosition, relativePosition);
-                            var isHardCollision = distanceBetweenCenters < distanceLimit;
-
-                            if (isHardCollision && simulation.parameters.collisionEnabled)
-                            {
+                            particle.potentialEnergy += potentialEnergy / 2;
+                            otherParticle.potentialEnergy += potentialEnergy / 2;
 
 
-                                var overlap = distanceLimit - distanceBetweenCenters;
-                                var massSum = particle.mass + otherParticle.mass;
+                            var force = p.bondEnergy * lennardJonesForce(invR);
 
-                                // Move out of overlap
+                            var accelerationDirection = normal;
+                            v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                                accelerationDirection, -force / particle.mass);
+                            v2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration,
+                                accelerationDirection, force / otherParticle.mass);
 
-                                v2.scaleAndAdd(particle.position, particle.position,
-                                    normal, -overlap * otherParticle.mass / massSum);
-                                v2.scaleAndAdd(otherParticle.position, otherParticle.position,
-                                    normal, overlap * particle.mass / massSum);
-
-                                // Elastic collision
-
-                                v2.subtract(relativeVelocity, particle.velocity, otherParticle.velocity);
-                                v2.projectOntoNormal(deltaVelocity, relativeVelocity, normal);
-
-                                // NOTE: I change the velocity instead of the acceleration, because otherwise
-                                // there are transient dips in energy at collision (because of how velocity verlet works)
-
-                                v2.scaleAndAdd(particle.velocity, particle.velocity,
-                                    deltaVelocity, -2 * otherParticle.mass / massSum);
-                                v2.scaleAndAdd(otherParticle.velocity, otherParticle.velocity,
-                                    deltaVelocity, 2 * particle.mass / massSum);
-
-                                // NOTE: change potential energy to compensate for moving particles
-                                var r = distanceLimit / separation;
-                                var newPotentialEnergy = p.bondEnergy * softLennardJonesEnergy(r, p.ljSoftness, p.ljn, p.ljm);
-                                var potentialEnergyDifference = potentialEnergy - newPotentialEnergy;
-
-                                // NOTE: using half of potential energy for each particle
-                                // TODO: special case for zero/small velocity?
-                                var squaredVelocity = v2.square(particle.velocity);
-                                if (squaredVelocity !== 0)
-                                {
-                                    var velocityAmplification = Math.sqrt(1 + potentialEnergyDifference / (particle.mass * v2.square(particle.velocity)));
-                                    v2.scale(particle.velocity, particle.velocity, velocityAmplification);
-                                }
-
-                                var squaredVelocity = v2.square(otherParticle.velocity);
-                                if (squaredVelocity !== 0)
-                                {
-                                    var velocityAmplification = Math.sqrt(1 + potentialEnergyDifference / (otherParticle.mass * v2.square(otherParticle.velocity)));
-                                    v2.scale(otherParticle.velocity, otherParticle.velocity, velocityAmplification);
-                                }
-                            }
-                            else if (simulation.parameters.bondEnergy !== 0)
-                            {
-                                // Potential force
-                                var r = distanceBetweenCenters / separation;
-                                var potentialEnergy = p.bondEnergy * softLennardJonesEnergy(r, p.ljSoftness, p.ljn, p.ljm);
-                                var force = p.bondEnergy * softLennardJonesForce(r, p.ljSoftness, p.ljn, p.ljm);
-
-                                // TODO: this is a little weird
-                                particle.potentialEnergy += potentialEnergy / 2;
-                                otherParticle.potentialEnergy += potentialEnergy / 2;
-
-                                var accelerationDirection = normal;
-                                v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                                    accelerationDirection, -force / particle.mass);
-                                v2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration,
-                                    accelerationDirection, force / otherParticle.mass);
-                            }
+                            v2.free(relativePosition);
                         }
 
                         // Friction
