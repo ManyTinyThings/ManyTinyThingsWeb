@@ -157,7 +157,7 @@ v2.projectOntoNormal = function(out, a, normal)
     return out;
 };
 
-v2.rotateCCW = function(out, a)
+v2.perpCCW = function(out, a)
 {
     var x = a[0];
     var y = a[1];
@@ -166,7 +166,7 @@ v2.rotateCCW = function(out, a)
     return out;
 };
 
-v2.rotateCW = function(out, a)
+v2.perpCW = function(out, a)
 {
     var x = a[0];
     var y = a[1];
@@ -2587,7 +2587,7 @@ function recordWallParticleCollision(collisionPool, collisions, wall, particle, 
 
     v2.subtract(wallVector, wallEnd, wallStart);
     v2.normalize(wallNormal, wallVector);
-    v2.rotateCCW(wallNormal, wallNormal);
+    v2.perpCCW(wallNormal, wallNormal);
 
     // NOTE: Only check the wall facing the velocity
     v2.scale(wallNormal, wallNormal, -Math.sign(v2.inner(wallNormal, particle.velocity)));
@@ -2755,7 +2755,7 @@ function isIntersecting(shape, otherShape)
                 simplex[0] = a;
                 simplex[1] = b;
                 simplexCount = 2;
-                v2.rotateCCW(direction, ab);
+                v2.perpCCW(direction, ab);
                 v2.scale(direction, direction, v2.outer(ab, ao));
             }
             else
@@ -2776,9 +2776,9 @@ function isIntersecting(shape, otherShape)
 
             // "cross product" stuff
             var orientation = v2.outer(ab, ac);
-            v2.rotateCW(abNormal, ab);
+            v2.perpCW(abNormal, ab);
             v2.scale(abNormal, abNormal, orientation);
-            v2.rotateCCW(acNormal, ac);
+            v2.perpCCW(acNormal, ac);
             v2.scale(acNormal, acNormal, orientation);
             v2.scale(ao, a, -1);
 
@@ -2906,7 +2906,7 @@ function closestDistanceGJK(shape, otherShape)
 
 function towardOriginFromLine(direction, lineStart, lineVector, factor)
 {
-    v2.rotateCCW(direction, lineVector);
+    v2.perpCCW(direction, lineVector);
     var outer = v2.outer(lineStart, lineVector) * factor;
     var tolerance = 0.00001;
     if (Math.abs(outer) > tolerance)
@@ -2940,7 +2940,7 @@ function searchForContact(stillShape, movingShape, velocity)
 
     // TODO: could probably do this algorithm without divides (intersections)
     // instead only use dot products
-    v2.rotateCCW(direction, velocity);
+    v2.perpCCW(direction, velocity);
     doubleSupport(a, direction, stillShape, movingShape);
     doubleSupport(b, v2.scale(direction, direction, -1), stillShape, movingShape);
     v2.subtract(ab, b, a);
