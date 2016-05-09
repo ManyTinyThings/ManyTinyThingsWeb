@@ -159,15 +159,19 @@ v2.projectOntoNormal = function(out, a, normal)
 
 v2.rotateCCW = function(out, a)
 {
-    out[0] = -a[1];
-    out[1] = a[0];
+    var x = a[0];
+    var y = a[1];
+    out[0] = -y;
+    out[1] = x;
     return out;
 };
 
 v2.rotateCW = function(out, a)
 {
-    out[0] = a[1];
-    out[1] = -a[0];
+    var x = a[0];
+    var y = a[1];
+    out[0] = y;
+    out[1] = -x;
     return out;
 };
 
@@ -1760,43 +1764,13 @@ var updateSimulation = function()
                     // perhaps by using deltaPosition, and a remainingTime that's always positive
                     // or by flipping velocities when time gets < 0 and having dt > 0
 
-                    // TODO: make this be a global function instead of a closure if it improves performance
-                    function recordCollision(collisions, remainingTime, object, otherObject, relativeVelocity)
-                    {
-                        var collision = {
-                            time: 0,
-                            first: object,
-                            second: otherObject,
-                        }
-                        var contact = searchForContact(object, otherObject, relativeVelocity);
-
-                        if (contact.isOverlapping)
-                        {
-                            // TODO: move out of overlap
-                            var normal = v2();
-                            v2.rotateCW(normal, relativeVelocity);
-                            v2.normalize(normal, normal);
-                            collision.normal = normal;
-                            collisions.push(collision);
-                            return;
-                        }
-
-                        var epsilon = 0.001;
-                        var isCollision = (((-epsilon) < contact.time) && (contact.time < remainingTime));
-                        if (isCollision)
-                        {
-                            collision.time = atLeast(0, contact.time);
-                            collision.normal = contact.normal;
-                            collisions.push(collision);
-                        }
-
-                    }
-
                     var remainingTime = dt;
 
                     if (simulation.parameters.collisionEnabled)
                     {
+                        var collisionPool = new Pool(createCollision);
                         var collisions = [];
+                        var firstCollisions = [];
 
                         for (var particleIndex = 0; particleIndex < particleCount; ++particleIndex)
                         {
@@ -1804,19 +1778,19 @@ var updateSimulation = function()
                             for (var otherParticleIndex = 0; otherParticleIndex < particleIndex; ++otherParticleIndex)
                             {
                                 var otherParticle = particles[otherParticleIndex];
-                                v2.subtract(relativeVelocity, otherParticle.velocity, particle.velocity);
-
-                                recordCollision(collisions, remainingTime,
+                                recordParticleParticleCollision(
+                                    collisionPool, collisions,
                                     particle, otherParticle,
-                                    relativeVelocity);
+                                    remainingTime);
                             }
 
                             for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
                             {
                                 var wall = simulation.walls[wallIndex];
-                                recordCollision(collisions, remainingTime,
+                                recordWallParticleCollision(
+                                    collisionPool, collisions,
                                     wall, particle,
-                                    particle.velocity);
+                                    remainingTime);
                             }
                         }
 
@@ -1831,7 +1805,7 @@ var updateSimulation = function()
                             var firstCollisionTime = collisions[firstIndex].time;
                             remainingTime -= firstCollisionTime;
 
-                            var firstCollisions = [];
+                            firstCollisions.length = 0;
                             for (var collisionIndex = 0; collisionIndex < collisions.length; collisionIndex++)
                             {
                                 // TODO: should probably be epsilon here
@@ -1851,8 +1825,6 @@ var updateSimulation = function()
 
                             for (var firstCollisionIndex = 0; firstCollisionIndex < firstCollisions.length; firstCollisionIndex++)
                             {
-
-
                                 // ! Collision
                                 // TODO: energy corrections (to conserve energy)
 
@@ -1891,6 +1863,8 @@ var updateSimulation = function()
 
                                 // calculate any new collisions for involved particles
 
+                                var isParticleParticleCollision = (firstCollision.type == CollisionType.particleParticle);
+
                                 for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
                                 {
                                     // TODO: make firstCollision.first and second be indices
@@ -1898,17 +1872,38 @@ var updateSimulation = function()
 
                                     if ((particle !== firstCollision.first) && (particle !== firstCollision.second))
                                     {
-                                        v2.subtract(relativeVelocity, particle.velocity, firstCollision.first.velocity);
-                                        recordCollision(collisions, remainingTime,
-                                            firstCollision.first, particle,
-                                            relativeVelocity);
-                                        v2.subtract(relativeVelocity, particle.velocity, firstCollision.second.velocity);
-                                        recordCollision(collisions, remainingTime,
-                                            firstCollision.second, particle,
-                                            relativeVelocity);
+                                        if (isParticleParticleCollision)
+                                        {
+                                            recordParticleParticleCollision(
+                                                collisionPool, collisions,
+                                                particle, firstCollision.first,
+                                                remainingTime);
+                                        }
+                                        recordParticleParticleCollision(
+                                            collisionPool, collisions,
+                                            particle, firstCollision.second,
+                                            remainingTime);
                                     }
                                 }
 
+                                for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
+                                {
+                                    var wall = simulation.walls[wallIndex];
+
+                                    if (isParticleParticleCollision)
+                                    {
+                                        recordWallParticleCollision(
+                                            collisionPool, collisions,
+                                            wall, firstCollision.first,
+                                            remainingTime);
+                                    }
+                                    recordWallParticleCollision(
+                                        collisionPool, collisions,
+                                        wall, firstCollision.second,
+                                        remainingTime);
+                                }
+
+                                poolFree(collisionPool, firstCollision);
                             }
                         }
 
@@ -1937,7 +1932,6 @@ var updateSimulation = function()
                         {
                             for (var otherParticleIndex = 0; otherParticleIndex < particleIndex; otherParticleIndex++)
                             {
-                                // TODO: maybe ignore potential for particles with too high velocity?
 
                                 var otherParticle = particles[otherParticleIndex];
 
@@ -2000,8 +1994,6 @@ var updateSimulation = function()
                             var p = simulation.parameters;
                             var separation = p.separationFactor * (particle.radius + otherParticle.radius);
 
-                            var relativePosition = v2.alloc();
-
                             v2.subtract(relativePosition, otherParticle.position, particle.position);
                             v2.periodicize(relativePosition, relativePosition, simulation.boxBounds);
                             var distanceBetweenCenters = v2.magnitude(relativePosition);
@@ -2022,8 +2014,6 @@ var updateSimulation = function()
                                 accelerationDirection, -force / particle.mass);
                             v2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration,
                                 accelerationDirection, force / otherParticle.mass);
-
-                            v2.free(relativePosition);
                         }
 
                         // Friction
@@ -2459,6 +2449,7 @@ function randomInInterval(a, b)
     return lerp(a, Math.random(), b);
 }
 
+// NOTE: generates 2 at a time, saves the one not immediately returned
 var randomGaussian = function()
 {
     var returnX = true;
@@ -2511,7 +2502,7 @@ function intersectionOriginCircleLine(
         var t2 = (-dotAB + root) * bSqInv;
 
         return {
-            isIntersected: true,
+            isIntersecting: true,
             t1: t1,
             t2: t2,
         }
@@ -2519,7 +2510,7 @@ function intersectionOriginCircleLine(
     else
     {
         return {
-            isIntersected: false
+            isIntersecting: false
         };
     }
 }
@@ -2538,6 +2529,123 @@ function intersectionOriginLineLine(originVector, start, vector)
 
 // ! Collision
 
+var CollisionType = Object.freeze(
+{
+    particleParticle: 0,
+    wallParticle: 1,
+});
+
+function createCollision()
+{
+    return {
+        time: 0,
+        normal: v2(),
+        type: CollisionType.particleParticle,
+        first: undefined,
+        second: undefined,
+    };
+}
+
+function recordParticleParticleCollision(collisionPool, collisions, particle, otherParticle, remainingTime)
+{
+    var relativePosition = v2.alloc();
+    var relativeVelocity = v2.alloc();
+
+    v2.subtract(relativePosition, particle.position, otherParticle.position);
+    v2.subtract(relativeVelocity, particle.velocity, otherParticle.velocity);
+
+    var radiusSum = particle.radius + otherParticle.radius;
+    var intersection = intersectionOriginCircleLine(radiusSum,
+        relativePosition, relativeVelocity);
+    if (intersection.isIntersecting && (0 <= intersection.t1) && (intersection.t1 < remainingTime))
+    {
+        var collision = poolAlloc(collisionPool);
+        collision.type = CollisionType.particleParticle;
+        collision.first = particle;
+        collision.second = otherParticle;
+        collision.time = intersection.t1;
+        v2.scaleAndAdd(collision.normal, relativePosition, relativeVelocity, collision.time);
+        v2.normalize(collision.normal, collision.normal);
+        collisions.push(collision);
+    }
+
+    v2.free(relativePosition);
+    v2.free(relativeVelocity);
+}
+
+function recordWallParticleCollision(collisionPool, collisions, wall, particle, remainingTime)
+{
+    var wallVector = v2.alloc();
+    var wallNormal = v2.alloc();
+    var relativeWallStart = v2.alloc();
+    var particleRelativeEndpoint = v2.alloc();
+
+    var wallStart = wall.vertices[0];
+    var wallEnd = wall.vertices[1];
+
+    // Test the walls
+
+    v2.subtract(wallVector, wallEnd, wallStart);
+    v2.normalize(wallNormal, wallVector);
+    v2.rotateCCW(wallNormal, wallNormal);
+
+    // NOTE: Only check the wall facing the velocity
+    v2.scale(wallNormal, wallNormal, -Math.sign(v2.inner(wallNormal, particle.velocity)));
+
+    v2.subtract(relativeWallStart, wallStart, particle.position);
+    v2.scaleAndAdd(relativeWallStart, relativeWallStart, wallNormal, particle.radius);
+
+    var intersection = intersectionOriginLineLine(particle.velocity, relativeWallStart, wallVector);
+    var isIntersectingSide = (0 <= intersection.tLine) && (intersection.tLine <= 1);
+    var isIntersectingNow = (0 <= intersection.tOriginLine) && (intersection.tOriginLine < remainingTime);
+    if (isIntersectingSide && isIntersectingNow)
+    {
+        var collision = poolAlloc(collisionPool);
+        collision.type = CollisionType.wallParticle;
+        collision.first = wall;
+        collision.second = particle;
+        collision.time = intersection.tOriginLine;
+        v2.copy(collision.normal, wallNormal);
+        collisions.push(collision);
+    }
+    else
+    {
+        // Test the endpoints
+
+        for (var i = 0; i < 2; i++)
+        {
+            if (i == 0)
+            {
+                v2.subtract(particleRelativeEndpoint, particle.position, wallStart);
+            }
+            else
+            {
+                v2.subtract(particleRelativeEndpoint, particle.position, wallEnd);
+            }
+
+            var intersection = intersectionOriginCircleLine(particle.radius, particleRelativeEndpoint, wallVector);
+            if (intersection.isIntersecting && (0 <= intersection.t1) && (intersection.t1 < remainingTime))
+            {
+                var collision = poolAlloc(collisionPool);
+                collision.type = CollisionType.wallParticle;
+                collision.first = wall;
+                collision.second = particle;
+                collision.time = intersection.t1;
+                v2.scaleAndAdd(collision.normal, particleRelativeEndpoint, particle.velocity, collision.time);
+                v2.normalize(collision.normal, collision.normal);
+                collisions.push(collision);
+                break;
+            }
+        }
+    }
+
+    v2.free(wallVector);
+    v2.free(wallNormal);
+    v2.free(relativeWallStart);
+    v2.free(particleRelativeEndpoint);
+}
+
+// ! General collision
 
 function closestToOriginBetween(out, a, b)
 {
