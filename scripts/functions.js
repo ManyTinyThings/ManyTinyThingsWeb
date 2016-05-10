@@ -1698,9 +1698,11 @@ var updateSimulation = function()
         updateParticleCount(simulation);
 
 
+        var params = simulation.parameters;
+
         // ! Keep track of time
 
-        dt = simulation.parameters.dt;
+        dt = params.dt;
 
         var elapsedSeconds = (timestamp - simulation.previousTimestamp) / 1000;
 
@@ -1712,10 +1714,10 @@ var updateSimulation = function()
         if (simulation.isFirstFrameAfterPause)
         {
             simulation.isFirstFrameAfterPause = false;
-            elapsedSeconds = dt / simulation.parameters.simulationTimePerSecond;
+            elapsedSeconds = dt / params.simulationTimePerSecond;
         }
 
-        simulation.timeLeftToSimulate += elapsedSeconds * simulation.parameters.simulationTimePerSecond;
+        simulation.timeLeftToSimulate += elapsedSeconds * params.simulationTimePerSecond;
 
         // ! Simulation loop with fixed timestep
 
@@ -1726,7 +1728,7 @@ var updateSimulation = function()
             // TODO: interpolate drawing? Shouldn't be needed with such a small timestep
             simulation.time += dt;
 
-            v2.set(gravityAcceleration, 0, -simulation.parameters.gravityAcceleration);
+            v2.set(gravityAcceleration, 0, -params.gravityAcceleration);
 
             if (!simulation.pausedByUser)
             {
@@ -1743,7 +1745,7 @@ var updateSimulation = function()
                     // Scale velocities with delta temperature
 
                     v2.scale(particle.velocity, particle.velocity,
-                        Math.pow(simulation.parameters.velocityAmplification, dt));
+                        Math.pow(params.velocityAmplification, dt));
 
                     // velocity verlet
 
@@ -1758,7 +1760,7 @@ var updateSimulation = function()
 
                 // ! Collision
 
-                if (simulation.parameters.aprioriCollision)
+                if (params.aprioriCollision)
                 {
                     // TODO: ensure this works with time backwards (dt < 0),
                     // perhaps by using deltaPosition, and a remainingTime that's always positive
@@ -1766,7 +1768,7 @@ var updateSimulation = function()
 
                     var remainingTime = dt;
 
-                    if (simulation.parameters.collisionEnabled)
+                    if (params.collisionEnabled)
                     {
                         var collisionPool = new Pool(createCollision);
                         var collisions = [];
@@ -1841,7 +1843,7 @@ var updateSimulation = function()
                                 var velocityScalingSecond = (firstCollision.first.mass == Infinity) ?
                                     1 : (firstCollision.first.mass / massSum);
 
-                                var restitutionFactor = 1 + simulation.parameters.coefficientOfRestitution;
+                                var restitutionFactor = 1 + params.coefficientOfRestitution;
 
                                 v2.scaleAndAdd(firstCollision.first.velocity, firstCollision.first.velocity,
                                     deltaVelocity, -restitutionFactor * velocityScalingFirst);
@@ -1928,14 +1930,14 @@ var updateSimulation = function()
                     {
                         var particle = particles[particleIndex];
 
-                        if (simulation.parameters.bondEnergy !== 0)
+                        if (params.bondEnergy !== 0)
                         {
                             for (var otherParticleIndex = 0; otherParticleIndex < particleIndex; otherParticleIndex++)
                             {
 
                                 var otherParticle = particles[otherParticleIndex];
 
-                                var separationFactor = simulation.parameters.separationFactor;
+                                var separationFactor = params.separationFactor;
                                 var distanceLimit = (particle.radius + otherParticle.radius);
                                 var separation = separationFactor * distanceLimit;
 
@@ -1944,8 +1946,8 @@ var updateSimulation = function()
                                 var distanceBetweenCenters = v2.magnitude(relativePosition);
 
                                 var invR = separation / distanceBetweenCenters;
-                                var potentialEnergy = p.bondEnergy * lennardJonesEnergy(invR);
-                                var force = p.bondEnergy * lennardJonesForce(invR);
+                                var potentialEnergy = params.bondEnergy * lennardJonesEnergy(invR);
+                                var force = params.bondEnergy * lennardJonesForce(invR);
 
                                 var normal = v2.normalize(relativePosition, relativePosition);
 
@@ -1968,7 +1970,7 @@ var updateSimulation = function()
 
                         // Friction
                         v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                            particle.velocity, -simulation.parameters.friction / particle.mass);
+                            particle.velocity, -params.friction / particle.mass);
                     }
                 }
                 else
@@ -1991,8 +1993,7 @@ var updateSimulation = function()
                         {
                             var otherParticle = particles[j];
                             // TODO: use quadtree with given cutoff distance
-                            var p = simulation.parameters;
-                            var separation = p.separationFactor * (particle.radius + otherParticle.radius);
+                            var separation = params.separationFactor * (particle.radius + otherParticle.radius);
 
                             v2.subtract(relativePosition, otherParticle.position, particle.position);
                             v2.periodicize(relativePosition, relativePosition, simulation.boxBounds);
@@ -2001,13 +2002,13 @@ var updateSimulation = function()
 
                             // Potential force
                             var invR = separation / distanceBetweenCenters;
-                            var potentialEnergy = p.bondEnergy * lennardJonesEnergy(invR);
+                            var potentialEnergy = params.bondEnergy * lennardJonesEnergy(invR);
 
                             particle.potentialEnergy += potentialEnergy / 2;
                             otherParticle.potentialEnergy += potentialEnergy / 2;
 
 
-                            var force = p.bondEnergy * lennardJonesForce(invR);
+                            var force = params.bondEnergy * lennardJonesForce(invR);
 
                             var accelerationDirection = normal;
                             v2.scaleAndAdd(particle.acceleration, particle.acceleration,
@@ -2019,7 +2020,7 @@ var updateSimulation = function()
                         // Friction
 
                         v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                            particle.velocity, -simulation.parameters.friction / particle.mass);
+                            particle.velocity, -params.friction / particle.mass);
                     }
 
                 }
@@ -2068,14 +2069,14 @@ var updateSimulation = function()
 
         // ! Trajectory
 
-        if (simulation.parameters.trajectoryEnabled && (simulation.particles.length > 0))
+        if (params.trajectoryEnabled && (simulation.particles.length > 0))
         {
             simulation.trajectory.push(v2.clone(simulation.particles[0].position));
         }
 
         // ! Measurements
 
-        if (simulation.parameters.measurementEnabled)
+        if (params.measurementEnabled)
         {
             // TODO: record measurements for each simulation step, but only draw once?
             // maybe not, once per frame should be enough for showing
@@ -2095,7 +2096,7 @@ var updateSimulation = function()
                 m.time.push(simulation.time);
                 var tooOldCount = -1;
                 // NOTE: save more data than shown, to avoid weird autoscaling in plots
-                while ((simulation.time - m.time[++tooOldCount]) > 2 * simulation.parameters.measurementWindowLength)
+                while ((simulation.time - m.time[++tooOldCount]) > 2 * params.measurementWindowLength)
                 {};
 
                 for (var key in m)
@@ -2205,7 +2206,7 @@ var updateSimulation = function()
 
             var tooOldCount = -1;
             // NOTE: save more data than shown, to avoid weird autoscaling in plots
-            while ((simulation.time - simulation.times[++tooOldCount]) > 2 * simulation.parameters.measurementWindowLength)
+            while ((simulation.time - simulation.times[++tooOldCount]) > 2 * params.measurementWindowLength)
             {};
 
             simulation.entropy.splice(0, tooOldCount);
@@ -2249,7 +2250,7 @@ var updateSimulation = function()
                 // TODO: make the limits change smoothly, so it's less noticable
                 setGraphLimits(graph,
                 {
-                    xMin: simulation.time - simulation.parameters.measurementWindowLength,
+                    xMin: simulation.time - params.measurementWindowLength,
                     xMax: simulation.time,
                 })
                 drawGraph(graph);
