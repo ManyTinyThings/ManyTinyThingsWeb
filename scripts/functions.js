@@ -1781,7 +1781,7 @@ var updateSimulation = function()
                                 recordParticleParticleCollision(
                                     collisionPool, collisions,
                                     particle, otherParticle,
-                                    remainingTime);
+                                    remainingTime, simulation.boxBounds);
                             }
 
                             for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
@@ -1877,12 +1877,12 @@ var updateSimulation = function()
                                             recordParticleParticleCollision(
                                                 collisionPool, collisions,
                                                 particle, firstCollision.first,
-                                                remainingTime);
+                                                remainingTime, simulation.boxBounds);
                                         }
                                         recordParticleParticleCollision(
                                             collisionPool, collisions,
                                             particle, firstCollision.second,
-                                            remainingTime);
+                                            remainingTime, simulation.boxBounds);
                                     }
                                 }
 
@@ -2546,12 +2546,13 @@ function createCollision()
     };
 }
 
-function recordParticleParticleCollision(collisionPool, collisions, particle, otherParticle, remainingTime)
+function recordParticleParticleCollision(collisionPool, collisions, particle, otherParticle, remainingTime, boxBounds)
 {
     var relativePosition = v2.alloc();
     var relativeVelocity = v2.alloc();
 
     v2.subtract(relativePosition, particle.position, otherParticle.position);
+    v2.periodicize(relativePosition, relativePosition, boxBounds);
     v2.subtract(relativeVelocity, particle.velocity, otherParticle.velocity);
 
     var radiusSum = particle.radius + otherParticle.radius;
@@ -2575,6 +2576,8 @@ function recordParticleParticleCollision(collisionPool, collisions, particle, ot
 
 function recordWallParticleCollision(collisionPool, collisions, wall, particle, remainingTime)
 {
+    // TODO: periodicize so that collisions work across periodic boundary
+
     var wallVector = v2.alloc();
     var wallNormal = v2.alloc();
     var relativeWallStart = v2.alloc();
