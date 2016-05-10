@@ -2626,7 +2626,7 @@ function recordWallParticleCollision(collisionPool, collisions, wall, particle, 
                 v2.subtract(particleRelativeEndpoint, particle.position, wallEnd);
             }
 
-            var intersection = intersectionOriginCircleLine(particle.radius, particleRelativeEndpoint, wallVector);
+            var intersection = intersectionOriginCircleLine(particle.radius, particleRelativeEndpoint, particle.velocity);
             if (intersection.isIntersecting && (0 <= intersection.t1) && (intersection.t1 < remainingTime))
             {
                 var collision = poolAlloc(collisionPool);
