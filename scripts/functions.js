@@ -1703,6 +1703,10 @@ var updateSimulation = function()
         dt = simulation.parameters.dt;
 
         var elapsedSeconds = (timestamp - simulation.previousTimestamp) / 1000;
+
+        // NOTE: attempt to avoid stalls by limiting max frame time
+        elapsedSeconds = atMost(1 / 30, elapsedSeconds);
+
         simulation.previousTimestamp = timestamp;
 
         if (simulation.isFirstFrameAfterPause)
@@ -1719,14 +1723,10 @@ var updateSimulation = function()
         {
             simulation.timeLeftToSimulate -= dt;
 
-            // TODO: make timestep completely fixed? 
-            // and change simulation speed by running more or fewer iterations with interpolation?
+            // TODO: interpolate drawing? Shouldn't be needed with such a small timestep
             simulation.time += dt;
 
             v2.set(gravityAcceleration, 0, -simulation.parameters.gravityAcceleration);
-
-            // Update lots of stuff
-            // TODO: put this stuff inline here
 
             if (!simulation.pausedByUser)
             {
