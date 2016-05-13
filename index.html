@@ -29,14 +29,16 @@
             visualizations: ["energy"],
             particleGenerator: sameInitialGenerator,
             parameters: {
-                radiusScaling: 0.1,
-                particleCount: 2,
-                bondEnergy: 0,
+                radiusScaling: 0.05,
+                particleCount: 127,
+                bondEnergy: 1,
+                gravityAcceleration: 0.001,
                 aprioriCollision: true,
                 collisionEnabled: true,
                 measurementEnabled: false,
             },
         });
+        //sim.walls.length = 0;
 
     //    sim.walls.push(
     //     new Wall(v2(0, 1), v2(0, 0.2)),

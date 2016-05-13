@@ -1472,6 +1472,12 @@ function lennardJonesForce(invR)
     return (12 * invR * (a6 * a6 - a6));
 }
 
+function lennardJonesVirial(invR2)
+{
+    var a6 = invR2 * invR2 * invR2;
+    return (12 * (a6 * a6 - a6));
+}
+
 // TODO: maybe have all these be of the same form
 
 function softLennardJonesEnergy(r, softness, n, m)
@@ -1918,111 +1924,63 @@ var updateSimulation = function()
                         var particle = particles[particleIndex];
                         v2.scaleAndAdd(particle.position, particle.position, particle.velocity, remainingTime);
                     }
-
-
-                    // TODO: handle overlap, because it sometimes happens
-                    // might be because walls do not use prior collision code
-
-
-                    // ! Calculate forces
-
-                    for (var particleIndex = 0; particleIndex < particleCount; particleIndex++)
-                    {
-                        var particle = particles[particleIndex];
-
-                        if (params.bondEnergy !== 0)
-                        {
-                            for (var otherParticleIndex = 0; otherParticleIndex < particleIndex; otherParticleIndex++)
-                            {
-
-                                var otherParticle = particles[otherParticleIndex];
-
-                                var separationFactor = params.separationFactor;
-                                var distanceLimit = (particle.radius + otherParticle.radius);
-                                var separation = separationFactor * distanceLimit;
-
-                                v2.subtract(relativePosition, otherParticle.position, particle.position);
-                                v2.periodicize(relativePosition, relativePosition, simulation.boxBounds);
-                                var distanceBetweenCenters = v2.magnitude(relativePosition);
-
-                                var invR = separation / distanceBetweenCenters;
-                                var potentialEnergy = params.bondEnergy * lennardJonesEnergy(invR);
-                                var force = params.bondEnergy * lennardJonesForce(invR);
-
-                                var normal = v2.normalize(relativePosition, relativePosition);
-
-                                particle.potentialEnergy += potentialEnergy / 2;
-                                otherParticle.potentialEnergy += potentialEnergy / 2;
-
-                                var accelerationDirection = normal;
-                                v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                                    accelerationDirection, -force / particle.mass);
-                                v2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration,
-                                    accelerationDirection, force / otherParticle.mass);
-
-                                var halfVirial = force * distanceBetweenCenters / 2;
-                                particle.virial += halfVirial;
-                                otherParticle.virial += halfVirial;
-
-                            }
-                        }
-
-
-                        // Friction
-                        v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                            particle.velocity, -params.friction / particle.mass);
-                    }
                 }
-                else
+
+
+                // TODO: handle overlap, because it sometimes happens
+                // might be because walls do not use prior collision code
+
+
+                // ! Calculate forces
+
+                for (var particleIndex = 0; particleIndex < particleCount; particleIndex++)
                 {
-                    // Velocity verlet move
+                    var particle = particles[particleIndex];
 
-                    for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
+                    if (params.bondEnergy !== 0)
                     {
-                        var particle = particles[particleIndex];
-                        v2.scaleAndAdd(particle.position, particle.position, particle.velocity, dt);
-                    }
-
-                    for (var i = 0; i < particleCount; ++i)
-                    {
-                        var particle = particles[i];
-
-                        // ! Particle interactions
-
-                        for (var j = 0; j < i; ++j)
+                        for (var otherParticleIndex = 0; otherParticleIndex < particleIndex; otherParticleIndex++)
                         {
-                            var otherParticle = particles[j];
-                            // TODO: use quadtree with given cutoff distance
-                            var separation = params.separationFactor * (particle.radius + otherParticle.radius);
+
+                            var otherParticle = particles[otherParticleIndex];
+
+                            var separationFactor = params.separationFactor;
+                            var distanceLimit = (particle.radius + otherParticle.radius);
+                            var separation = separationFactor * distanceLimit;
 
                             v2.subtract(relativePosition, otherParticle.position, particle.position);
                             v2.periodicize(relativePosition, relativePosition, simulation.boxBounds);
-                            var distanceBetweenCenters = v2.magnitude(relativePosition);
-                            var normal = v2.scale(relativePosition, relativePosition, 1 / distanceBetweenCenters);
+                            var quadrance = v2.square(relativePosition);
 
-                            // Potential force
-                            var invR = separation / distanceBetweenCenters;
-                            var potentialEnergy = params.bondEnergy * lennardJonesEnergy(invR);
+                            // ! Lennard-jones
+                            var invQuadrance = 1 / quadrance;
+                            var a2 = square(separation) * invQuadrance;
+                            var a6 = a2 * a2 * a2;
+                            var virial = params.bondEnergy * 12 * (a6 - a6 * a6);
+                            var potentialEnergy = params.bondEnergy * (a6 - 2) * a6;
+                            var forceFactor = virial * invQuadrance;
+
+                            v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                                relativePosition, forceFactor / particle.mass);
+                            v2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration,
+                                relativePosition, -forceFactor / otherParticle.mass);
+
+                            // Measurements
 
                             particle.potentialEnergy += potentialEnergy / 2;
                             otherParticle.potentialEnergy += potentialEnergy / 2;
 
+                            var halfVirial = virial / 2;
+                            particle.virial += halfVirial;
+                            otherParticle.virial += halfVirial;
 
-                            var force = params.bondEnergy * lennardJonesForce(invR);
-
-                            var accelerationDirection = normal;
-                            v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                                accelerationDirection, -force / particle.mass);
-                            v2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration,
-                                accelerationDirection, force / otherParticle.mass);
                         }
-
-                        // Friction
-
-                        v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                            particle.velocity, -params.friction / particle.mass);
                     }
 
+
+                    // Friction
+                    v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                        particle.velocity, -params.friction / particle.mass);
                 }
 
 
