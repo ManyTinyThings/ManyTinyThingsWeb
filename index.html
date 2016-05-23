@@ -25,17 +25,18 @@
 
         var sim = createSimulation({
             width: 500,
-            controls: ["playPauseButton", "resetButton", "velocityAmplification"],
-            visualizations: ["energy"],
+            controls: ["playPauseButton", "resetButton", "temperature"],
+            visualizations: ["temperature"],
             particleGenerator: sameInitialGenerator,
             parameters: {
                 radiusScaling: 0.05,
-                particleCount: 127,
-                bondEnergy: 1,
-                gravityAcceleration: 0.001,
-                aprioriCollision: true,
+                particleCount: 37,
+                bondEnergy: 0.1,
+                gravityAcceleration: 0, //0.001,
                 collisionEnabled: true,
-                measurementEnabled: false,
+                measurementEnabled: true,
+                viscosity: 0.1,
+                temperature: 0.01,
             },
         });
         //sim.walls.length = 0;

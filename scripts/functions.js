@@ -1593,14 +1593,14 @@ function softLennardJonesForce(r, softness, n, m)
     return preFactor * 2 * (term * term - term);
 }
 
-function langevinNoise(particle, viscosity, temperature)
+function langevinNoise(particle, viscosity, temperature, viscosityFactor, gaussianFactor)
 {
-    if (params.viscosity > 0)
+    if (viscosity > 0)
     {
-        var thermalVelocity = Math.sqrt(params.temperature / particle.mass);
+        var thermalVelocity = Math.sqrt(temperature / particle.mass);
 
         var gaussianVector = v2.alloc();
-        // TODO: maybe divide by sqrt2?
+        // TODO: maybe divide by sqrt2? probably not
         v2.scale(particle.velocity, particle.velocity, viscosityFactor);
         v2.set(gaussianVector, randomGaussian(), randomGaussian());
         v2.scaleAndAdd(particle.velocity, particle.velocity,
@@ -1860,7 +1860,6 @@ var updateSimulation = function()
                 // langevin setup
 
                 var viscosityFactor = Math.exp(-params.viscosity * dt * 0.5);
-                // NOTE: I divide by sqrt2 here
                 var gaussianFactor = Math.sqrt((1 - square(viscosityFactor)));
 
                 for (var particleIndex = 0; particleIndex < particleCount;
@@ -1874,7 +1873,7 @@ var updateSimulation = function()
                         Math.pow(params.velocityAmplification, dt));
 
                     // langevin
-                    langevinNoise(particle, viscosity, temperature, viscosityFactor, gaussianFactor);
+                    langevinNoise(particle, params.viscosity, params.temperature, viscosityFactor, gaussianFactor);
 
                     // velocity verlet
                     v2.scaleAndAdd(particle.velocity, particle.velocity, particle.acceleration, 0.5 * dt);
@@ -2139,7 +2138,7 @@ var updateSimulation = function()
                     v2.scaleAndAdd(particle.velocity, particle.velocity, particle.acceleration, 0.5 * dt);
 
                     // TODO: maybe only do this once?
-                    langevinNoise(particle, viscosity, temperature, viscosityFactor, gaussianFactor);
+                    langevinNoise(particle, params.viscosity, params.temperature, viscosityFactor, gaussianFactor);
 
                     // calculate quantities
 
