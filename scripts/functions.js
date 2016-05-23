@@ -2087,10 +2087,12 @@ var updateSimulation = function()
                     if (simulation.mouse.mode === "dragParticle")
                     {
                         // TODO: friction while dragging?
-                        var dragStrength = 0.1;
+                        var dragStrength = 1;
                         v2.subtract(relativePosition, simulation.mouse.worldPosition, particle.position);
                         v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                            relativePosition, dragStrength / particle.mass);
+                            relativePosition, dragStrength);
+                        v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                            particle.velocity, -1 / particle.mass);
                     }
                 }
 
