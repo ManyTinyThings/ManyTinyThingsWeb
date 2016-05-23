@@ -1010,7 +1010,7 @@ function createSimulation(opts)
             particleCount: 91,
             radiusScaling: 0.08,
             friction: 0,
-            measurementWindowLength: 1000,
+            measurementWindowLength: 100,
             measurementEnabled: true,
             separationFactor: 1.2,
             soundEnabled: false,
@@ -1021,6 +1021,9 @@ function createSimulation(opts)
             aprioriCollision: true,
             coefficientOfRestitution: 1,
             isParticleParticleCollisionEnabled: false,
+            viscosity: 0,
+            temperature: 1.0,
+
         },
         customUpdate: function(simulation) {},
     });
@@ -1306,6 +1309,15 @@ function createSimulation(opts)
     });
     createSlider(
     {
+        name: "temperature",
+        label: "Temperature:",
+        min: 0,
+        minLabel: "Cold",
+        max: 0.1,
+        maxLabel: "Hot",
+    });
+    createSlider(
+    {
         name: "simulationSpeed",
         label: "Control time:",
         min: -1,
@@ -1581,6 +1593,22 @@ function softLennardJonesForce(r, softness, n, m)
     return preFactor * 2 * (term * term - term);
 }
 
+function langevinNoise(particle, viscosity, temperature)
+{
+    if (params.viscosity > 0)
+    {
+        var thermalVelocity = Math.sqrt(params.temperature / particle.mass);
+
+        var gaussianVector = v2.alloc();
+        // TODO: maybe divide by sqrt2?
+        v2.scale(particle.velocity, particle.velocity, viscosityFactor);
+        v2.set(gaussianVector, randomGaussian(), randomGaussian());
+        v2.scaleAndAdd(particle.velocity, particle.velocity,
+            gaussianVector, gaussianFactor * thermalVelocity)
+        v2.free(gaussianVector)
+    }
+}
+
 // ! Colors
 
 colors = {};
@@ -1829,6 +1857,12 @@ var updateSimulation = function()
                 var particles = simulation.particles;
                 var particleCount = simulation.particles.length;
 
+                // langevin setup
+
+                var viscosityFactor = Math.exp(-params.viscosity * dt * 0.5);
+                // NOTE: I divide by sqrt2 here
+                var gaussianFactor = Math.sqrt((1 - square(viscosityFactor)));
+
                 for (var particleIndex = 0; particleIndex < particleCount;
                     ++particleIndex)
                 {
@@ -1839,9 +1873,12 @@ var updateSimulation = function()
                     v2.scale(particle.velocity, particle.velocity,
                         Math.pow(params.velocityAmplification, dt));
 
-                    // velocity verlet
+                    // langevin
+                    langevinNoise(particle, viscosity, temperature, viscosityFactor, gaussianFactor);
 
+                    // velocity verlet
                     v2.scaleAndAdd(particle.velocity, particle.velocity, particle.acceleration, 0.5 * dt);
+
 
                     // reset stuff before next loop
                     v2.copy(particle.acceleration, gravityAcceleration);
@@ -1852,172 +1889,169 @@ var updateSimulation = function()
 
                 // ! Collision
 
-                if (params.aprioriCollision)
+                // TODO: ensure this works with time backwards (dt < 0),
+                // perhaps by using deltaPosition, and a remainingTime that's always positive
+                // or by flipping velocities when time gets < 0 and having dt > 0
+
+                var remainingTime = dt;
+
+                if (params.collisionEnabled)
                 {
-                    // TODO: ensure this works with time backwards (dt < 0),
-                    // perhaps by using deltaPosition, and a remainingTime that's always positive
-                    // or by flipping velocities when time gets < 0 and having dt > 0
+                    var collisionPool = new Pool(createCollision);
+                    var collisions = [];
+                    var firstCollisions = [];
 
-                    var remainingTime = dt;
-
-                    if (params.collisionEnabled)
+                    for (var particleIndex = 0; particleIndex < particleCount; ++particleIndex)
                     {
-                        var collisionPool = new Pool(createCollision);
-                        var collisions = [];
-                        var firstCollisions = [];
+                        var particle = particles[particleIndex];
 
-                        for (var particleIndex = 0; particleIndex < particleCount; ++particleIndex)
+                        if (params.particleParticleCollisionEnabled)
+                        {
+                            for (var otherParticleIndex = 0; otherParticleIndex < particleIndex; ++otherParticleIndex)
+                            {
+                                var otherParticle = particles[otherParticleIndex];
+                                recordParticleParticleCollision(
+                                    collisionPool, collisions,
+                                    particle, otherParticle,
+                                    remainingTime, simulation.boxBounds);
+                            }
+                        }
+
+                        for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
+                        {
+                            var wall = simulation.walls[wallIndex];
+                            recordWallParticleCollision(
+                                collisionPool, collisions,
+                                wall, particle,
+                                remainingTime);
+                        }
+                    }
+
+                    while (collisions.length != 0)
+                    {
+                        // take first collision
+                        var firstIndex = arrayMinIndex(collisions, function(c)
+                        {
+                            return c.time;
+                        });
+
+                        var firstCollisionTime = collisions[firstIndex].time;
+                        remainingTime -= firstCollisionTime;
+
+                        firstCollisions.length = 0;
+                        for (var collisionIndex = 0; collisionIndex < collisions.length; collisionIndex++)
+                        {
+                            // TODO: should probably be epsilon here
+                            var collision = collisions[collisionIndex];
+                            if (collision.time === firstCollisionTime)
+                            {
+                                firstCollisions.push(collision);
+                            }
+                        }
+
+                        // advance time for everyone
+                        for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
                         {
                             var particle = particles[particleIndex];
+                            v2.scaleAndAdd(particle.position, particle.position, particle.velocity, firstCollisionTime);
+                        }
+
+                        for (var firstCollisionIndex = 0; firstCollisionIndex < firstCollisions.length; firstCollisionIndex++)
+                        {
+                            // ! Collision
+                            // TODO: energy corrections (to conserve energy)
+
+                            var firstCollision = firstCollisions[firstCollisionIndex];
+
+                            var normal = v2.alloc();
+                            var massSum = firstCollision.first.mass + firstCollision.second.mass;
+
+                            v2.subtract(relativeVelocity, firstCollision.first.velocity, firstCollision.second.velocity);
+                            v2.projectOntoNormal(deltaVelocity, relativeVelocity, firstCollision.normal);
+
+                            var velocityScalingFirst = (firstCollision.second.mass == Infinity) ?
+                                1 : (firstCollision.second.mass / massSum);
+                            var velocityScalingSecond = (firstCollision.first.mass == Infinity) ?
+                                1 : (firstCollision.first.mass / massSum);
+
+                            var restitutionFactor = 1 + params.coefficientOfRestitution;
+
+                            v2.scaleAndAdd(firstCollision.first.velocity, firstCollision.first.velocity,
+                                deltaVelocity, -restitutionFactor * velocityScalingFirst);
+                            v2.scaleAndAdd(firstCollision.second.velocity, firstCollision.second.velocity,
+                                deltaVelocity, restitutionFactor * velocityScalingSecond);
+
+                            // remove collisions for involved particles
+
+                            for (var collisionIndex = 0; collisionIndex < collisions.length; collisionIndex++)
+                            {
+                                var c = collisions[collisionIndex];
+
+                                if ((c.first === firstCollision.first) || (c.first === firstCollision.second) || (c.second === firstCollision.first) || (c.second === firstCollision.second))
+                                {
+                                    collisions.splice(collisionIndex--, 1);
+                                    continue;
+                                }
+                            }
+
+                            // calculate any new collisions for involved particles
+
+                            var isParticleParticleCollision = (firstCollision.type == CollisionType.particleParticle);
 
                             if (params.particleParticleCollisionEnabled)
                             {
-                                for (var otherParticleIndex = 0; otherParticleIndex < particleIndex; ++otherParticleIndex)
+
+                                for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
                                 {
-                                    var otherParticle = particles[otherParticleIndex];
-                                    recordParticleParticleCollision(
-                                        collisionPool, collisions,
-                                        particle, otherParticle,
-                                        remainingTime, simulation.boxBounds);
+                                    // TODO: make firstCollision.first and second be indices
+                                    var particle = particles[particleIndex];
+
+                                    if ((particle !== firstCollision.first) && (particle !== firstCollision.second))
+                                    {
+                                        if (isParticleParticleCollision)
+                                        {
+                                            recordParticleParticleCollision(
+                                                collisionPool, collisions,
+                                                particle, firstCollision.first,
+                                                remainingTime, simulation.boxBounds);
+                                        }
+                                        recordParticleParticleCollision(
+                                            collisionPool, collisions,
+                                            particle, firstCollision.second,
+                                            remainingTime, simulation.boxBounds);
+                                    }
                                 }
                             }
 
                             for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
                             {
                                 var wall = simulation.walls[wallIndex];
-                                recordWallParticleCollision(
-                                    collisionPool, collisions,
-                                    wall, particle,
-                                    remainingTime);
-                            }
-                        }
 
-                        while (collisions.length != 0)
-                        {
-                            // take first collision
-                            var firstIndex = arrayMinIndex(collisions, function(c)
-                            {
-                                return c.time;
-                            });
-
-                            var firstCollisionTime = collisions[firstIndex].time;
-                            remainingTime -= firstCollisionTime;
-
-                            firstCollisions.length = 0;
-                            for (var collisionIndex = 0; collisionIndex < collisions.length; collisionIndex++)
-                            {
-                                // TODO: should probably be epsilon here
-                                var collision = collisions[collisionIndex];
-                                if (collision.time === firstCollisionTime)
+                                if (isParticleParticleCollision)
                                 {
-                                    firstCollisions.push(collision);
-                                }
-                            }
-
-                            // advance time for everyone
-                            for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
-                            {
-                                var particle = particles[particleIndex];
-                                v2.scaleAndAdd(particle.position, particle.position, particle.velocity, firstCollisionTime);
-                            }
-
-                            for (var firstCollisionIndex = 0; firstCollisionIndex < firstCollisions.length; firstCollisionIndex++)
-                            {
-                                // ! Collision
-                                // TODO: energy corrections (to conserve energy)
-
-                                var firstCollision = firstCollisions[firstCollisionIndex];
-
-                                var normal = v2.alloc();
-                                var massSum = firstCollision.first.mass + firstCollision.second.mass;
-
-                                v2.subtract(relativeVelocity, firstCollision.first.velocity, firstCollision.second.velocity);
-                                v2.projectOntoNormal(deltaVelocity, relativeVelocity, firstCollision.normal);
-
-                                var velocityScalingFirst = (firstCollision.second.mass == Infinity) ?
-                                    1 : (firstCollision.second.mass / massSum);
-                                var velocityScalingSecond = (firstCollision.first.mass == Infinity) ?
-                                    1 : (firstCollision.first.mass / massSum);
-
-                                var restitutionFactor = 1 + params.coefficientOfRestitution;
-
-                                v2.scaleAndAdd(firstCollision.first.velocity, firstCollision.first.velocity,
-                                    deltaVelocity, -restitutionFactor * velocityScalingFirst);
-                                v2.scaleAndAdd(firstCollision.second.velocity, firstCollision.second.velocity,
-                                    deltaVelocity, restitutionFactor * velocityScalingSecond);
-
-                                // remove collisions for involved particles
-
-                                for (var collisionIndex = 0; collisionIndex < collisions.length; collisionIndex++)
-                                {
-                                    var c = collisions[collisionIndex];
-
-                                    if ((c.first === firstCollision.first) || (c.first === firstCollision.second) || (c.second === firstCollision.first) || (c.second === firstCollision.second))
-                                    {
-                                        collisions.splice(collisionIndex--, 1);
-                                        continue;
-                                    }
-                                }
-
-                                // calculate any new collisions for involved particles
-
-                                var isParticleParticleCollision = (firstCollision.type == CollisionType.particleParticle);
-
-                                if (params.particleParticleCollisionEnabled)
-                                {
-
-                                    for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
-                                    {
-                                        // TODO: make firstCollision.first and second be indices
-                                        var particle = particles[particleIndex];
-
-                                        if ((particle !== firstCollision.first) && (particle !== firstCollision.second))
-                                        {
-                                            if (isParticleParticleCollision)
-                                            {
-                                                recordParticleParticleCollision(
-                                                    collisionPool, collisions,
-                                                    particle, firstCollision.first,
-                                                    remainingTime, simulation.boxBounds);
-                                            }
-                                            recordParticleParticleCollision(
-                                                collisionPool, collisions,
-                                                particle, firstCollision.second,
-                                                remainingTime, simulation.boxBounds);
-                                        }
-                                    }
-                                }
-
-                                for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
-                                {
-                                    var wall = simulation.walls[wallIndex];
-
-                                    if (isParticleParticleCollision)
-                                    {
-                                        recordWallParticleCollision(
-                                            collisionPool, collisions,
-                                            wall, firstCollision.first,
-                                            remainingTime);
-                                    }
                                     recordWallParticleCollision(
                                         collisionPool, collisions,
-                                        wall, firstCollision.second,
+                                        wall, firstCollision.first,
                                         remainingTime);
                                 }
-
-                                poolFree(collisionPool, firstCollision);
+                                recordWallParticleCollision(
+                                    collisionPool, collisions,
+                                    wall, firstCollision.second,
+                                    remainingTime);
                             }
+
+                            poolFree(collisionPool, firstCollision);
                         }
-
                     }
 
-                    // move last bit
+                }
 
-                    for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
-                    {
-                        var particle = particles[particleIndex];
-                        v2.scaleAndAdd(particle.position, particle.position, particle.velocity, remainingTime);
-                    }
+                // move last bit
+
+                for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
+                {
+                    var particle = particles[particleIndex];
+                    v2.scaleAndAdd(particle.position, particle.position, particle.velocity, remainingTime);
                 }
 
 
@@ -2103,6 +2137,9 @@ var updateSimulation = function()
 
                     // finish velocity verlet
                     v2.scaleAndAdd(particle.velocity, particle.velocity, particle.acceleration, 0.5 * dt);
+
+                    // TODO: maybe only do this once?
+                    langevinNoise(particle, viscosity, temperature, viscosityFactor, gaussianFactor);
 
                     // calculate quantities
 
@@ -2306,6 +2343,7 @@ var updateSimulation = function()
                 {
                     xMin: simulation.time - params.measurementWindowLength,
                     xMax: simulation.time,
+                    yMin: 0,
                 })
                 drawGraph(graph);
             }
