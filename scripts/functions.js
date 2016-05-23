@@ -743,11 +743,8 @@ function uniformParticleGenerator(simulation, particleIndex)
     var particle = new Particle();
     particle.radius = simulation.parameters.radiusScaling;
 
-    // TODO: generalize this
-    do {
-        particle.position = uniformPosition(simulation, particleIndex);
-    }
-    while (isColliding(simulation, particle))
+    particle.position = uniformPosition(simulation, particleIndex);
+    // moveOutOfCollision(simulation, particle);
 
     particle.radius = 1;
     particle.velocity = uniformVelocity(simulation, particleIndex);
@@ -840,6 +837,89 @@ function addParticle(simulation, position)
         simulation.particles.push(particle);
         simulation.parameters.particleCount += 1;
     }
+}
+
+function moveOutOfCollision(simulation, particle)
+{
+    var relativePosition = v2.alloc();
+    var wallVector = v2.alloc();
+
+    var hasCollisions = true;
+    while (hasCollisions)
+    {
+        hasCollisions = false;
+        for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
+        {
+            var wall = simulation.walls[wallIndex];
+
+            v2.subtract(wallVector, wall.vertices[1], wall.vertices[0]);
+            v2.subtract(relativePosition, wall.vertices[0], particle.position);
+            var t = v2.inner(relativePosition, wallVector) / v2.square(wallVector);
+
+            if ((0 <= t) && (t <= 1))
+            {
+                // intersects line segment
+                v2.scaleAndAdd(relativePosition,
+                    relativePosition, wallVector, t);
+            }
+            else if (t > 1)
+            {
+                // intersects wallEnd
+                v2.subtract(relativePosition, wall.vertices[1], particle.position);
+            }
+            // else wallStart, but relativePosition already points there
+
+            var quadrance = v2.square(relativePosition);
+            if (quadrance < square(particle.radius))
+            {
+                var distance = Math.sqrt(quadrance);
+                var overlapRatio = (particle.radius - distance) / distance;
+                v2.scaleAndAdd(particle.position,
+                    particle.position, relativePosition, -overlapRatio);
+                hasCollisions = true;
+                break;
+            }
+        }
+        if (hasCollisions)
+        {
+            continue;
+        }
+
+        for (var otherParticleIndex = 0; otherParticleIndex < simulation.particles.length; otherParticleIndex++)
+        {
+            if (otherParticle === particle)
+            {
+                continue;
+            }
+            var otherParticle = simulation.particles[otherParticleIndex];
+
+            var distanceLimit = particle.radius + otherParticle.radius;
+            v2.subtract(relativePosition, otherParticle.position, particle.position);
+            var quadrance = v2.square(relativePosition);
+
+            if (quadrance < square(distanceLimit))
+            {
+                var distance = Math.sqrt(quadrance);
+                var overlapRatio = (distanceLimit - distance) / distance;
+
+                // NOTE: move particles according to their relative size, 
+                // otherwise very big particles might have problems
+                // v2.scaleAndAdd(particle.position,
+                //     particle.position, relativePosition, -overlapRatio * otherParticle.radius / distanceLimit);
+                // v2.scaleAndAdd(otherParticle.position,
+                //     otherParticle.position, relativePosition, overlapRatio * particle.radius / distanceLimit);
+
+                v2.scaleAndAdd(particle.position,
+                    particle.position, relativePosition, -overlapRatio);
+
+                hasCollisions = true;
+                break;
+            }
+        }
+    }
+
+    v2.free(relativePosition);
+    v2.free(wallVector);
 }
 
 function isColliding(simulation, particle)
