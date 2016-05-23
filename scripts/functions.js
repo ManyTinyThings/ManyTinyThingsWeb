@@ -940,6 +940,7 @@ function createSimulation(opts)
             ljm: 1,
             aprioriCollision: true,
             coefficientOfRestitution: 1,
+            isParticleParticleCollisionEnabled: false,
         },
         customUpdate: function(simulation) {},
     });
@@ -964,6 +965,11 @@ function createSimulation(opts)
     simulation.parameters = opts.parameters;
     simulation.initialParameters = {};
     combineWithDefaults(simulation.initialParameters, opts.parameters);
+    if (simulation.parameters.bondEnergy == 0)
+    {
+        simulation.parameters.dt = simulation.parameters.simulationTimePerSecond / 60;
+        simulation.parameters.isParticleParticleCollisionEnabled = true;
+    }
 
     simulation.customUpdate = opts.customUpdate;
 
@@ -1783,13 +1789,17 @@ var updateSimulation = function()
                         for (var particleIndex = 0; particleIndex < particleCount; ++particleIndex)
                         {
                             var particle = particles[particleIndex];
-                            for (var otherParticleIndex = 0; otherParticleIndex < particleIndex; ++otherParticleIndex)
+
+                            if (params.particleParticleCollisionEnabled)
                             {
-                                var otherParticle = particles[otherParticleIndex];
-                                recordParticleParticleCollision(
-                                    collisionPool, collisions,
-                                    particle, otherParticle,
-                                    remainingTime, simulation.boxBounds);
+                                for (var otherParticleIndex = 0; otherParticleIndex < particleIndex; ++otherParticleIndex)
+                                {
+                                    var otherParticle = particles[otherParticleIndex];
+                                    recordParticleParticleCollision(
+                                        collisionPool, collisions,
+                                        particle, otherParticle,
+                                        remainingTime, simulation.boxBounds);
+                                }
                             }
 
                             for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
@@ -1873,24 +1883,28 @@ var updateSimulation = function()
 
                                 var isParticleParticleCollision = (firstCollision.type == CollisionType.particleParticle);
 
-                                for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
+                                if (params.particleParticleCollisionEnabled)
                                 {
-                                    // TODO: make firstCollision.first and second be indices
-                                    var particle = particles[particleIndex];
 
-                                    if ((particle !== firstCollision.first) && (particle !== firstCollision.second))
+                                    for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
                                     {
-                                        if (isParticleParticleCollision)
+                                        // TODO: make firstCollision.first and second be indices
+                                        var particle = particles[particleIndex];
+
+                                        if ((particle !== firstCollision.first) && (particle !== firstCollision.second))
                                         {
+                                            if (isParticleParticleCollision)
+                                            {
+                                                recordParticleParticleCollision(
+                                                    collisionPool, collisions,
+                                                    particle, firstCollision.first,
+                                                    remainingTime, simulation.boxBounds);
+                                            }
                                             recordParticleParticleCollision(
                                                 collisionPool, collisions,
-                                                particle, firstCollision.first,
+                                                particle, firstCollision.second,
                                                 remainingTime, simulation.boxBounds);
                                         }
-                                        recordParticleParticleCollision(
-                                            collisionPool, collisions,
-                                            particle, firstCollision.second,
-                                            remainingTime, simulation.boxBounds);
                                     }
                                 }
 
@@ -2578,14 +2592,7 @@ function recordWallParticleCollision(collisionPool, collisions, wall, particle, 
 
         for (var i = 0; i < 2; i++)
         {
-            if (i == 0)
-            {
-                v2.subtract(particleRelativeEndpoint, particle.position, wallStart);
-            }
-            else
-            {
-                v2.subtract(particleRelativeEndpoint, particle.position, wallEnd);
-            }
+            v2.subtract(particleRelativeEndpoint, particle.position, wall.vertices[i]);
 
             var intersection = intersectionOriginCircleLine(particle.radius, particleRelativeEndpoint, particle.velocity);
             if (intersection.isIntersecting && ((-collisionEpsilon) <= intersection.t1) && (intersection.t1 < remainingTime))
