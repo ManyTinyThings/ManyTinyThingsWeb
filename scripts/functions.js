@@ -1018,11 +1018,11 @@ function createSimulation(opts)
             ljSoftness: 0,
             ljn: 6,
             ljm: 1,
-            aprioriCollision: true,
             coefficientOfRestitution: 1,
             isParticleParticleCollisionEnabled: false,
             viscosity: 0,
             temperature: 1.0,
+            isPeriodic: false,
 
         },
         customUpdate: function(simulation) {},
@@ -1912,7 +1912,7 @@ var updateSimulation = function()
                                 recordParticleParticleCollision(
                                     collisionPool, collisions,
                                     particle, otherParticle,
-                                    remainingTime, simulation.boxBounds);
+                                    remainingTime, simulation.boxBounds, params.isPeriodic);
                             }
                         }
 
@@ -2012,12 +2012,12 @@ var updateSimulation = function()
                                             recordParticleParticleCollision(
                                                 collisionPool, collisions,
                                                 particle, firstCollision.first,
-                                                remainingTime, simulation.boxBounds);
+                                                remainingTime, simulation.boxBounds, params.isPeriodic);
                                         }
                                         recordParticleParticleCollision(
                                             collisionPool, collisions,
                                             particle, firstCollision.second,
-                                            remainingTime, simulation.boxBounds);
+                                            remainingTime, simulation.boxBounds, params.isPeriodic);
                                     }
                                 }
                             }
@@ -2076,7 +2076,10 @@ var updateSimulation = function()
                             var separation = separationFactor * distanceLimit;
 
                             v2.subtract(relativePosition, otherParticle.position, particle.position);
-                            v2.periodicize(relativePosition, relativePosition, simulation.boxBounds);
+                            if (params.isPeriodic)
+                            {
+                                v2.periodicize(relativePosition, relativePosition, simulation.boxBounds);
+                            }
                             var quadrance = v2.square(relativePosition);
 
                             // ! Lennard-jones
@@ -2145,7 +2148,10 @@ var updateSimulation = function()
                     particle.kineticEnergy = 0.5 * particle.mass * v2.square(particle.velocity);
 
                     // ! Periodic boundary conditions
-                    v2.periodicize(particle.position, particle.position, simulation.boxBounds);
+                    if (params.isPeriodic)
+                    {
+                        v2.periodicize(particle.position, particle.position, simulation.boxBounds);
+                    }
                 }
             }
         }
@@ -2640,13 +2646,16 @@ function createCollision()
 
 var collisionEpsilon = 0.01;
 
-function recordParticleParticleCollision(collisionPool, collisions, particle, otherParticle, remainingTime, boxBounds)
+function recordParticleParticleCollision(collisionPool, collisions, particle, otherParticle, remainingTime, boxBounds, isPeriodic)
 {
     var relativePosition = v2.alloc();
     var relativeVelocity = v2.alloc();
 
     v2.subtract(relativePosition, particle.position, otherParticle.position);
-    v2.periodicize(relativePosition, relativePosition, boxBounds);
+    if (isPeriodic)
+    {
+        v2.periodicize(relativePosition, relativePosition, boxBounds);
+    }
     v2.subtract(relativeVelocity, particle.velocity, otherParticle.velocity);
 
     var radiusSum = particle.radius + otherParticle.radius;
