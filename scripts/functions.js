@@ -409,62 +409,83 @@ function updateAutoLimits(autoLimits, x, y)
     }
 }
 
+function getLimits(graph)
+{
+    // Figure out limits
+
+    var autoLimits = {
+        xMin: Number.MAX_VALUE,
+        xMax: -Number.MAX_VALUE,
+        yMin: Number.MAX_VALUE,
+        yMax: -Number.MAX_VALUE,
+    }
+    for (var curveIndex = 0; curveIndex < graph.curves.length; curveIndex++)
+    {
+        var curve = graph.curves[curveIndex];
+        for (var i = 0; i < curve.pointCount; i++)
+        {
+            var x = curve.xs[i];
+            var y = curve.ys[i];
+            updateAutoLimits(autoLimits, x, y);
+        }
+    }
+
+    for (var barIndex = 0; barIndex < graph.bars.length; barIndex++)
+    {
+        var bar = graph.bars[barIndex];
+        updateAutoLimits(autoLimits, bar.start, 0);
+        updateAutoLimits(autoLimits, bar.end, bar.value);
+    }
+
+
+
+    var limits = {};
+
+    for (var key in graph.limits)
+    {
+        if (graph.limits[key] == "auto")
+        {
+            limits[key] = autoLimits[key];
+        }
+        else
+        {
+            limits[key] = graph.limits[key];
+        }
+    }
+
+    var paddingFactor = 0.05;
+    // TODO: maybe minimum padding?
+    var xPadding = paddingFactor * (limits.xMax - limits.xMin);
+    var yPadding = paddingFactor * (limits.yMax - limits.yMin);
+
+    var paddings = {
+        xMin: -xPadding,
+        xMax: xPadding,
+        yMin: -yPadding,
+        yMax: yPadding,
+    };
+
+    for (var key in graph.limits)
+    {
+        if (graph.limits[key] == "auto")
+        {
+            limits[key] += paddings[key];
+        }
+    }
+
+    return limits;
+}
+
 function drawGraph(graph)
 {
     if (graph.isVisible)
     {
-        // Figure out limits
-
-        var autoLimits = {
-            xMin: Number.MAX_VALUE,
-            xMax: -Number.MAX_VALUE,
-            yMin: Number.MAX_VALUE,
-            yMax: -Number.MAX_VALUE,
-        }
-        for (var curveIndex = 0; curveIndex < graph.curves.length; curveIndex++)
-        {
-            var curve = graph.curves[curveIndex];
-            for (var i = 0; i < curve.pointCount; i++)
-            {
-                var x = curve.xs[i];
-                var y = curve.ys[i];
-                updateAutoLimits(autoLimits, x, y);
-            }
-        }
-
-        for (var barIndex = 0; barIndex < graph.bars.length; barIndex++)
-        {
-            var bar = graph.bars[barIndex];
-            updateAutoLimits(autoLimits, bar.start, 0);
-            updateAutoLimits(autoLimits, bar.end, bar.value);
-        }
-
-        var limits = {};
-
-        for (var key in graph.limits)
-        {
-            if (graph.limits[key] == "auto")
-            {
-                limits[key] = autoLimits[key];
-            }
-            else
-            {
-                limits[key] = graph.limits[key];
-            }
-        }
-
-        var paddingFactor = 0.05;
-        var minimumPadding = 0.00001;
-        var xPadding = atLeast(minimumPadding, paddingFactor * (limits.xMax - limits.xMin));
-        var yPadding = atLeast(minimumPadding, paddingFactor * (limits.yMax - limits.yMin));
+        var limits = getLimits(graph)
 
         setLeftTopRightBottom(graph.renderer.bounds,
-            limits.xMin - xPadding,
-            limits.yMax + yPadding,
-            limits.xMax + xPadding,
-            limits.yMin - yPadding
+            limits.xMin, limits.yMax,
+            limits.xMax, limits.yMin
         );
-
         updateRendererBounds(graph.renderer);
 
         // Clear and draw
@@ -2359,17 +2380,26 @@ var updateSimulation = function()
                 var graph = simulation.timeSeries[i];
                 var xMin = simulation.time - params.measurementWindowLength;
                 var xMax = simulation.time;
+
                 addCurve(graph,
                 {
                     x: [xMin, xMax],
-                    y: [0, 0]
+                    y: [0, 0],
                 });
+
                 // TODO: make the limits change smoothly, so it's less noticable
                 setGraphLimits(graph,
                 {
                     xMin: xMin,
                     xMax: xMax,
                 });
+                var limits = getLimits(graph);
+                addCurve(graph,
+                {
+                    x: [xMin, xMin],
+                    y: [limits.yMin, limits.yMax],
+                });
+
                 drawGraph(graph);
             }
 
