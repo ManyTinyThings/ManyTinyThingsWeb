@@ -1904,7 +1904,7 @@ var updateSimulation = function()
                     {
                         var particle = particles[particleIndex];
 
-                        if (params.particleParticleCollisionEnabled)
+                        if (params.isParticleParticleCollisionEnabled)
                         {
                             for (var otherParticleIndex = 0; otherParticleIndex < particleIndex; ++otherParticleIndex)
                             {
@@ -1997,7 +1997,7 @@ var updateSimulation = function()
 
                             var isParticleParticleCollision = (firstCollision.type == CollisionType.particleParticle);
 
-                            if (params.particleParticleCollisionEnabled)
+                            if (params.isParticleParticleCollisionEnabled)
                             {
 
                                 for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
