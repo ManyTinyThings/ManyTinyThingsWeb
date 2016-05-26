@@ -2352,13 +2352,19 @@ var updateSimulation = function()
             for (var i = 0; i < simulation.timeSeries.length; ++i)
             {
                 var graph = simulation.timeSeries[i];
+                var xMin = simulation.time - params.measurementWindowLength;
+                var xMax = simulation.time;
+                addCurve(graph,
+                {
+                    x: [xMin, xMax],
+                    y: [0, 0]
+                });
                 // TODO: make the limits change smoothly, so it's less noticable
                 setGraphLimits(graph,
                 {
-                    xMin: simulation.time - params.measurementWindowLength,
-                    xMax: simulation.time,
-                    yMin: 0,
-                })
+                    xMin: xMin,
+                    xMax: xMax,
+                });
                 drawGraph(graph);
             }
 
