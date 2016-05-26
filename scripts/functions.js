@@ -1737,6 +1737,12 @@ function drawSimulation(simulation)
         var billiardCueTrajectory = [billiardCue.start, billiardCue.end];
         drawTrajectory(simulation.renderer, billiardCueTrajectory, colors.black);
     }
+
+    if (simulation.mouse.mode == "dragParticle")
+    {
+        var particle = simulation.particles[simulation.mouse.activeParticleIndex];
+        drawArrow(simulation.renderer, particle.position, simulation.mouse.worldPosition);
+    }
 }
 
 var updateSimulation = function()
@@ -1803,13 +1809,10 @@ var updateSimulation = function()
                         simulation.mouse.activeParticleIndex = hitParticle;
                     }
                 }
-                else
+                else if (isOnParticle)
                 {
-                    if (isOnParticle)
-                    {
-                        simulation.mouse.mode = "dragParticle";
-                        simulation.mouse.activeParticleIndex = hitParticle;
-                    }
+                    simulation.mouse.mode = "dragParticle";
+                    simulation.mouse.activeParticleIndex = hitParticle;
                 }
             }
 
