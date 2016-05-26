@@ -1926,8 +1926,17 @@ var updateSimulation = function()
                         }
                     }
 
+                    var maxCollisionPassCount = 100;
+                    var collisionPassCount = 0;
                     while (collisions.length != 0)
                     {
+                        // make sure we don't hang here
+                        collisionPassCount += 1;
+                        if (collisionPassCount > maxCollisionPassCount)
+                        {
+                            break;
+                        }
+
                         // take first collision
                         var firstIndex = arrayMinIndex(collisions, function(c)
                         {
