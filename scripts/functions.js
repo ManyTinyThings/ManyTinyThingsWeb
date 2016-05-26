@@ -1593,19 +1593,28 @@ function softLennardJonesForce(r, softness, n, m)
     return preFactor * 2 * (term * term - term);
 }
 
-function langevinNoise(particle, viscosity, temperature, viscosityFactor, gaussianFactor)
+function applyLangevinNoise(particles, viscosity, temperature)
 {
     if (viscosity > 0)
     {
-        var thermalVelocity = Math.sqrt(temperature / particle.mass);
+        var viscosityFactor = Math.exp(-viscosity * dt * 0.5);
+        var gaussianFactor = Math.sqrt((1 - square(viscosityFactor)));
 
-        var gaussianVector = v2.alloc();
-        // TODO: maybe divide by sqrt2? probably not
-        v2.scale(particle.velocity, particle.velocity, viscosityFactor);
-        v2.set(gaussianVector, randomGaussian(), randomGaussian());
-        v2.scaleAndAdd(particle.velocity, particle.velocity,
-            gaussianVector, gaussianFactor * thermalVelocity)
-        v2.free(gaussianVector)
+        for (var particleIndex = 0; particleIndex < particles.length;
+            ++particleIndex)
+        {
+            var particle = particles[particleIndex];
+
+            var thermalVelocity = Math.sqrt(temperature / particle.mass);
+
+            var gaussianVector = v2.alloc();
+            // TODO: maybe divide by sqrt2? probably not
+            v2.scale(particle.velocity, particle.velocity, viscosityFactor);
+            v2.set(gaussianVector, randomGaussian(), randomGaussian());
+            v2.scaleAndAdd(particle.velocity, particle.velocity,
+                gaussianVector, gaussianFactor * thermalVelocity)
+            v2.free(gaussianVector)
+        }
     }
 }
 
@@ -1853,14 +1862,12 @@ var updateSimulation = function()
             if (!simulation.pausedByUser)
             {
                 // ! Equations of motion
-
                 var particles = simulation.particles;
                 var particleCount = simulation.particles.length;
 
                 // langevin setup
 
-                var viscosityFactor = Math.exp(-params.viscosity * dt * 0.5);
-                var gaussianFactor = Math.sqrt((1 - square(viscosityFactor)));
+                applyLangevinNoise(particles, params.viscosity, params.temperature);
 
                 for (var particleIndex = 0; particleIndex < particleCount;
                     ++particleIndex)
@@ -1872,8 +1879,7 @@ var updateSimulation = function()
                     v2.scale(particle.velocity, particle.velocity,
                         Math.pow(params.velocityAmplification, dt));
 
-                    // langevin
-                    langevinNoise(particle, params.viscosity, params.temperature, viscosityFactor, gaussianFactor);
+
 
                     // velocity verlet
                     v2.scaleAndAdd(particle.velocity, particle.velocity, particle.acceleration, 0.5 * dt);
@@ -2149,9 +2155,6 @@ var updateSimulation = function()
                     // finish velocity verlet
                     v2.scaleAndAdd(particle.velocity, particle.velocity, particle.acceleration, 0.5 * dt);
 
-                    // TODO: maybe only do this once?
-                    langevinNoise(particle, params.viscosity, params.temperature, viscosityFactor, gaussianFactor);
-
                     // calculate quantities
 
                     particle.kineticEnergy = 0.5 * particle.mass * v2.square(particle.velocity);
@@ -2162,6 +2165,8 @@ var updateSimulation = function()
                         v2.periodicize(particle.position, particle.position, simulation.boxBounds);
                     }
                 }
+
+                applyLangevinNoise(particles, params.viscosity, params.temperature);
             }
         }
 
