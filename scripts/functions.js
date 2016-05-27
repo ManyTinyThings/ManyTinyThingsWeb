@@ -1388,8 +1388,8 @@ function createSimulation(opts)
     {
         name: "friction",
         label: "Friction:",
-        min: -0.2,
-        minLabel: "Negative?",
+        min: 0,
+        minLabel: "None",
         max: 1,
         maxLabel: "A lot",
     });
@@ -1724,7 +1724,7 @@ function drawSimulation(simulation)
         drawTrajectory(simulation.renderer, wall.vertices, colors.black);
     }
 
-    drawParticles(simulation.renderer, simulation.particles);
+    drawParticles(simulation.renderer, simulation.particles, simulation.parameters.isPeriodic);
 
     if (simulation.parameters.trajectoryEnabled)
     {

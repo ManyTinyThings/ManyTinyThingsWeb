@@ -40,7 +40,7 @@ function updateRendererBounds(renderer)
     context.translate(-bounds.left, -bounds.top);
 }
 
-function drawParticles(renderer, particles)
+function drawParticles(renderer, particles, isPeriodic)
 {
     var context = renderer.context;
     for (var i = 0; i < particles.length; ++i)
@@ -49,13 +49,24 @@ function drawParticles(renderer, particles)
         var position = particle.position;
 
         context.fillStyle = cssFromRGBA(particle.color.rgba);
-        for (var dx = 0; dx < 3; dx++)
+        var minScreen, maxScreen;
+        if (isPeriodic)
         {
-            for (var dy = 0; dy < 3; dy++)
+            minScreen = -1;
+            maxScreen = 1;
+        }
+        else
+        {
+            minScreen = 0;
+            maxScreen = 0;
+        }
+        for (var dx = minScreen; dx <= maxScreen; dx++)
+        {
+            for (var dy = minScreen; dy <= maxScreen; dy++)
             {
                 context.beginPath();
-                var x = position[0] + renderer.bounds.width * (dx - 1);
-                var y = position[1] + renderer.bounds.height * (dy - 1);
+                var x = position[0] + renderer.bounds.width * dx;
+                var y = position[1] + renderer.bounds.height * dy;
                 context.arc(x, y, particle.radius, 0, tau);
                 context.fill();
             }

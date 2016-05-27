@@ -26,11 +26,11 @@
         var sim = createSimulation({
             width: 500,
             controls: ["playPauseButton", "resetButton", "temperature"],
-            visualizations: ["temperature"],
+            visualizations: ["temperature", "energy"],
             particleGenerator: sameInitialGenerator,
             parameters: {
                 radiusScaling: 0.05,
-                particleCount: 37,
+                particleCount: 61,
                 bondEnergy: 0.1,
                 gravityAcceleration: 0, //0.001,
                 collisionEnabled: true,
@@ -48,23 +48,6 @@
     // );
     </script>
 
-    <div id="testGraph"></div>
-    <script>
-        var testDiv = document.getElementById("testGraph");
-        var histogram = createGraph(testDiv, "gaussian test");
-        var randoms = [];
-        for (var i = 0; i < 10000; i++) {
-            randoms.push(randomGaussian());
-        }
-
-        addHistogram(histogram, {
-            values: randoms,
-            min: -3,
-            max: 3,
-            barCount: 20,
-        });
-        drawGraph(histogram);
-    </script>
 </body>
 
 </html>

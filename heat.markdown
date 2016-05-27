@@ -14,6 +14,7 @@ Here is a billiard ball. Try throwing it around.
             particleCount: 1,
             friction: 0.1,
             bondEnergy: 0,
+            coefficientOfRestitution: 0.7,
         },
     });
 </script>
@@ -36,7 +37,7 @@ I added some more balls. Play around with them!
     });
 </script>
 
-Here I show the total energy, which is what you get by adding up the energy of eac particle.
+Here I show the total energy, which is what you get by adding up the energy of each particle.
 
 Balls knocking each other around is actually a pretty good model of how the world work at the atomic level.
 One big difference: _there is no friction_. Lower the friction of the system below an see what happens.
@@ -58,23 +59,6 @@ The atoms are bouncing all over the place, and they never stop. We have created 
 
 Also, notice that the energy stays the same. Put another way: _energy is never created o destroyed_. This is how the world works at the microscopic level.
 
-We've already seen what happens if the energy keeps decreasing: everything stops. What happens if the energy always increases? Try out negative friction!
-
-<script>
-    createSimulation({
-        visualizations: ["energy"],
-        controls: ["resetButton", "friction"],
-        particleGenerator: billiardsParticleGenerator,
-        parameters: {
-            particleCount: 11,
-            friction: 0,
-            bondEnergy: 0,
-        },
-    });
-</script>
-
-Yeah... that would be madness.
-
 Another big difference: the world isn't made of 11 atoms, there are a lot more!
 
 <script>
@@ -82,7 +66,7 @@ Another big difference: the world isn't made of 11 atoms, there are a lot more!
         particleGenerator: uniformParticleGenerator,
         parameters: {
             particleCount: 250,
-            radiusScaling: 0.01,
+            radiusScaling: 0.003,
             bondEnergy: 0,
         },
     });
@@ -122,9 +106,10 @@ Take a look at these two boxes of particles. Which one has more energy?
             bondEnergy: 0,
             maxInitialSpeed: 0.02,
         },
-        walls: [{start: v2.create(0, -1), end: v2.create(0, 1)}],
     });
-
+    hotColdSim.walls.push(
+        new Wall(v2(0, -1), v2(0, 1))
+    );
     setColdHotRegions(hotColdSim);
 
 </script>
@@ -160,9 +145,11 @@ Yep, the right one definitely has more energy. Now compare with this:
             bondEnergy: 0,
             maxInitialSpeed: 0.1,
         },
-        walls: [{start: v2.create(0, -1), end: v2.create(0, 1)}],
     });
 
+    slowFastBall.walls.push(
+        new Wall(v2(0, -1), v2(0, 1))
+    );
     setColdHotRegions(slowFastBall);
 </script>
 
@@ -203,9 +190,11 @@ To demonstrate: try _decreasing_ the energy of both systems below.
             bondEnergy: 0,
             maxInitialSpeed: 0.01,
         },
-        walls: [{start: v2.create(0, -1), end: v2.create(0, 1)}],
     });
 
+    oneManySim.walls.push(
+        new Wall(v2(0, -1), v2(0, 1))
+    );
     setColdHotRegions(oneManySim);
 </script>
 
