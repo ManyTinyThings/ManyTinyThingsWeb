@@ -15,10 +15,15 @@
         function sameInitialGenerator(simulation, particleIndex)
         {
             var particle = new Particle();
-            particle.position = hexagonalLatticePosition(simulation, particleIndex);
-            if (particleIndex == -1)
+            particle.position = rectangularLatticePosition(simulation, particleIndex);
+            if (particleIndex % 2)
             {
-                v2.set(particle.velocity, 0, simulation.parameters.maxInitialSpeed);
+                particle.particleType = 4;
+                particle.color = colors.red;
+            }
+            else
+            {
+                particle.particleType = 3;
             }
             return particle;
         }
@@ -30,14 +35,16 @@
             particleGenerator: sameInitialGenerator,
             parameters: {
                 radiusScaling: 0.05,
-                particleCount: 61,
-                bondEnergy: 0.1,
+                particleCount: 60,
+                bondEnergy: 0.01,
                 gravityAcceleration: 0, //0.001,
                 collisionEnabled: true,
                 measurementEnabled: true,
                 viscosity: 0.1,
                 temperature: 0.01,
                 isPeriodic: false,
+                dt: 0.005,
+                coulombStrength: 0.1,
             },
         });
         //sim.walls.length = 0;

@@ -614,6 +614,8 @@ var Particle = function()
     this.radius = 1;
     this.mass = 1;
 
+    this.particleType = 0;
+
     this.shapeType = ShapeType.circle;
 }
 
@@ -1044,7 +1046,7 @@ function createSimulation(opts)
             viscosity: 0,
             temperature: 1.0,
             isPeriodic: false,
-
+            coulombStrength: 0.001,
         },
         customUpdate: function(simulation) {},
     });
@@ -1058,6 +1060,7 @@ function createSimulation(opts)
 
     simulation.particles = [];
     simulation.particleGenerator = opts.particleGenerator;
+
     simulation.radiusScaling = 1;
 
     simulation.quadTree = undefined;
@@ -2120,13 +2123,39 @@ var updateSimulation = function()
                                 v2.periodicize(relativePosition, relativePosition, simulation.boxBounds);
                             }
                             var quadrance = v2.square(relativePosition);
+                            var squareSeparation = square(separation);
+
 
                             // ! Lennard-jones
                             var invQuadrance = 1 / quadrance;
-                            var a2 = square(separation) * invQuadrance;
+                            var a2 = squareSeparation * invQuadrance;
                             var a6 = a2 * a2 * a2;
                             var virial = params.bondEnergy * 12 * (a6 - a6 * a6);
                             var potentialEnergy = params.bondEnergy * (a6 - 2) * a6;
+
+
+                            if (particle.particleType != otherParticle.particleType)
+                            {
+                                // only repulsive
+                                if (quadrance > squareSeparation)
+                                {
+                                    virial = 0;
+                                    potentialEnergy = 0;
+                                }
+                                potentialEnergy += params.bondEnergy;
+                            }
+
+                            var isCoulombType = (particle.particleType == 3) || (particle.particleType == 4);
+                            var isOtherCoulombType = (otherParticle.particleType == 3) || (otherParticle.particleType == 4);
+                            if (isCoulombType && isOtherCoulombType)
+                            {
+                                var q = (particle.particleType - 3.5) * 2;
+                                var otherQ = (otherParticle.particleType - 3.5) * 2;
+                                var coulombEnergy = params.coulombStrength * q * otherQ * Math.sqrt(invQuadrance);
+                                potentialEnergy += coulombEnergy;
+                                virial += -coulombEnergy;
+                            }
+
                             var forceFactor = virial * invQuadrance;
 
                             v2.scaleAndAdd(particle.acceleration, particle.acceleration,
