@@ -1073,14 +1073,14 @@ function createSimulation(opts)
             measurementEnabled: true,
             separationFactor: 1.2,
             soundEnabled: false,
-            bondEnergy: 1.0,
+            lennardJonesStrength: 1.0,
             ljSoftness: 0,
             ljn: 6,
             ljm: 1,
             coefficientOfRestitution: 1,
             isParticleParticleCollisionEnabled: false,
-            viscosity: 0,
-            temperature: 1.0,
+            thermostatSpeed: 0,
+            thermostatTemperature: 0.01,
             isPeriodic: false,
             coulombStrength: 0.001,
         },
@@ -1370,12 +1370,21 @@ function createSimulation(opts)
     });
     createSlider(
     {
-        name: "temperature",
+        name: "thermostatTemperature",
         label: "Temperature:",
         min: 0,
         minLabel: "Cold",
         max: 0.1,
         maxLabel: "Hot",
+    });
+    createSlider(
+    {
+        name: "thermostatSpeed",
+        label: "Thermostat Speed:",
+        min: 0,
+        minLabel: "Off",
+        max: 0.5,
+        maxLabel: "Fast",
     });
     createSlider(
     {
@@ -1933,7 +1942,7 @@ var updateSimulation = function()
 
                 // langevin setup
 
-                applyLangevinNoise(particles, params.viscosity, params.temperature);
+                applyLangevinNoise(particles, params.thermostatSpeed, params.thermostatTemperature);
 
                 for (var particleIndex = 0; particleIndex < particleCount;
                     ++particleIndex)
@@ -2145,78 +2154,74 @@ var updateSimulation = function()
                 {
                     var particle = particles[particleIndex];
 
-                    if (params.bondEnergy !== 0)
+                    for (var otherParticleIndex = 0; otherParticleIndex < particleIndex; otherParticleIndex++)
                     {
-                        for (var otherParticleIndex = 0; otherParticleIndex < particleIndex; otherParticleIndex++)
+                        var otherParticle = particles[otherParticleIndex];
+
+                        var interaction = getInteraction(simulation, particle.particleType, otherParticle.particleType);
+                        if (interaction == Interaction.none)
                         {
-                            var otherParticle = particles[otherParticleIndex];
-
-                            var interaction = getInteraction(simulation, particle.particleType, otherParticle.particleType);
-                            if (interaction == Interaction.none)
-                            {
-                                continue;
-                            }
-
-                            var separationFactor = params.separationFactor;
-                            var distanceLimit = (particle.radius + otherParticle.radius);
-                            var separation = separationFactor * distanceLimit;
-
-                            v2.subtract(relativePosition, otherParticle.position, particle.position);
-                            if (params.isPeriodic)
-                            {
-                                v2.periodicize(relativePosition, relativePosition, simulation.boxBounds);
-                            }
-                            var quadrance = v2.square(relativePosition);
-                            var squareSeparation = square(separation);
-
-                            // TODO: one loop for each interaction intead of one loop with a lot of ifs
-
-                            // ! Lennard-jones
-                            var invQuadrance = 1 / quadrance;
-                            var a2 = squareSeparation * invQuadrance;
-                            var a6 = a2 * a2 * a2;
-                            var virial = params.bondEnergy * 12 * (a6 - 1) * a6;
-                            var potentialEnergy = params.bondEnergy * (a6 - 2) * a6;
-
-                            var isCoulombInteraction = (interaction == Interaction.coulombSame) || (interaction == Interaction.coulombDifferent);
-
-                            if ((interaction == Interaction.repulsive) || isCoulombInteraction)
-                            {
-                                if (quadrance > squareSeparation)
-                                {
-                                    virial = 0;
-                                    potentialEnergy = 0;
-                                }
-                                potentialEnergy += params.bondEnergy;
-                            }
-
-                            if (isCoulombInteraction)
-                            {
-                                var chargeProduct = (interaction == Interaction.coulombSame) ? 1 : -1;
-                                var coulombEnergy = params.coulombStrength * chargeProduct * Math.sqrt(invQuadrance);
-                                potentialEnergy += coulombEnergy;
-                                virial += coulombEnergy;
-                            }
-
-                            var forceFactor = -virial * invQuadrance;
-
-                            v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                                relativePosition, forceFactor / particle.mass);
-                            v2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration,
-                                relativePosition, -forceFactor / otherParticle.mass);
-
-                            // Measurements
-
-                            particle.potentialEnergy += potentialEnergy / 2;
-                            otherParticle.potentialEnergy += potentialEnergy / 2;
-
-                            var halfVirial = virial / 2;
-                            particle.virial += halfVirial;
-                            otherParticle.virial += halfVirial;
-
+                            continue;
                         }
-                    }
 
+                        var separationFactor = params.separationFactor;
+                        var distanceLimit = (particle.radius + otherParticle.radius);
+                        var separation = separationFactor * distanceLimit;
+
+                        v2.subtract(relativePosition, otherParticle.position, particle.position);
+                        if (params.isPeriodic)
+                        {
+                            v2.periodicize(relativePosition, relativePosition, simulation.boxBounds);
+                        }
+                        var quadrance = v2.square(relativePosition);
+                        var squareSeparation = square(separation);
+
+                        // TODO: one loop for each interaction intead of one loop with a lot of ifs
+
+                        // ! Lennard-jones
+                        var invQuadrance = 1 / quadrance;
+                        var a2 = squareSeparation * invQuadrance;
+                        var a6 = a2 * a2 * a2;
+                        var virial = params.lennardJonesStrength * 12 * (a6 - 1) * a6;
+                        var potentialEnergy = params.lennardJonesStrength * (a6 - 2) * a6;
+
+                        var isCoulombInteraction = (interaction == Interaction.coulombSame) || (interaction == Interaction.coulombDifferent);
+
+                        if ((interaction == Interaction.repulsive) || isCoulombInteraction)
+                        {
+                            if (quadrance > squareSeparation)
+                            {
+                                virial = 0;
+                                potentialEnergy = 0;
+                            }
+                            potentialEnergy += params.lennardJonesStrength;
+                        }
+
+                        if (isCoulombInteraction)
+                        {
+                            var chargeProduct = (interaction == Interaction.coulombSame) ? 1 : -1;
+                            var coulombEnergy = params.coulombStrength * chargeProduct * Math.sqrt(invQuadrance);
+                            potentialEnergy += coulombEnergy;
+                            virial += coulombEnergy;
+                        }
+
+                        var forceFactor = -virial * invQuadrance;
+
+                        v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                            relativePosition, forceFactor / particle.mass);
+                        v2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration,
+                            relativePosition, -forceFactor / otherParticle.mass);
+
+                        // Measurements
+
+                        particle.potentialEnergy += potentialEnergy / 2;
+                        otherParticle.potentialEnergy += potentialEnergy / 2;
+
+                        var halfVirial = virial / 2;
+                        particle.virial += halfVirial;
+                        otherParticle.virial += halfVirial;
+
+                    }
 
                     // Friction
                     v2.scaleAndAdd(particle.acceleration, particle.acceleration,
@@ -2261,7 +2266,7 @@ var updateSimulation = function()
                     }
                 }
 
-                applyLangevinNoise(particles, params.viscosity, params.temperature);
+                applyLangevinNoise(particles, params.thermostatSpeed, params.thermostatTemperature);
 
             }
 

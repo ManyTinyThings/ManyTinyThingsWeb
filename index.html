@@ -38,7 +38,7 @@
 
         var sim = createSimulation({
             width: 500,
-            controls: ["playPauseButton", "resetButton", "temperature"],
+            controls: ["playPauseButton", "resetButton", "thermostatTemperature", "thermostatSpeed"],
             visualizations: ["temperature", "energy"],
             particleGenerator: sameInitialGenerator,
             parameters: {
@@ -48,8 +48,8 @@
                 gravityAcceleration: 0, //0.001,
                 collisionEnabled: true,
                 measurementEnabled: true,
-                viscosity: 0.1,
-                temperature: 0.01,
+                thermostatSpeed: 0.1,
+                thermostatTemperature: 0.01,
                 isPeriodic: false,
                 dt: 0.005,
                 coulombStrength: 0.1,
