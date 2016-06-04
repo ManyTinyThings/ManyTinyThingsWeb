@@ -16,15 +16,23 @@
         {
             var particle = new Particle();
             particle.position = rectangularLatticePosition(simulation, particleIndex);
-            if (particleIndex % 2)
+            var type = particleIndex % 3;
+            if (type == 0)
             {
-                particle.particleType = 4;
+                particle.particleType = 0;
                 particle.color = colors.red;
+                particle.radius = 0.6;
+            }
+            else if (type == 1)
+            {
+                particle.color = colors.blue;
+                particle.particleType = 1;
             }
             else
             {
-                particle.particleType = 3;
+                particle.particleType = 2;
             }
+
             return particle;
         }
 
@@ -36,7 +44,7 @@
             parameters: {
                 radiusScaling: 0.05,
                 particleCount: 60,
-                bondEnergy: 0.01,
+                bondEnergy: 0.1,
                 gravityAcceleration: 0, //0.001,
                 collisionEnabled: true,
                 measurementEnabled: true,
@@ -47,6 +55,15 @@
                 coulombStrength: 0.1,
             },
         });
+
+        setInteraction(sim, 0, 0, Interaction.coulombSame);
+        setInteraction(sim, 0, 1, Interaction.coulombDifferent);
+        setInteraction(sim, 1, 1, Interaction.coulombSame);
+        setInteraction(sim, 0, 2, Interaction.repulsive);
+        setInteraction(sim, 1, 2, Interaction.repulsive);
+        setInteraction(sim, 2, 2, Interaction.repulsive);
+
+
         //sim.walls.length = 0;
 
     //    sim.walls.push(
