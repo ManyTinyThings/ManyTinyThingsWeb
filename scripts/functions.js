@@ -764,12 +764,10 @@ function twoColors(simulation, particleIndex)
 function uniformParticleGenerator(simulation, particleIndex)
 {
     var particle = new Particle();
-    particle.radius = simulation.parameters.radiusScaling;
 
     particle.position = uniformPosition(simulation, particleIndex);
     // moveOutOfCollision(simulation, particle);
 
-    particle.radius = 1;
     particle.velocity = uniformVelocity(simulation, particleIndex);
     return particle;
 }
@@ -822,6 +820,44 @@ function billiardsParticleGenerator(simulation, particleIndex)
     return particle;
 }
 
+// ! Particle types
+
+var Interaction = Object.freeze(
+{
+    none: 0,
+    repulsive: 1,
+    lennardJones: 2,
+    coulombSame: 3,
+    coulombDifferent: 4,
+});
+
+function symmetricIndex(a, b)
+{
+    x = Math.min(a, b);
+    y = Math.max(a, b);
+    index = x + (y * (y + 1) / 2);
+    return index;
+}
+
+function setInteraction(simulation, a, b, interaction)
+{
+    var index = symmetricIndex(a, b);
+    simulation.interactions[index] = interaction;
+}
+
+function getInteraction(simulation, a, b)
+{
+    var index = symmetricIndex(a, b);
+    var interaction = simulation.interactions[index];
+    if (interaction == undefined)
+    {
+        interaction = Interaction.repulsive;
+    }
+    return interaction;
+}
+
+// ! Particle updating
+
 function updateParticleCount(simulation)
 {
     var newParticleCount = simulation.parameters.particleCount;
@@ -840,7 +876,7 @@ function updateParticleCount(simulation)
         {
             var newParticle = simulation.particleGenerator(simulation, particleIndex);
             simulation.particles.push(newParticle);
-            newParticle.radius = simulation.radiusScaling;
+            newParticle.radius *= simulation.radiusScaling;
 
         }
         // TODO: move particles out of each other so that no overlaps occur
@@ -1060,6 +1096,7 @@ function createSimulation(opts)
 
     simulation.particles = [];
     simulation.particleGenerator = opts.particleGenerator;
+    simulation.interactions = [];
 
     simulation.radiusScaling = 1;
 
@@ -2110,8 +2147,13 @@ var updateSimulation = function()
                     {
                         for (var otherParticleIndex = 0; otherParticleIndex < particleIndex; otherParticleIndex++)
                         {
-
                             var otherParticle = particles[otherParticleIndex];
+
+                            var interaction = getInteraction(simulation, particle.particleType, otherParticle.particleType);
+                            if (interaction == Interaction.none)
+                            {
+                                continue;
+                            }
 
                             var separationFactor = params.separationFactor;
                             var distanceLimit = (particle.radius + otherParticle.radius);
@@ -2125,18 +2167,19 @@ var updateSimulation = function()
                             var quadrance = v2.square(relativePosition);
                             var squareSeparation = square(separation);
 
+                            // TODO: one loop for each interaction intead of one loop with a lot of ifs
 
                             // ! Lennard-jones
                             var invQuadrance = 1 / quadrance;
                             var a2 = squareSeparation * invQuadrance;
                             var a6 = a2 * a2 * a2;
-                            var virial = params.bondEnergy * 12 * (a6 - a6 * a6);
+                            var virial = params.bondEnergy * 12 * (a6 - 1) * a6;
                             var potentialEnergy = params.bondEnergy * (a6 - 2) * a6;
 
+                            var isCoulombInteraction = (interaction == Interaction.coulombSame) || (interaction == Interaction.coulombDifferent);
 
-                            if (particle.particleType != otherParticle.particleType)
+                            if ((interaction == Interaction.repulsive) || isCoulombInteraction)
                             {
-                                // only repulsive
                                 if (quadrance > squareSeparation)
                                 {
                                     virial = 0;
@@ -2145,18 +2188,15 @@ var updateSimulation = function()
                                 potentialEnergy += params.bondEnergy;
                             }
 
-                            var isCoulombType = (particle.particleType == 3) || (particle.particleType == 4);
-                            var isOtherCoulombType = (otherParticle.particleType == 3) || (otherParticle.particleType == 4);
-                            if (isCoulombType && isOtherCoulombType)
+                            if (isCoulombInteraction)
                             {
-                                var q = (particle.particleType - 3.5) * 2;
-                                var otherQ = (otherParticle.particleType - 3.5) * 2;
-                                var coulombEnergy = params.coulombStrength * q * otherQ * Math.sqrt(invQuadrance);
+                                var chargeProduct = (interaction == Interaction.coulombSame) ? 1 : -1;
+                                var coulombEnergy = params.coulombStrength * chargeProduct * Math.sqrt(invQuadrance);
                                 potentialEnergy += coulombEnergy;
-                                virial += -coulombEnergy;
+                                virial += coulombEnergy;
                             }
 
-                            var forceFactor = virial * invQuadrance;
+                            var forceFactor = -virial * invQuadrance;
 
                             v2.scaleAndAdd(particle.acceleration, particle.acceleration,
                                 relativePosition, forceFactor / particle.mass);
