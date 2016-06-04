@@ -892,7 +892,7 @@ function addParticle(simulation, position)
         var particleIndex = simulation.particles.length;
         var particle = simulation.particleGenerator(simulation, particleIndex);
         particle.position = position;
-        particle.radius = simulation.parameters.radiusScaling;
+        particle.radius *= simulation.parameters.radiusScaling;
         simulation.particles.push(particle);
         simulation.parameters.particleCount += 1;
     }
