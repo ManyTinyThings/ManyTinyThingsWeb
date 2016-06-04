@@ -1891,40 +1891,42 @@ var updateSimulation = function()
         updateParticleCount(simulation);
 
 
-        var params = simulation.parameters;
-
-        // ! Keep track of time
-
-        dt = params.dt;
-
-        var elapsedSeconds = (timestamp - simulation.previousTimestamp) / 1000;
-
-        // NOTE: attempt to avoid stalls by limiting max frame time
-        elapsedSeconds = atMost(1 / 30, elapsedSeconds);
-
-        simulation.previousTimestamp = timestamp;
-
-        if (simulation.isFirstFrameAfterPause)
+        if (!simulation.pausedByUser)
         {
-            simulation.isFirstFrameAfterPause = false;
-            elapsedSeconds = dt / params.simulationTimePerSecond;
-        }
 
-        simulation.timeLeftToSimulate += elapsedSeconds * params.simulationTimePerSecond;
 
-        // ! Simulation loop with fixed timestep
+            var params = simulation.parameters;
 
-        while (simulation.timeLeftToSimulate >= dt)
-        {
-            simulation.timeLeftToSimulate -= dt;
+            // ! Keep track of time
 
-            // TODO: interpolate drawing? Shouldn't be needed with such a small timestep
-            simulation.time += dt;
+            dt = params.dt;
 
-            v2.set(gravityAcceleration, 0, -params.gravityAcceleration);
+            var elapsedSeconds = (timestamp - simulation.previousTimestamp) / 1000;
 
-            if (!simulation.pausedByUser)
+            // NOTE: attempt to avoid stalls by limiting max frame time
+            elapsedSeconds = atMost(1 / 30, elapsedSeconds);
+
+            simulation.previousTimestamp = timestamp;
+
+            if (simulation.isFirstFrameAfterPause)
             {
+                simulation.isFirstFrameAfterPause = false;
+                elapsedSeconds = dt / params.simulationTimePerSecond;
+            }
+
+            simulation.timeLeftToSimulate += elapsedSeconds * params.simulationTimePerSecond;
+
+            // ! Simulation loop with fixed timestep
+
+            while (simulation.timeLeftToSimulate >= dt)
+            {
+                simulation.timeLeftToSimulate -= dt;
+
+                // TODO: interpolate drawing? Shouldn't be needed with such a small timestep
+                simulation.time += dt;
+
+                v2.set(gravityAcceleration, 0, -params.gravityAcceleration);
+
                 // ! Equations of motion
                 var particles = simulation.particles;
                 var particleCount = simulation.particles.length;
@@ -2260,229 +2262,231 @@ var updateSimulation = function()
                 }
 
                 applyLangevinNoise(particles, params.viscosity, params.temperature);
+
             }
-        }
 
-        // ! Things done once per frame, not once per simulation step
+            // ! Things done once per frame, not once per simulation step
 
-        // ! Input cleanup
+            // ! Input cleanup
 
-        simulation.mouse.leftButton.transitionCount = 0;
-        simulation.mouse.rightButton.transitionCount = 0;
+            simulation.mouse.leftButton.transitionCount = 0;
+            simulation.mouse.rightButton.transitionCount = 0;
 
-        // ! Trajectory
+            // ! Trajectory
 
-        if (params.trajectoryEnabled && (simulation.particles.length > 0))
-        {
-            simulation.trajectory.push(v2.clone(simulation.particles[0].position));
-        }
-
-        // ! Measurements
-
-        if (params.measurementEnabled)
-        {
-            // TODO: record measurements for each simulation step, but only draw once?
-            // maybe not, once per frame should be enough for showing
-
-            var totalEntropy = 0;
-            var probabilities = [];
-            var counts = [];
-            var totalArea = rectangleArea(simulation.boxBounds);
-
-            var barWidth = 1 / simulation.measurementRegions.length;
-            for (var regionIndex = 0; regionIndex < simulation.measurementRegions.length; regionIndex++)
+            if (params.trajectoryEnabled && (simulation.particles.length > 0))
             {
-                var region = simulation.measurementRegions[regionIndex];
-                var m = region.measurements;
+                simulation.trajectory.push(v2.clone(simulation.particles[0].position));
+            }
 
-                // Add new value, remove old, crufty ones
-                m.time.push(simulation.time);
+            // ! Measurements
+
+            if (params.measurementEnabled)
+            {
+                // TODO: record measurements for each simulation step, but only draw once?
+                // maybe not, once per frame should be enough for showing
+
+                var totalEntropy = 0;
+                var probabilities = [];
+                var counts = [];
+                var totalArea = rectangleArea(simulation.boxBounds);
+
+                var barWidth = 1 / simulation.measurementRegions.length;
+                for (var regionIndex = 0; regionIndex < simulation.measurementRegions.length; regionIndex++)
+                {
+                    var region = simulation.measurementRegions[regionIndex];
+                    var m = region.measurements;
+
+                    // Add new value, remove old, crufty ones
+                    m.time.push(simulation.time);
+                    var tooOldCount = -1;
+                    // NOTE: save more data than shown, to avoid weird autoscaling in plots
+                    while ((simulation.time - m.time[++tooOldCount]) > 2 * params.measurementWindowLength)
+                    {};
+
+                    for (var key in m)
+                    {
+                        m[key].splice(0, tooOldCount);
+                    }
+
+                    var regionEnergy = 0;
+                    var regionTemperature = 0;
+                    var regionCount = 0;
+                    var regionPressure = 0;
+                    var regionVirialSum = 0;
+                    var regionArea = rectangleArea(region.bounds);
+
+                    for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++)
+                    {
+                        var particle = simulation.particles[particleIndex];
+
+                        if (doesRectContainPoint(region.bounds, particle.position))
+                        {
+                            regionPressure += particle.pressure;
+                            regionEnergy += (particle.potentialEnergy + particle.kineticEnergy);
+                            regionTemperature += particle.kineticEnergy;
+                            regionCount += 1;
+                            regionVirialPressure = particle.virial;
+                        }
+                    }
+
+                    regionTemperature /= regionCount;
+                    var dimension = 2;
+                    var regionVirialPressure = (regionVirialSum / dimension + regionTemperature * regionCount) / regionArea;
+
+
+                    m.energy.push(regionEnergy);
+                    m.temperature.push(regionTemperature);
+                    m.count.push(regionCount);
+                    m.pressure.push(regionPressure);
+                    m.virialPressure.push(regionVirialPressure);
+
+
+                    var smoothingWindowSize = atMost(2, m.pressure.length);
+                    var smoothingFactor = 0;
+                    // TODO: optimize this when adding just one sample, by only computing delta from previous smoothed value
+                    var cosFactor = tau / (smoothingWindowSize - 1);
+                    var windowSum = 0;
+                    for (var i = 0; i < smoothingWindowSize; i++)
+                    {
+                        var w = lerp(1, smoothingFactor, Math.cos(i * cosFactor));
+                        windowSum += w * m.pressure[m.pressure.length - 1 - i];
+                    }
+                    var windowAverage = windowSum / smoothingWindowSize;
+                    m.smoothedPressure.push(windowAverage);
+
+
+
+                    addCurve(simulation.visualizations.energy,
+                    {
+                        x: m.time,
+                        y: m.energy,
+                        color: region.color
+                    });
+                    addCurve(simulation.visualizations.temperature,
+                    {
+                        x: m.time,
+                        y: m.temperature,
+                        color: region.color
+                    });
+                    addCurve(simulation.visualizations.counts,
+                    {
+                        x: m.time,
+                        y: m.count,
+                        color: region.color,
+                    });
+                    addCurve(simulation.visualizations.pressure,
+                    {
+                        x: m.time,
+                        y: m.smoothedPressure,
+                        color: region.color,
+                    });
+                    addCurve(simulation.visualizations.virialPressure,
+                    {
+                        x: m.time,
+                        y: m.virialPressure,
+                        color: region.color,
+                    });
+                    addBars(simulation.visualizations.countsHistogram,
+                    {
+                        bars: [
+                        {
+                            start: barWidth * regionIndex,
+                            end: barWidth * (regionIndex + 1),
+                            value: regionCount,
+                            color: region.color,
+                        }]
+                    });
+
+                    totalEntropy += microstateEntropy(regionCount / simulation.particles.length);
+                    probabilities.push(regionArea / totalArea);
+                    counts.push(regionCount);
+                }
+
+                // TODO: make a list with global visualizations too
+
+                simulation.times.push(simulation.time);
+                simulation.entropy.push(totalEntropy);
+                simulation.probability.push(multinomial(probabilities, counts));
+
                 var tooOldCount = -1;
                 // NOTE: save more data than shown, to avoid weird autoscaling in plots
-                while ((simulation.time - m.time[++tooOldCount]) > 2 * params.measurementWindowLength)
+                while ((simulation.time - simulation.times[++tooOldCount]) > 2 * params.measurementWindowLength)
                 {};
 
-                for (var key in m)
+                simulation.entropy.splice(0, tooOldCount);
+                simulation.times.splice(0, tooOldCount);
+                simulation.probability.splice(0, tooOldCount);
+
+                addCurve(simulation.visualizations.entropy,
                 {
-                    m[key].splice(0, tooOldCount);
-                }
+                    x: m.time,
+                    y: simulation.entropy,
+                });
 
-                var regionEnergy = 0;
-                var regionTemperature = 0;
-                var regionCount = 0;
-                var regionPressure = 0;
-                var regionVirialSum = 0;
-                var regionArea = rectangleArea(region.bounds);
-
-                for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++)
+                addCurve(simulation.visualizations.probability,
                 {
-                    var particle = simulation.particles[particleIndex];
+                    x: m.time,
+                    y: simulation.probability,
+                });
 
-                    if (doesRectContainPoint(region.bounds, particle.position))
+                // ! Plot things
+
+                setGraphLimits(simulation.visualizations.counts,
+                {
+                    yMax: simulation.particles.length
+                });
+                setGraphLimits(simulation.visualizations.entropy,
+                {
+                    yMax: 1
+                });
+                setGraphLimits(simulation.visualizations.probability,
+                {
+                    yMax: 1
+                });
+
+                simulation.customUpdate(simulation);
+
+                // ! Drawing
+
+                for (var i = 0; i < simulation.timeSeries.length; ++i)
+                {
+                    var graph = simulation.timeSeries[i];
+                    var xMin = simulation.time - params.measurementWindowLength;
+                    var xMax = simulation.time;
+
+                    addCurve(graph,
                     {
-                        regionPressure += particle.pressure;
-                        regionEnergy += (particle.potentialEnergy + particle.kineticEnergy);
-                        regionTemperature += particle.kineticEnergy;
-                        regionCount += 1;
-                        regionVirialPressure = particle.virial;
-                    }
-                }
+                        x: [xMin, xMax],
+                        y: [0, 0],
+                    });
 
-                regionTemperature /= regionCount;
-                var dimension = 2;
-                var regionVirialPressure = (regionVirialSum / dimension + regionTemperature * regionCount) / regionArea;
-
-
-                m.energy.push(regionEnergy);
-                m.temperature.push(regionTemperature);
-                m.count.push(regionCount);
-                m.pressure.push(regionPressure);
-                m.virialPressure.push(regionVirialPressure);
-
-
-                var smoothingWindowSize = atMost(2, m.pressure.length);
-                var smoothingFactor = 0;
-                // TODO: optimize this when adding just one sample, by only computing delta from previous smoothed value
-                var cosFactor = tau / (smoothingWindowSize - 1);
-                var windowSum = 0;
-                for (var i = 0; i < smoothingWindowSize; i++)
-                {
-                    var w = lerp(1, smoothingFactor, Math.cos(i * cosFactor));
-                    windowSum += w * m.pressure[m.pressure.length - 1 - i];
-                }
-                var windowAverage = windowSum / smoothingWindowSize;
-                m.smoothedPressure.push(windowAverage);
-
-
-
-                addCurve(simulation.visualizations.energy,
-                {
-                    x: m.time,
-                    y: m.energy,
-                    color: region.color
-                });
-                addCurve(simulation.visualizations.temperature,
-                {
-                    x: m.time,
-                    y: m.temperature,
-                    color: region.color
-                });
-                addCurve(simulation.visualizations.counts,
-                {
-                    x: m.time,
-                    y: m.count,
-                    color: region.color,
-                });
-                addCurve(simulation.visualizations.pressure,
-                {
-                    x: m.time,
-                    y: m.smoothedPressure,
-                    color: region.color,
-                });
-                addCurve(simulation.visualizations.virialPressure,
-                {
-                    x: m.time,
-                    y: m.virialPressure,
-                    color: region.color,
-                });
-                addBars(simulation.visualizations.countsHistogram,
-                {
-                    bars: [
+                    // TODO: make the limits change smoothly, so it's less noticable
+                    setGraphLimits(graph,
                     {
-                        start: barWidth * regionIndex,
-                        end: barWidth * (regionIndex + 1),
-                        value: regionCount,
-                        color: region.color,
-                    }]
-                });
+                        xMin: xMin,
+                        xMax: xMax,
+                    });
+                    var limits = getLimits(graph);
+                    addCurve(graph,
+                    {
+                        x: [xMin, xMin],
+                        y: [limits.yMin, limits.yMax],
+                    });
 
-                totalEntropy += microstateEntropy(regionCount / simulation.particles.length);
-                probabilities.push(regionArea / totalArea);
-                counts.push(regionCount);
+                    drawGraph(graph);
+                }
+
+                setGraphLimits(simulation.visualizations.countsHistogram,
+                {
+                    xMin: 0,
+                    xMax: 1,
+                    yMin: 0,
+                    yMax: simulation.particles.length
+                });
+                drawGraph(simulation.visualizations.countsHistogram);
             }
 
-            // TODO: make a list with global visualizations too
-
-            simulation.times.push(simulation.time);
-            simulation.entropy.push(totalEntropy);
-            simulation.probability.push(multinomial(probabilities, counts));
-
-            var tooOldCount = -1;
-            // NOTE: save more data than shown, to avoid weird autoscaling in plots
-            while ((simulation.time - simulation.times[++tooOldCount]) > 2 * params.measurementWindowLength)
-            {};
-
-            simulation.entropy.splice(0, tooOldCount);
-            simulation.times.splice(0, tooOldCount);
-            simulation.probability.splice(0, tooOldCount);
-
-            addCurve(simulation.visualizations.entropy,
-            {
-                x: m.time,
-                y: simulation.entropy,
-            });
-
-            addCurve(simulation.visualizations.probability,
-            {
-                x: m.time,
-                y: simulation.probability,
-            });
-
-            // ! Plot things
-
-            setGraphLimits(simulation.visualizations.counts,
-            {
-                yMax: simulation.particles.length
-            });
-            setGraphLimits(simulation.visualizations.entropy,
-            {
-                yMax: 1
-            });
-            setGraphLimits(simulation.visualizations.probability,
-            {
-                yMax: 1
-            });
-
-            simulation.customUpdate(simulation);
-
-            // ! Drawing
-
-            for (var i = 0; i < simulation.timeSeries.length; ++i)
-            {
-                var graph = simulation.timeSeries[i];
-                var xMin = simulation.time - params.measurementWindowLength;
-                var xMax = simulation.time;
-
-                addCurve(graph,
-                {
-                    x: [xMin, xMax],
-                    y: [0, 0],
-                });
-
-                // TODO: make the limits change smoothly, so it's less noticable
-                setGraphLimits(graph,
-                {
-                    xMin: xMin,
-                    xMax: xMax,
-                });
-                var limits = getLimits(graph);
-                addCurve(graph,
-                {
-                    x: [xMin, xMin],
-                    y: [limits.yMin, limits.yMax],
-                });
-
-                drawGraph(graph);
-            }
-
-            setGraphLimits(simulation.visualizations.countsHistogram,
-            {
-                xMin: 0,
-                xMax: 1,
-                yMin: 0,
-                yMax: simulation.particles.length
-            });
-            drawGraph(simulation.visualizations.countsHistogram);
         }
 
         drawSimulation(simulation);
