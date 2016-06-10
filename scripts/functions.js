@@ -2211,9 +2211,11 @@ var updateSimulation = function()
                         {
                             // TODO: energy is positive in ground state, is that correct?
                             var chargeProduct = (interaction == Interaction.coulombSame) ? 1 : -1;
-                            var coulombEnergy = params.coulombStrength * chargeProduct * Math.sqrt(invQuadrance);
-                            potentialEnergy += coulombEnergy;
-                            virial += coulombEnergy;
+
+                            // NOTE: we are in 2D! skipping extra factor of 2 here
+                            var coulombFactor = params.coulombStrength * chargeProduct;
+                            potentialEnergy += coulombFactor * Math.log(invQuadrance);
+                            virial += coulombFactor;
                         }
 
                         var forceFactor = -virial * invQuadrance;
