@@ -1058,31 +1058,41 @@ function createSimulation(opts)
         parameters:
         {
             maxInitialSpeed: 0.1,
-            collisionEnabled: true,
-            pressureWindowSize: 1000,
-            quadtreeEnabled: true,
-            simulationTimePerSecond: 5,
-            dt: 0.005,
-            velocityAmplification: 1,
-            gravityAcceleration: 0,
-            simulationSpeed: 1,
+            separationFactor: 1.2,
             particleCount: 91,
             radiusScaling: 0.08,
-            friction: 0,
+            soundEnabled: false,
+            isPeriodic: false,
+
+            // collision-related
+            collisionEnabled: true,
+            quadtreeEnabled: true,
+            isParticleParticleCollisionEnabled: false,
+            coefficientOfRestitution: 1,
+
+            // time-related
+            pressureWindowSize: 1000,
+            simulationTimePerSecond: 5,
+            dt: 0.005,
+            simulationSpeed: 1,
+
+            // measurements
             measurementWindowLength: 100,
             measurementEnabled: true,
-            separationFactor: 1.2,
-            soundEnabled: false,
+
+            // forces
+            velocityAmplification: 1,
+            gravityAcceleration: 0,
+            friction: 0,
+            coulombStrength: 0.001,
             lennardJonesStrength: 1.0,
             ljSoftness: 0,
             ljn: 6,
             ljm: 1,
-            coefficientOfRestitution: 1,
-            isParticleParticleCollisionEnabled: false,
+
+            // thermostat
             thermostatSpeed: 0,
             thermostatTemperature: 0.01,
-            isPeriodic: false,
-            coulombStrength: 0.001,
         },
         customUpdate: function(simulation) {},
     });
@@ -2148,7 +2158,7 @@ var updateSimulation = function()
                 // might be because walls do not use prior collision code
 
 
-                // ! Calculate forces
+                // ! Calculate force and energy
 
                 for (var particleIndex = 0; particleIndex < particleCount; particleIndex++)
                 {
@@ -2199,6 +2209,7 @@ var updateSimulation = function()
 
                         if (isCoulombInteraction)
                         {
+                            // TODO: energy is positive in ground state, is that correct?
                             var chargeProduct = (interaction == Interaction.coulombSame) ? 1 : -1;
                             var coulombEnergy = params.coulombStrength * chargeProduct * Math.sqrt(invQuadrance);
                             potentialEnergy += coulombEnergy;
@@ -2361,6 +2372,7 @@ var updateSimulation = function()
                     m.smoothedPressure.push(windowAverage);
 
 
+                    // TODO: only draw the viz that are visible
 
                     addCurve(simulation.visualizations.energy,
                     {
