@@ -616,7 +616,8 @@ var Particle = function()
 
     this.particleType = 0;
 
-    this.gridCellIndex = -1;
+    this.gridCol = -1;
+    this.gridRow = -1;
 }
 
 // ! Initialization
@@ -2193,7 +2194,8 @@ var updateSimulation = function()
                     row = mod(row, simulation.particleGrid.rowCount);
                     var cellIndex = row * simulation.particleGrid.colCount + col;
                     simulation.particleGrid.cells[cellIndex].push(particle);
-                    particle.gridCellIndex = cellIndex;
+                    particle.gridCol = col;
+                    particle.gridRow = row;
                 }
 
 
@@ -2215,12 +2217,10 @@ var updateSimulation = function()
                     {
                         for (var dy = -gridRadius; dy <= gridRadius; dy++)
                         {
-                            var cellIndex = particle.gridCellIndex + simulation.particleGrid.colCount * dy + dx;
-                            // TODO: handle periodic boundary
-                            if ((cellIndex < 0) || (simulation.particleGrid.cells.length <= cellIndex))
-                            {
-                                continue;
-                            }
+                            var col = mod(particle.gridCol + dx, simulation.particleGrid.colCount);
+                            var row = mod(particle.gridRow + dy, simulation.particleGrid.rowCount);
+                            var cellIndex = simulation.particleGrid.colCount * row + col;
+
                             var cell = simulation.particleGrid.cells[cellIndex];
                             for (var otherParticleIndex = 0; otherParticleIndex < cell.length; otherParticleIndex++)
                             {
