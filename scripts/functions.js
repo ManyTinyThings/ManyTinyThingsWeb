@@ -2160,6 +2160,10 @@ var updateSimulation = function()
 
                 // ! Calculate force and energy
 
+                var cutoffFactor = 2.5;
+                var squareCutoffFactor = square(cutoffFactor);
+
+
                 for (var particleIndex = 0; particleIndex < particleCount; particleIndex++)
                 {
                     var particle = particles[particleIndex];
@@ -2173,6 +2177,7 @@ var updateSimulation = function()
                         {
                             continue;
                         }
+                        var isCoulombInteraction = (interaction == Interaction.coulombSame) || (interaction == Interaction.coulombDifferent);
 
                         var separationFactor = params.separationFactor;
                         var distanceLimit = (particle.radius + otherParticle.radius);
@@ -2184,27 +2189,28 @@ var updateSimulation = function()
                             v2.periodicize(relativePosition, relativePosition, simulation.boxBounds);
                         }
                         var quadrance = v2.square(relativePosition);
+                        var invQuadrance = 1 / quadrance;
                         var squareSeparation = square(separation);
 
-                        // TODO: one loop for each interaction intead of one loop with a lot of ifs
+                        var potentialEnergy = 0;
+                        var virial = 0;
 
-                        // ! Lennard-jones
-                        var invQuadrance = 1 / quadrance;
-                        var a2 = squareSeparation * invQuadrance;
-                        var a6 = a2 * a2 * a2;
-                        var virial = params.lennardJonesStrength * 12 * (a6 - 1) * a6;
-                        var potentialEnergy = params.lennardJonesStrength * (a6 - 2) * a6;
-
-                        var isCoulombInteraction = (interaction == Interaction.coulombSame) || (interaction == Interaction.coulombDifferent);
-
-                        if ((interaction == Interaction.repulsive) || isCoulombInteraction)
+                        if (interaction == Interaction.repulsive)
                         {
                             if (quadrance > squareSeparation)
                             {
-                                virial = 0;
-                                potentialEnergy = 0;
+                                continue;
                             }
                             potentialEnergy += params.lennardJonesStrength;
+                        }
+
+                        if (quadrance < (squareCutoffFactor * squareSeparation))
+                        {
+                            // ! Lennard-jones
+                            var a2 = squareSeparation * invQuadrance;
+                            var a6 = a2 * a2 * a2;
+                            virial += params.lennardJonesStrength * 12 * (a6 - 1) * a6;
+                            potentialEnergy += params.lennardJonesStrength * (a6 - 2) * a6;
                         }
 
                         if (isCoulombInteraction)
@@ -2212,11 +2218,15 @@ var updateSimulation = function()
                             // TODO: energy is positive in ground state, is that correct?
                             var chargeProduct = (interaction == Interaction.coulombSame) ? 1 : -1;
 
-                            // NOTE: we are in 2D! skipping extra factor of 2 here
+                            // NOTE: we are in 2D! skipping extra factor of 2 here (from square in log)
                             var coulombFactor = params.coulombStrength * chargeProduct;
-                            potentialEnergy += coulombFactor * Math.log(invQuadrance);
+                            potentialEnergy += -coulombFactor * Math.log(quadrance);
                             virial += coulombFactor;
                         }
+
+                        // TODO: one loop for each interaction intead of one loop with a lot of ifs
+
+
 
                         var forceFactor = -virial * invQuadrance;
 

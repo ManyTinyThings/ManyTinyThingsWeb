@@ -16,12 +16,12 @@
         {
             var particle = new Particle();
             particle.position = rectangularLatticePosition(simulation, particleIndex);
-            var type = particleIndex % 3;
+            var type = particleIndex % 2;
             if (type == 0)
             {
                 particle.particleType = 0;
                 particle.color = colors.red;
-                particle.radius = 0.6;
+                particle.radius = 0.5;
             }
             else if (type == 1)
             {
@@ -43,8 +43,7 @@
             particleGenerator: sameInitialGenerator,
             parameters: {
                 radiusScaling: 0.05,
-                particleCount: 60,
-                bondEnergy: 0.1,
+                particleCount: 100,
                 gravityAcceleration: 0, //0.001,
                 collisionEnabled: true,
                 measurementEnabled: true,
@@ -52,7 +51,9 @@
                 thermostatTemperature: 0.01,
                 isPeriodic: false,
                 dt: 0.005,
-                coulombStrength: 0.1,
+                coulombStrength: 1.0,
+                lennardJonesStrength: 0.1,
+                separationFactor: 1.0,
             },
         });
 
