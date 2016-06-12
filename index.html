@@ -21,7 +21,6 @@
             {
                 particle.particleType = 0;
                 particle.color = colors.red;
-                particle.radius = 0.5;
             }
             else if (type == 1)
             {
@@ -43,7 +42,7 @@
             particleGenerator: sameInitialGenerator,
             parameters: {
                 radiusScaling: 0.05,
-                particleCount: 100,
+                particleCount: 2,
                 gravityAcceleration: 0, //0.001,
                 collisionEnabled: true,
                 measurementEnabled: true,
@@ -51,18 +50,20 @@
                 thermostatTemperature: 0.01,
                 isPeriodic: false,
                 dt: 0.005,
-                coulombStrength: 1.0,
+                coulombStrength: 0.01,
                 lennardJonesStrength: 0.1,
                 separationFactor: 1.0,
+                curoffFactor: 4,
             },
         });
 
-        setInteraction(sim, 0, 0, Interaction.coulombSame);
-        setInteraction(sim, 0, 1, Interaction.coulombDifferent);
-        setInteraction(sim, 1, 1, Interaction.coulombSame);
-        setInteraction(sim, 0, 2, Interaction.repulsive);
-        setInteraction(sim, 1, 2, Interaction.repulsive);
-        setInteraction(sim, 2, 2, Interaction.repulsive);
+        setInteraction(sim, 0, 0, Interaction.lennardJones);
+        setInteraction(sim, 0, 1, Interaction.repulsive);
+        setInteraction(sim, 1, 1, Interaction.lennardJones);
+
+        // setInteraction(sim, 0, 0, Interaction.coulombSame);
+        // setInteraction(sim, 0, 1, Interaction.coulombDifferent);
+        // setInteraction(sim, 1, 1, Interaction.coulombSame);
 
 
         //sim.walls.length = 0;
