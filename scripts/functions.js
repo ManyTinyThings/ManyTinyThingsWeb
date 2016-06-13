@@ -1593,9 +1593,9 @@ function createSimulation(opts)
     // ! Grid
 
 
-    var minGridSideLength = simulation.parameters.radiusScaling * simulation.parameters.cutoffFactor;
-    var colCount = Math.floor(simulation.boxBounds.width / minGridSideLength);
-    var rowCount = Math.floor(simulation.boxBounds.height / minGridSideLength);
+    var minGridSideLength = 2 * simulation.parameters.radiusScaling * simulation.parameters.cutoffFactor;
+    var colCount = atLeast(3, Math.floor(simulation.boxBounds.width / minGridSideLength));
+    var rowCount = atLeast(3, Math.floor(simulation.boxBounds.height / minGridSideLength));
 
     simulation.particleGrid = {
         cells: [],
@@ -2243,6 +2243,7 @@ var updateSimulation = function()
                                 var separation = separationFactor * distanceLimit;
 
                                 v2.subtract(relativePosition, otherParticle.position, particle.position);
+
                                 if (params.isPeriodic)
                                 {
                                     v2.periodicize(relativePosition, relativePosition, simulation.boxBounds);
@@ -2263,17 +2264,24 @@ var updateSimulation = function()
                                     potentialEnergy += params.lennardJonesStrength;
                                 }
 
-                                // TODO: shift the potential to account for truncation
+                                // truncation
                                 if (quadrance > (squareCutoffFactor * squareSeparation))
                                 {
                                     continue;
                                 }
+
+                                // compensate truncation
+                                // NOTE: not really necessary
+                                var b2 = 1 / squareCutoffFactor;
+                                var b6 = b2 * b2 * b2;
+                                potentialEnergy -= params.lennardJonesStrength * (b6 - 2) * b6;
 
                                 // ! Lennard-jones
                                 var a2 = squareSeparation * invQuadrance;
                                 var a6 = a2 * a2 * a2;
                                 potentialEnergy += params.lennardJonesStrength * (a6 - 2) * a6;
                                 virial += params.lennardJonesStrength * 12 * (a6 - 1) * a6;
+
 
                                 if (isCoulombInteraction)
                                 {
