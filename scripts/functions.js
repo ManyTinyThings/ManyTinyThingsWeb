@@ -2193,7 +2193,7 @@ var updateSimulation = function()
                     col = mod(col, simulation.particleGrid.colCount);
                     row = mod(row, simulation.particleGrid.rowCount);
                     var cellIndex = row * simulation.particleGrid.colCount + col;
-                    simulation.particleGrid.cells[cellIndex].push(particle);
+                    simulation.particleGrid.cells[cellIndex].push(particleIndex);
                     particle.gridCol = col;
                     particle.gridRow = row;
                 }
@@ -2222,13 +2222,14 @@ var updateSimulation = function()
                             var cellIndex = simulation.particleGrid.colCount * row + col;
 
                             var cell = simulation.particleGrid.cells[cellIndex];
-                            for (var otherParticleIndex = 0; otherParticleIndex < cell.length; otherParticleIndex++)
+                            for (var cellIndex = 0; cellIndex < cell.length; cellIndex++)
                             {
-                                var otherParticle = cell[otherParticleIndex];
-                                if (particle === otherParticle)
+                                var otherParticleIndex = cell[cellIndex];
+                                if (particleIndex >= otherParticleIndex)
                                 {
                                     continue;
                                 }
+                                var otherParticle = particles[otherParticleIndex];
 
                                 var interaction = getInteraction(simulation, particle.particleType, otherParticle.particleType);
                                 if (interaction == Interaction.none)
