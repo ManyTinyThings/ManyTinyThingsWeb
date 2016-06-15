@@ -1059,7 +1059,6 @@ function createSimulation(opts)
         parameters:
         {
             maxInitialSpeed: 0.1,
-            separationFactor: 1.2,
             particleCount: 91,
             radiusScaling: 0.08,
             soundEnabled: false,
@@ -1090,6 +1089,7 @@ function createSimulation(opts)
             ljSoftness: 0,
             ljn: 6,
             ljm: 1,
+            separationFactor: 1.1,
             cutoffFactor: 2.5,
 
             // thermostat
@@ -1661,16 +1661,15 @@ function resetSimulation(simulation)
     updateParticleCount(simulation);
 }
 
-// TODO: calculate both energy and force at the same time
-function lennardJonesEnergy(invR)
+function lennardJonesEnergy(r)
 {
-    // TODO: truncate and shift, see wikipedia
-    var a6 = Math.pow(invR, 6);
+    var a6 = Math.pow(1 / r, 6);
     return (a6 - 2) * a6;
 }
 
-function lennardJonesForce(invR)
+function lennardJonesForce(r)
 {
+    var invR = 1 / r;
     var a6 = Math.pow(invR, 6);
     return (12 * invR * (a6 * a6 - a6));
 }
@@ -2359,7 +2358,7 @@ var updateSimulation = function()
                         var dragStrength = 1;
                         v2.subtract(relativePosition, simulation.mouse.worldPosition, particle.position);
                         v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                            relativePosition, dragStrength);
+                            relativePosition, dragStrength / particle.mass);
                         v2.scaleAndAdd(particle.acceleration, particle.acceleration,
                             particle.velocity, -1 / particle.mass);
                     }
