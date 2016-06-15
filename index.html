@@ -16,7 +16,7 @@
         {
             var particle = new Particle();
             particle.position = rectangularLatticePosition(simulation, particleIndex);
-            var type = particleIndex % 2;
+            var type = 0; particleIndex % 2;
             if (type == 0)
             {
                 particle.particleType = 0;
@@ -42,7 +42,7 @@
             particleGenerator: sameInitialGenerator,
             parameters: {
                 radiusScaling: 0.05,
-                particleCount: 100,
+                particleCount: 50,
                 gravityAcceleration: 0, //0.001,
                 collisionEnabled: true,
                 measurementEnabled: true,
@@ -66,12 +66,12 @@
         // setInteraction(sim, 1, 1, Interaction.coulombSame);
 
 
-        sim.walls.length = 0;
+        //sim.walls.length = 0;
 
-    //    sim.walls.push(
-    //     new Wall(v2(0, 1), v2(0, 0.2)),
-    //     new Wall(v2(0, -1), v2(0, -0.2))
-    // );
+       sim.walls.push(
+        new Wall(v2(0, 1), v2(0, 0.2)),
+        new Wall(v2(0, -1), v2(0, -0.2))
+    );
     </script>
 
 </body>

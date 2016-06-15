@@ -2248,6 +2248,30 @@ var updateSimulation = function()
                                 {
                                     v2.periodicize(relativePosition, relativePosition, simulation.boxBounds);
                                 }
+
+
+                                var wallVector = v2.alloc();
+                                var wallToParticle = v2.alloc();
+                                var isAcrossWall = false;
+                                for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
+                                {
+                                    var wall = simulation.walls[wallIndex];
+                                    v2.subtract(wallVector, wall.vertices[1], wall.vertices[0]);
+                                    v2.subtract(wallToParticle, particle.position, wall.vertices[0]);
+                                    var intersection = intersectionOriginLineLine(wallVector, wallToParticle, relativePosition);
+                                    isAcrossWall = ((0 < intersection.tLine) && (intersection.tLine < 1) && (0 < intersection.tOriginLine) && (intersection.tOriginLine < 1));
+                                    if (isAcrossWall)
+                                    {
+                                        break;
+                                    }
+                                }
+                                v2.free(wallToParticle);
+                                v2.free(wallVector);
+                                if (isAcrossWall)
+                                {
+                                    continue;
+                                }
+
                                 var quadrance = v2.square(relativePosition);
                                 var invQuadrance = 1 / quadrance;
                                 var squareSeparation = square(separation);
