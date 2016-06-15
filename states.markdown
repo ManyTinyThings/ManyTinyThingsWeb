@@ -167,8 +167,11 @@ If we increase the temperature (and thus the jiggling) even further, the speed i
 
 We first saw particles that bounce off each other, like in billiards. Here, we explored particles which _attract_ each other when they are close together. Are there other possiblities? Let's look more closely at the interaction.
 
-We can show 
+It's easier to think about the interaction if we only look at how two particles move relative to each other. One way to think about it is that we center the camera on one particle, so that particle will therefore not move.
 
+The interaction will depend on the distance between two particles, and we can visualize it as a "landscape", where the stationary particle is at the left and the moving particle is a ball rolling in the landscape. 
+
+Let's first look at the simple bouncing-off interaction. This is represented by a steep hill in the potential landscape. When the particles come close to each other, the moving particle rolls up the imaginary hill and loses speed, until it turns and rolls back down.
 
 <div id="potential2"></div>
 
@@ -192,7 +195,7 @@ We can show
         v2.free(relativePosition);
         var r = distance / (simulation.parameters.separationFactor * simulation.parameters.radiusScaling * 2);
 
-        var xMax = 2.5;
+        var xMax = 3;
         var xs = [];
         var ys = [];
         var sampleCount = 100;
@@ -223,8 +226,8 @@ We can show
         graphs: ["energy"],
         parameters: {
             particleCount: 2,
-            radiusScaling: 0.2,
-            friction: 0,
+            radiusScaling: 0.15,
+            friction: 0.1,
             lennardJonesStrength: 0.1,
             simulationTimePerSecond: 1,
         },
@@ -233,11 +236,12 @@ We can show
 
     v2.set(interactionSim.particles[0].position, 0, 0);
     interactionSim.particles[0].mass = Infinity;
-    v2.set(interactionSim.particles[1].position, 0.5, 0.5);
+    v2.set(interactionSim.particles[1].position, 0.7, 0.7);
 
     setInteraction(interactionSim, 0, 0, Interaction.repulsive);
 </script>
 
+The potential for the attractive interaction is more interesting. There is still a steep hill, but before that we have a valley, and it's rolling down this valley that makes the particles "like" each other.
 
 <div id="potential"></div>
 
@@ -249,8 +253,8 @@ We can show
         graphs: ["energy"],
         parameters: {
             particleCount: 2,
-            radiusScaling: 0.2,
-            friction: 0,
+            radiusScaling: 0.15,
+            friction: 0.1,
             lennardJonesStrength: 0.1,
             simulationTimePerSecond: 1,
         },
@@ -259,19 +263,27 @@ We can show
 
     v2.set(interactionSim.particles[0].position, 0, 0);
     interactionSim.particles[0].mass = Infinity;
-    v2.set(interactionSim.particles[1].position, 0.5, 0.5);
+    v2.set(interactionSim.particles[1].position, 0.7, 0.7);
 
     setInteraction(interactionSim, 0, 0, Interaction.lennardJones);
 </script>
 
+Note that the ball will roll back and forth in the valley before settling at the bottom. This is why the particles vibrate a bit when they snap together. Without friction, they will keep vibrating forever.
 
+Also: the potential only depends on distance, that is, it's the same in all directions. To check, try making the moving particle spin around the other one in an orbit! (This is actually very similar to how the moon spins around the earth and the earth around the sun!)
 
 
 # TODO
 
 * Potential energy
+    * Rolling ball instead of line
 	* Two different kinds of particles
+        * attractive adn
 		* Positive and negative
-		* Should form a grid?
 * Arranges neatly when still
 * The attraction is negligible when moving
+* To think about:
+    * Why do the particles arrange in a certain way?
+        * LJ: hexagonal
+        * coulomb: rectangular
+        * reciprocal LJ: some kinda combination?
