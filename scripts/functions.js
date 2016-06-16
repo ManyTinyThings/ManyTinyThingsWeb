@@ -260,6 +260,15 @@ function createAndAppend(elementType, parent)
     return element;
 }
 
+
+
+function createElementHere(type)
+{
+    var element = document.createElement(type);
+    document.currentScript.insertAdjacentElement("beforeBegin", element);
+    return element;
+}
+
 function hideElement(element)
 {
     element.style.display = "none";
@@ -281,24 +290,21 @@ function createSliderHere(opts)
 
     var initialValue = opts.object[opts.name];
 
-    // set up slider element
+    // set up elements
 
-    var slider = document.createElement("input");
+    var p = createElementHere("p");
+    p.appendChild(document.createTextNode(opts.minLabel));
+    var slider = createAndAppend("input", p);
+    p.appendChild(document.createTextNode(opts.maxLabel));
+
+    // configure slider
+
     slider.setAttribute("type", "range");
     slider.setAttribute("value", initialValue);
     slider.setAttribute("min", opts.min);
     slider.setAttribute("max", opts.max);
     var step = opts.step || (opts.max - opts.min) / 1000;
     slider.setAttribute("step", step);
-
-
-    // set up presentation elements
-
-    var p = document.createElement("p");
-    p.appendChild(document.createTextNode(opts.minLabel));
-    p.appendChild(slider);
-    p.appendChild(document.createTextNode(opts.maxLabel));
-    document.currentScript.insertAdjacentElement("afterEnd", p);
 
     // set up callbacks
 
@@ -324,6 +330,37 @@ function createSliderHere(opts)
 
     updater();
 }
+
+function createCheckboxHere(opts)
+{
+    var label = createElementHere("label");
+    var checkbox = createAndAppend("input", label);
+    checkbox.setAttribute("type", "checkbox");
+    checkbox.checked = opts.object[opts.name];
+    label.insertAdjacentHTML("beforeEnd", opts.label);
+
+    checkbox.addEventListener("change", function()
+    {
+        opts.object[opts.name] = this.checked;
+    });
+
+    var updater = function()
+    {
+        checkbox.checked = opts.object[opts.name];
+        window.requestAnimationFrame(updater);
+    }
+
+    updater();
+}
+
+function createButtonHere(opts)
+{
+    var button = createElementHere("input");
+    button.setAttribute("type", "button");
+    button.setAttribute("value", opts.label);
+    button.addEventListener("click", opts.action);
+}
+
 
 // ! Graphs/Plots
 
@@ -1162,6 +1199,16 @@ function createSimulation(opts)
         initialize: opts.initialize,
     };
 
+    simulation.div = createElementHere("div");
+    simulation.div.setAttribute("class", "simulation");
+
+    simulation.canvas = createAndAppend("canvas", simulation.div);
+    simulation.canvas.setAttribute("width", simulation.width);
+    simulation.canvas.setAttribute("height", simulation.height);
+    simulation.canvas.setAttribute("class", "simulation_canvas");
+
+    simulation.renderer = createRenderer(simulation.canvas);
+
     resetSimulation(simulation);
 
     return simulation;
@@ -1184,7 +1231,6 @@ function resetSimulation(simulation)
 
             // collision-related
             collisionEnabled: true,
-            quadtreeEnabled: true,
             isParticleParticleCollisionEnabled: false,
             coefficientOfRestitution: 1,
 
@@ -1223,23 +1269,13 @@ function resetSimulation(simulation)
         timeLeftToSimulate: 0,
         isFirstFrameAfterPause: true,
 
-        particles: [],
-        interactions: [],
         radiusScaling: 1,
     };
 
+    simulation.particles = [];
+    simulation.interactions = [];
+
     copyObject(simulation, newSimulation);
-
-    simulation.div = document.createElement("div");
-    document.currentScript.insertAdjacentElement("afterEnd", simulation.div);
-    simulation.div.setAttribute("class", "simulation");
-
-    simulation.canvas = createAndAppend("canvas", simulation.div);
-    simulation.canvas.setAttribute("width", simulation.width);
-    simulation.canvas.setAttribute("height", simulation.height);
-    simulation.canvas.setAttribute("class", "simulation_canvas");
-
-    simulation.renderer = createRenderer(simulation.canvas);
 
     // ! boxes
 
