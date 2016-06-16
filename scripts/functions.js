@@ -270,13 +270,6 @@ function showElement(element)
     element.style.display = "block";
 }
 
-var idCount = 0;
-
-function uniqueID()
-{
-    return (idCount++);
-}
-
 function createSliderHere(opts)
 {
     combineWithDefaults(opts,
