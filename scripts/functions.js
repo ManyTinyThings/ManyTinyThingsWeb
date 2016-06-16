@@ -205,6 +205,21 @@ function combineWithDefaults(opts, defaults)
     }
 }
 
+function copyObject(destination, source)
+{
+    for (var key in source)
+    {
+        if (typeof destination[key] === 'object')
+        {
+            copyObject(destination[key], source[key]);
+        }
+        else
+        {
+            destination[key] = source[key];
+        }
+    }
+}
+
 function arrayLast(array)
 {
     return array[array.length - 1];
@@ -253,6 +268,68 @@ function hideElement(element)
 function showElement(element)
 {
     element.style.display = "block";
+}
+
+var idCount = 0;
+
+function uniqueID()
+{
+    return (idCount++);
+}
+
+function createSliderHere(opts)
+{
+    combineWithDefaults(opts,
+    {
+        minLabel: String(opts.min),
+        maxLabel: String(opts.max),
+        snapBack: false,
+    });
+
+    var initialValue = opts.object[opts.name];
+
+    // set up slider element
+
+    var slider = document.createElement("input");
+    slider.setAttribute("type", "range");
+    slider.setAttribute("value", initialValue);
+    slider.setAttribute("min", opts.min);
+    slider.setAttribute("max", opts.max);
+    var step = opts.step || (opts.max - opts.min) / 1000;
+    slider.setAttribute("step", step);
+
+
+    // set up presentation elements
+
+    var p = document.createElement("p");
+    p.appendChild(document.createTextNode(opts.minLabel));
+    p.appendChild(slider);
+    p.appendChild(document.createTextNode(opts.maxLabel));
+    document.currentScript.insertAdjacentElement("afterEnd", p);
+
+    // set up callbacks
+
+    slider.addEventListener("mousemove", function()
+    {
+        opts.object[opts.name] = Number(this.value);
+    });
+
+    if (opts.snapBack)
+    {
+        slider.addEventListener("change", function()
+        {
+            this.value = initialValue;
+            opts.object[opts.name] = Number(initialValue);
+        });
+    }
+
+    var updater = function()
+    {
+        slider.value = opts.object[opts.name];
+        window.requestAnimationFrame(updater);
+    }
+
+    updater();
 }
 
 // ! Graphs/Plots
@@ -511,8 +588,8 @@ function drawGraph(graph)
 
     // Reset state
 
-    graph.curves = [];
-    graph.bars = [];
+    graph.curves.length = 0;
+    graph.bars.length = 0;
 }
 
 // ! Measurement regions
@@ -548,6 +625,71 @@ function setColdHotRegions(simulation)
     rightRegion.overlayColor = withAlpha(colors.red, 0.2);
 
     simulation.measurementRegions = [leftRegion, rightRegion];
+}
+
+// ! Colors
+
+colors = {};
+
+function addColor(color)
+{
+    colors[color.name] = color;
+}
+
+addColor(
+{
+    name: "blue",
+    rgba: [0, 0, 1, 1],
+});
+
+addColor(
+{
+    name: "red",
+    rgba: [1, 0, 0, 1],
+});
+
+addColor(
+{
+    name: "green",
+    rgba: [0, 1, 0, 1],
+});
+
+addColor(
+{
+    name: "yellow",
+    rgba: [1, 0.8, 0, 1],
+});
+
+addColor(
+{
+    name: "black",
+    rgba: [0, 0, 0, 1],
+})
+
+addColor(
+{
+    name: "white",
+    rgba: [0, 0, 0, 1],
+})
+
+addColor(
+{
+    name: "gray",
+    rgba: [0.5, 0.5, 0.5, 1],
+})
+
+addColor(
+{
+    name: "transparent",
+    rgba: [0, 0, 0, 0],
+})
+
+function withAlpha(color, alpha)
+{
+    return {
+        name: color.name,
+        rgba: [color.rgba[0], color.rgba[1], color.rgba[2], alpha],
+    }
 }
 
 // ! Constants
@@ -762,6 +904,15 @@ function twoColors(simulation, particleIndex)
 
 // ! particle generators
 
+function generateParticles(simulation, count, generator)
+{
+    for (var particleIndex = 0; particleIndex < count; particleIndex++)
+    {
+        var particle = generator(simulation, particleIndex);
+        simulation.particles.push(particle);
+    }
+}
+
 function uniformParticleGenerator(simulation, particleIndex)
 {
     var particle = new Particle();
@@ -859,43 +1010,13 @@ function getInteraction(simulation, a, b)
 
 // ! Particle updating
 
-function updateParticleCount(simulation)
+function addParticle(simulation, particle)
 {
-    var newParticleCount = simulation.parameters.particleCount;
-    if (newParticleCount == simulation.particles.length)
-    {
-        return;
-    }
-    else if (newParticleCount < simulation.particles.length)
-    {
-        simulation.particles.splice(newParticleCount, Number.MAX_VALUE);
-    }
-    else
-    {
-        for (var particleIndex = simulation.particles.length; particleIndex < newParticleCount;
-            ++particleIndex)
-        {
-            var newParticle = simulation.particleGenerator(simulation, particleIndex);
-            simulation.particles.push(newParticle);
-            newParticle.radius *= simulation.radiusScaling;
-
-        }
-        // TODO: move particles out of each other so that no overlaps occur
-    }
-
-}
-
-function addParticle(simulation, position)
-{
-    var inside = doesRectContainPoint(simulation.boxBounds, position);
+    var inside = doesRectContainPoint(simulation.boxBounds, particle.position);
     if (inside)
     {
-        var particleIndex = simulation.particles.length;
-        var particle = simulation.particleGenerator(simulation, particleIndex);
-        particle.position = position;
         particle.radius *= simulation.parameters.radiusScaling;
         simulation.particles.push(particle);
-        simulation.parameters.particleCount += 1;
     }
 }
 
@@ -1004,7 +1125,6 @@ function isColliding(simulation, particle)
 function removeParticle(simulation, particleIndex)
 {
     simulation.particles.splice(particleIndex, 1);
-    simulation.parameters.particleCount -= 1;
 }
 
 function worldFromPage(renderer, pagePosition)
@@ -1041,25 +1161,30 @@ function pickParticle(simulation, pickPosition, extraRadius)
     return -1;
 }
 
-var simulationCount = 0;
-
 function createSimulation(opts)
 {
-    var simulation = {};
+    var simulation = {
+        width: opts.width,
+        height: opts.height,
+        initialize: opts.initialize,
+    };
 
-    combineWithDefaults(opts,
-    {
-        width: 400,
-        height: 400,
+    resetSimulation(simulation);
+
+    return simulation;
+}
+
+function resetSimulation(simulation)
+{
+    var newSimulation = {
         controls: ["resetButton"],
         visualizations: [],
         measurementRegions: [],
-        walls: [],
+        walls: undefined,
         particleGenerator: latticeParticleGenerator,
         parameters:
         {
             maxInitialSpeed: 0.1,
-            particleCount: 91,
             radiusScaling: 0.08,
             soundEnabled: false,
             isPeriodic: false,
@@ -1078,7 +1203,7 @@ function createSimulation(opts)
 
             // measurements
             measurementWindowLength: 100,
-            measurementEnabled: true,
+            measurementEnabled: false,
 
             // forces
             velocityAmplification: 1,
@@ -1091,73 +1216,117 @@ function createSimulation(opts)
             ljm: 1,
             separationFactor: 1.1,
             cutoffFactor: 2.5,
+            onlyHardSpheres: false,
 
             // thermostat
             thermostatSpeed: 0,
             thermostatTemperature: 0.01,
         },
-        customUpdate: function(simulation) {},
-    });
 
-    simulation.time = 0;
-    simulation.times = [];
-    simulation.pausedByUser = false;
-    simulation.previousTimestamp = 0;
-    simulation.timeLeftToSimulate = 0;
-    simulation.isFirstFrameAfterPause = true;
+        time: 0,
+        times: [],
+        pausedByUser: false,
+        previousTimestamp: 0,
+        timeLeftToSimulate: 0,
+        isFirstFrameAfterPause: true,
 
-    simulation.particles = [];
-    simulation.particleGenerator = opts.particleGenerator;
-    simulation.interactions = [];
+        particles: [],
+        interactions: [],
+        radiusScaling: 1,
+    };
 
+    copyObject(simulation, newSimulation);
 
+    simulation.div = document.createElement("div");
+    document.currentScript.insertAdjacentElement("afterEnd", simulation.div);
+    simulation.div.setAttribute("class", "simulation");
 
-    simulation.radiusScaling = 1;
+    simulation.canvas = createAndAppend("canvas", simulation.div);
+    simulation.canvas.setAttribute("width", simulation.width);
+    simulation.canvas.setAttribute("height", simulation.height);
+    simulation.canvas.setAttribute("class", "simulation_canvas");
 
-    simulation.quadTree = undefined;
+    simulation.renderer = createRenderer(simulation.canvas);
+
+    // ! boxes
+
+    var aspectRatio = simulation.canvas.width / simulation.canvas.height;
+    var origin = v2(0, 0);
+
+    setCenterWidthHeight(
+        simulation.renderer.bounds,
+        origin, 2 * aspectRatio, 2
+    );
+
+    updateRendererBounds(simulation.renderer);
 
     simulation.boxBounds = new Rectangle();
     simulation.leftRect = new Rectangle();
     simulation.rightRect = new Rectangle();
 
-    simulation.parameters = opts.parameters;
-    simulation.initialParameters = {};
-    combineWithDefaults(simulation.initialParameters, opts.parameters);
-    if (simulation.parameters.bondEnergy == 0)
+    var b = simulation.boxBounds;
+    setCenterWidthHeight(b,
+        origin, 2 * aspectRatio, 2
+    );
+
+    setLeftTopRightBottom(simulation.rightRect,
+        b.center[0], b.top,
+        b.right, b.bottom);
+    setLeftTopRightBottom(simulation.leftRect,
+        b.left, b.top,
+        b.center[0], b.bottom);
+
+    var corners = [
+        v2(b.left, b.bottom),
+        v2(b.right, b.bottom),
+        v2(b.right, b.top),
+        v2(b.left, b.top),
+    ];
+
+    // ! Particle grid
+
+
+    var minGridSideLength = 2 * simulation.parameters.radiusScaling * simulation.parameters.cutoffFactor;
+    var colCount = atLeast(3, Math.floor(simulation.boxBounds.width / minGridSideLength));
+    var rowCount = atLeast(3, Math.floor(simulation.boxBounds.height / minGridSideLength));
+
+    simulation.particleGrid = {
+        cells: [],
+        colCount: colCount,
+        rowCount: rowCount,
+        dx: simulation.boxBounds.width / colCount,
+        dy: simulation.boxBounds.height / rowCount,
+    };
+
+    for (var cellIndex = 0; cellIndex < (colCount * rowCount); cellIndex++)
     {
-        simulation.parameters.dt = simulation.parameters.simulationTimePerSecond / 60;
-        simulation.parameters.isParticleParticleCollisionEnabled = true;
+        simulation.particleGrid.cells[cellIndex] = [];
+    }
+
+    // ! Walls
+    if (simulation.walls == undefined)
+    {
+        simulation.walls = [];
+        for (var i = 0; i < corners.length; i++)
+        {
+            var wall = new Wall(corners[i], corners[(i + 1) % corners.length]);
+            simulation.walls.push(wall);
+        }
     }
 
 
-    simulation.customUpdate = opts.customUpdate;
+    // ! Measurements
 
-    // TODO: more than one trajectory
-    simulation.trajectoryEnabled = false;
-    simulation.trajectory = [];
+    var totalRegion = createMeasurementRegion();
+    copyRectangle(totalRegion.bounds, simulation.boxBounds);
+    simulation.measurementRegions = [totalRegion];
 
-    // ! set up HTML elements
-    simulation.id = "simulation" + simulationCount;
-    simulationCount += 1;
+    simulation.entropy = [];
+    simulation.probability = [];
 
-    document.currentScript.insertAdjacentHTML("afterEnd", '<div id="' + simulation.id + '"></div>');
-    simulation.div = document.getElementById(simulation.id);
-    simulation.div.setAttribute("class", "simulation");
 
-    simulation.leftDiv = createAndAppend("div", simulation.div);
-    simulation.rightDiv = createAndAppend("div", simulation.div);
 
-    simulation.canvas = createAndAppend("canvas", simulation.leftDiv);
-    simulation.canvas.setAttribute("width", opts.width);
-    simulation.canvas.setAttribute("height", opts.height);
-    simulation.canvas.setAttribute("class", "simulation_canvas");
-
-    simulation.controlsDiv = createAndAppend("div", simulation.leftDiv);
-    simulation.buttonDiv = createAndAppend("div", simulation.controlsDiv);
-    simulation.sliderDiv = createAndAppend("div", simulation.controlsDiv);
-    simulation.checkboxDiv = createAndAppend("div", simulation.controlsDiv);
-
-    // ! Keyboard stuff
+    // ! Keyboard
 
     simulation.downKeys = [];
 
@@ -1176,7 +1345,7 @@ function createSimulation(opts)
         });
     })
 
-    // ! Mouse stuff
+    // ! Mouse
 
     simulation.mouse = {
         active: false,
@@ -1267,378 +1436,17 @@ function createSimulation(opts)
     document.addEventListener("resize", pauseIfHidden);
     window.addEventListener("load", pauseIfHidden);
 
-    // TODO: pause when window loses focus? (blur, focus events)
+    // ! User initialization
 
-    function createSlider(opts)
+    simulation.initialize(simulation);
+
+    if (simulation.parameters.onlyHardSpheres)
     {
-        combineWithDefaults(opts,
-        {
-            label: name,
-            minLabel: String(opts.min),
-            maxLabel: String(opts.max),
-            snapBack: false,
-            function: function(x)
-            {
-                return x;
-            },
-        });
-
-        var initialValue = simulation.parameters[opts.name];
-
-        // set up slider element
-
-        var slider = document.createElement("input");
-        slider.setAttribute("id", simulation.id + "_" + opts.name)
-        slider.setAttribute("type", "range");
-        slider.setAttribute("value", initialValue);
-        slider.setAttribute("min", opts.min);
-        slider.setAttribute("max", opts.max);
-        var step = opts.step || (opts.max - opts.min) / 1000;
-        slider.setAttribute("step", step);
-
-        // set up presentation elements
-
-        var p = createAndAppend("p", simulation.sliderDiv);
-        p.appendChild(document.createTextNode(opts.label));
-        p.appendChild(document.createElement("br"));
-        p.appendChild(document.createTextNode(opts.minLabel));
-        p.appendChild(slider);
-        p.appendChild(document.createTextNode(opts.maxLabel));
-
-        // set up callbacks
-
-        slider.addEventListener("input", function()
-        {
-            simulation.parameters[opts.name] = opts.function(Number(this.value));
-        });
-
-        if (opts.snapBack)
-        {
-            slider.addEventListener("change", function()
-            {
-                this.value = initialValue;
-                simulation.parameters[opts.name] = opts.function(initialValue);
-            });
-        }
-
-        hideElement(p);
-
-        simulation.controls[opts.name] = p;
-        return p;
+        simulation.parameters.dt = simulation.parameters.simulationTimePerSecond / 60;
+        simulation.parameters.isParticleParticleCollisionEnabled = true;
     }
-
-    function createCheckbox(opts)
-    {
-        combineWithDefaults(opts,
-        {
-            label: name
-        });
-
-        var span = createAndAppend("span", simulation.checkboxDiv)
-
-        var label = createAndAppend("label", span);
-        var checkbox = createAndAppend("input", span);
-        checkbox.setAttribute("type", "checkbox");
-        var checkboxId = simulation.id + "_" + opts.name;
-        checkbox.setAttribute("id", checkboxId);
-        checkbox.setAttribute("name", opts.name);
-        checkbox.checked = simulation.parameters[opts.name];
-        label.setAttribute("for", checkboxId);
-        label.innerHTML = opts.label;
-
-        checkbox.addEventListener("change", function()
-        {
-            simulation.parameters[opts.name] = this.checked;
-        });
-
-        hideElement(span);
-        simulation.controls[opts.name] = span;
-        return span;
-    }
-
-    function createButton(opts)
-    {
-        var button = createAndAppend("input", simulation.buttonDiv);
-        button.setAttribute("type", "button");
-        button.setAttribute("value", opts.label);
-        button.addEventListener("click", opts.callback);
-        hideElement(button);
-        simulation.controls[opts.name] = button;
-        return button;
-    }
-
-    // ! setup UI
-
-    simulation.controls = {};
-
-    // sliders
-
-    createSlider(
-    {
-        name: "velocityAmplification",
-        label: "Control temperature:",
-        min: 0.5,
-        minLabel: "Colder",
-        max: 1.5,
-        maxLabel: "Warmer",
-        snapBack: true,
-    });
-    createSlider(
-    {
-        name: "thermostatTemperature",
-        label: "Temperature:",
-        min: 0,
-        minLabel: "Cold",
-        max: 0.1,
-        maxLabel: "Hot",
-    });
-    createSlider(
-    {
-        name: "thermostatSpeed",
-        label: "Thermostat Speed:",
-        min: 0,
-        minLabel: "Off",
-        max: 0.5,
-        maxLabel: "Fast",
-    });
-    createSlider(
-    {
-        name: "simulationSpeed",
-        label: "Control time:",
-        min: -1,
-        minLabel: "Backward",
-        max: 1,
-        maxLabel: "Forward",
-    });
-    createSlider(
-    {
-        name: "particleCount",
-        label: "Number of particles:",
-        min: 0,
-        minLabel: "0",
-        max: 225,
-        maxLabel: "225",
-        step: 1
-            // TODO: make this exponential?
-    });
-    createSlider(
-    {
-        name: "radiusScaling",
-        label: "Particle size:",
-        min: 0.01,
-        minLabel: "Tiny",
-        max: 0.1,
-        maxLabel: "Huge",
-    });
-    createSlider(
-    {
-        name: "gravityAcceleration",
-        label: "Gravity:",
-        min: 0,
-        minLabel: "None",
-        max: 2e-4,
-        maxLabel: "Strong",
-    });
-    createSlider(
-    {
-        name: "boxSize",
-        label: "Box Size:",
-        min: 20,
-        minLabel: "Tiny",
-        max: 1000,
-        maxLabel: "Huge",
-    });
-    createSlider(
-    {
-        name: "friction",
-        label: "Friction:",
-        min: 0,
-        minLabel: "None",
-        max: 1,
-        maxLabel: "A lot",
-    });
-
-    // checkboxes
-
-    createCheckbox(
-    {
-        name: "quadtreeEnabled",
-        label: "Quadtree",
-    });
-    createCheckbox(
-    {
-        name: "trajectoryEnabled",
-        label: "Draw trajectory",
-    });
-    createCheckbox(
-    {
-        name: "soundEnabled",
-        label: "Sound",
-    });
-
-    // buttons
-
-    createButton(
-    {
-        name: "resetButton",
-        label: "Reset",
-        callback: function()
-        {
-            resetSimulation(simulation);
-        }
-    });
-    createButton(
-    {
-        name: "playPauseButton",
-        label: "Play/Pause",
-        callback: function()
-        {
-            simulation.pausedByUser = !simulation.pausedByUser;
-        },
-    });
-    createButton(
-    {
-        name: "addRandomParticleButton",
-        label: "Add random particle",
-        callback: function()
-        {
-            simulation.parameters.particleCount += 1;
-        }
-    });
-    createButton(
-    {
-        name: "reverseTime",
-        label: "Reverse time",
-        callback: function()
-        {
-            simulation.parameters.simulationSpeed *= -1;
-        }
-    });
-
-    for (var i = 0; i < opts.controls.length; i++)
-    {
-        showElement(simulation.controls[opts.controls[i]]);
-    }
-
-    // ! visualization
-
-    simulation.visualizationDiv = createAndAppend("div", simulation.rightDiv);
-    simulation.visualizations = {};
-    simulation.timeSeries = [];
-    simulation.histograms = [];
-
-    var timeSeriesNames = ["energy", "temperature", "counts", "pressure", "virialPressure", "entropy", "probability"];
-    var histogramNames = ["countsHistogram"];
-
-    for (var i = 0; i < timeSeriesNames.length; i++)
-    {
-        var name = timeSeriesNames[i];
-        var graph = createGraph(createAndAppend("div", simulation.visualizationDiv), name);
-        setGraphVisible(graph, false);
-        simulation.visualizations[name] = graph;
-        simulation.timeSeries.push(graph);
-    }
-
-    for (var i = 0; i < histogramNames.length; i++)
-    {
-        var name = histogramNames[i];
-        var graph = createGraph(createAndAppend("div", simulation.visualizationDiv), name);
-        setGraphVisible(graph, false);
-        simulation.visualizations[name] = graph;
-        simulation.histograms.push(graph);
-    }
-
-    for (var i = 0; i < opts.visualizations.length; i++)
-    {
-        setGraphVisible(simulation.visualizations[opts.visualizations[i]], true);
-    }
-
-
-    simulation.renderer = createRenderer(simulation.canvas);
-
-    // ! boxes
-
-    var aspectRatio = simulation.canvas.width / simulation.canvas.height;
-    var origin = v2(0, 0);
-
-    setCenterWidthHeight(
-        simulation.renderer.bounds,
-        origin, 2 * aspectRatio, 2
-    );
-
-    updateRendererBounds(simulation.renderer);
-
-    var boxBounds = simulation.boxBounds;
-    setCenterWidthHeight(boxBounds,
-        origin, 2 * aspectRatio, 2
-    );
-
-    setLeftTopRightBottom(simulation.rightRect,
-        boxBounds.center[0], boxBounds.top,
-        boxBounds.right, boxBounds.bottom);
-    setLeftTopRightBottom(simulation.leftRect,
-        boxBounds.left, boxBounds.top,
-        boxBounds.center[0], boxBounds.bottom);
-
-    simulation.quadTree = new Quadtree(boxBounds);
-
-    var b = simulation.boxBounds;
-    var corners = [
-        v2(b.left, b.bottom),
-        v2(b.right, b.bottom),
-        v2(b.right, b.top),
-        v2(b.left, b.top),
-    ];
-
-    // ! Grid
-
-
-    var minGridSideLength = 2 * simulation.parameters.radiusScaling * simulation.parameters.cutoffFactor;
-    var colCount = atLeast(3, Math.floor(simulation.boxBounds.width / minGridSideLength));
-    var rowCount = atLeast(3, Math.floor(simulation.boxBounds.height / minGridSideLength));
-
-    simulation.particleGrid = {
-        cells: [],
-        colCount: colCount,
-        rowCount: rowCount,
-        dx: simulation.boxBounds.width / colCount,
-        dy: simulation.boxBounds.height / rowCount,
-    };
-
-    for (var cellIndex = 0; cellIndex < (colCount * rowCount); cellIndex++)
-    {
-        simulation.particleGrid.cells[cellIndex] = [];
-    }
-
-    // Walls
-
-    simulation.walls = opts.walls;
-
-    for (var i = 0; i < corners.length; i++)
-    {
-        var wall = new Wall(corners[i], corners[(i + 1) % corners.length]);
-        simulation.walls.push(wall);
-    }
-
-    // ! Measurements
-
-
-    if (opts.measurementRegions.length > 0)
-    {
-        simulation.measurementRegions = opts.measurementRegions;
-    }
-    else
-    {
-        var totalRegion = createMeasurementRegion();
-        copyRectangle(totalRegion.bounds, simulation.boxBounds);
-        simulation.measurementRegions = [totalRegion];
-    }
-    simulation.entropy = [];
-    simulation.probability = [];
 
     // ! Start simulation
-
-    updateParticleCount(simulation);
 
     simulation.updateFunction = function(timestamp)
     {
@@ -1650,142 +1458,7 @@ function createSimulation(opts)
     return simulation;
 }
 
-function resetSimulation(simulation)
-{
-    simulation.parameters.particleCount = 0;
-    updateParticleCount(simulation);
 
-    simulation.parameters = {};
-    combineWithDefaults(simulation.parameters, simulation.initialParameters);
-
-    updateParticleCount(simulation);
-}
-
-function lennardJonesEnergy(r)
-{
-    var a6 = Math.pow(1 / r, 6);
-    return (a6 - 2) * a6;
-}
-
-function lennardJonesForce(r)
-{
-    var invR = 1 / r;
-    var a6 = Math.pow(invR, 6);
-    return (12 * invR * (a6 * a6 - a6));
-}
-
-function lennardJonesVirial(invR2)
-{
-    var a6 = invR2 * invR2 * invR2;
-    return (12 * (a6 * a6 - a6));
-}
-
-// TODO: maybe have all these be of the same form
-
-function softLennardJonesEnergy(r, softness, n, m)
-{
-    var factor = 1 / (softness + Math.pow(r, n));
-    var term = Math.pow(factor, m);
-    return (term * term - 2 * term);
-}
-
-function softLennardJonesForce(r, softness, n, m)
-{
-    var factor = 1 / (softness + Math.pow(r, n));
-    var term = Math.pow(factor, m);
-    var preFactor = m * n * Math.pow(r, n - 1) * factor;
-    return preFactor * 2 * (term * term - term);
-}
-
-function applyLangevinNoise(particles, viscosity, temperature)
-{
-    if (viscosity > 0)
-    {
-        var viscosityFactor = Math.exp(-viscosity * dt * 0.5);
-        var gaussianFactor = Math.sqrt((1 - square(viscosityFactor)));
-
-        for (var particleIndex = 0; particleIndex < particles.length;
-            ++particleIndex)
-        {
-            var particle = particles[particleIndex];
-
-            var thermalVelocity = Math.sqrt(temperature / particle.mass);
-
-            var gaussianVector = v2.alloc();
-            // TODO: maybe divide by sqrt2? probably not
-            v2.scale(particle.velocity, particle.velocity, viscosityFactor);
-            v2.set(gaussianVector, randomGaussian(), randomGaussian());
-            v2.scaleAndAdd(particle.velocity, particle.velocity,
-                gaussianVector, gaussianFactor * thermalVelocity)
-            v2.free(gaussianVector)
-        }
-    }
-}
-
-// ! Colors
-
-colors = {};
-
-function addColor(color)
-{
-    colors[color.name] = color;
-}
-
-addColor(
-{
-    name: "blue",
-    rgba: [0, 0, 1, 1],
-});
-
-addColor(
-{
-    name: "red",
-    rgba: [1, 0, 0, 1],
-});
-
-addColor(
-{
-    name: "green",
-    rgba: [0, 1, 0, 1],
-});
-
-addColor(
-{
-    name: "yellow",
-    rgba: [1, 0.8, 0, 1],
-});
-
-addColor(
-{
-    name: "black",
-    rgba: [0, 0, 0, 1],
-})
-
-addColor(
-{
-    name: "white",
-    rgba: [0, 0, 0, 1],
-})
-
-addColor(
-{
-    name: "gray",
-    rgba: [0.5, 0.5, 0.5, 1],
-})
-
-addColor(
-{
-    name: "transparent",
-    rgba: [0, 0, 0, 0],
-})
-
-function withAlpha(color, alpha)
-{
-    return {
-        name: color.name,
-        rgba: [color.rgba[0], color.rgba[1], color.rgba[2], alpha],
-    }
-}
 
 // ! Simulation
 
@@ -1930,9 +1603,6 @@ var updateSimulation = function()
             particle.radius *= simulation.parameters.radiusScaling / simulation.radiusScaling;
         }
         simulation.radiusScaling = simulation.parameters.radiusScaling;
-
-        updateParticleCount(simulation);
-
 
         if (!simulation.pausedByUser)
         {
@@ -2478,49 +2148,6 @@ var updateSimulation = function()
                     m.smoothedPressure.push(windowAverage);
 
 
-                    // TODO: only draw the viz that are visible
-
-                    addCurve(simulation.visualizations.energy,
-                    {
-                        x: m.time,
-                        y: m.energy,
-                        color: region.color
-                    });
-                    addCurve(simulation.visualizations.temperature,
-                    {
-                        x: m.time,
-                        y: m.temperature,
-                        color: region.color
-                    });
-                    addCurve(simulation.visualizations.counts,
-                    {
-                        x: m.time,
-                        y: m.count,
-                        color: region.color,
-                    });
-                    addCurve(simulation.visualizations.pressure,
-                    {
-                        x: m.time,
-                        y: m.smoothedPressure,
-                        color: region.color,
-                    });
-                    addCurve(simulation.visualizations.virialPressure,
-                    {
-                        x: m.time,
-                        y: m.virialPressure,
-                        color: region.color,
-                    });
-                    addBars(simulation.visualizations.countsHistogram,
-                    {
-                        bars: [
-                        {
-                            start: barWidth * regionIndex,
-                            end: barWidth * (regionIndex + 1),
-                            value: regionCount,
-                            color: region.color,
-                        }]
-                    });
-
                     totalEntropy += microstateEntropy(regionCount / simulation.particles.length);
                     probabilities.push(regionArea / totalArea);
                     counts.push(regionCount);
@@ -2540,76 +2167,7 @@ var updateSimulation = function()
                 simulation.entropy.splice(0, tooOldCount);
                 simulation.times.splice(0, tooOldCount);
                 simulation.probability.splice(0, tooOldCount);
-
-                addCurve(simulation.visualizations.entropy,
-                {
-                    x: m.time,
-                    y: simulation.entropy,
-                });
-
-                addCurve(simulation.visualizations.probability,
-                {
-                    x: m.time,
-                    y: simulation.probability,
-                });
-
-                // ! Plot things
-
-                setGraphLimits(simulation.visualizations.counts,
-                {
-                    yMax: simulation.particles.length
-                });
-                setGraphLimits(simulation.visualizations.entropy,
-                {
-                    yMax: 1
-                });
-                setGraphLimits(simulation.visualizations.probability,
-                {
-                    yMax: 1
-                });
-
-                simulation.customUpdate(simulation);
-
-                // ! Drawing
-
-                for (var i = 0; i < simulation.timeSeries.length; ++i)
-                {
-                    var graph = simulation.timeSeries[i];
-                    var xMin = simulation.time - params.measurementWindowLength;
-                    var xMax = simulation.time;
-
-                    addCurve(graph,
-                    {
-                        x: [xMin, xMax],
-                        y: [0, 0],
-                    });
-
-                    // TODO: make the limits change smoothly, so it's less noticable
-                    setGraphLimits(graph,
-                    {
-                        xMin: xMin,
-                        xMax: xMax,
-                    });
-                    var limits = getLimits(graph);
-                    addCurve(graph,
-                    {
-                        x: [xMin, xMin],
-                        y: [limits.yMin, limits.yMax],
-                    });
-
-                    drawGraph(graph);
-                }
-
-                setGraphLimits(simulation.visualizations.countsHistogram,
-                {
-                    xMin: 0,
-                    xMax: 1,
-                    yMin: 0,
-                    yMax: simulation.particles.length
-                });
-                drawGraph(simulation.visualizations.countsHistogram);
             }
-
         }
 
         drawSimulation(simulation);
@@ -2618,7 +2176,72 @@ var updateSimulation = function()
     }
 }();
 
-// ! Math stuff
+// ! Interactions
+
+function lennardJonesEnergy(r)
+{
+    var a6 = Math.pow(1 / r, 6);
+    return (a6 - 2) * a6;
+}
+
+function lennardJonesForce(r)
+{
+    var invR = 1 / r;
+    var a6 = Math.pow(invR, 6);
+    return (12 * invR * (a6 * a6 - a6));
+}
+
+function lennardJonesVirial(invR2)
+{
+    var a6 = invR2 * invR2 * invR2;
+    return (12 * (a6 * a6 - a6));
+}
+
+// TODO: maybe have all these be of the same form
+
+function softLennardJonesEnergy(r, softness, n, m)
+{
+    var factor = 1 / (softness + Math.pow(r, n));
+    var term = Math.pow(factor, m);
+    return (term * term - 2 * term);
+}
+
+function softLennardJonesForce(r, softness, n, m)
+{
+    var factor = 1 / (softness + Math.pow(r, n));
+    var term = Math.pow(factor, m);
+    var preFactor = m * n * Math.pow(r, n - 1) * factor;
+    return preFactor * 2 * (term * term - term);
+}
+
+function applyLangevinNoise(particles, viscosity, temperature)
+{
+    if (viscosity > 0)
+    {
+        var viscosityFactor = Math.exp(-viscosity * dt * 0.5);
+        var gaussianFactor = Math.sqrt((1 - square(viscosityFactor)));
+
+        for (var particleIndex = 0; particleIndex < particles.length;
+            ++particleIndex)
+        {
+            var particle = particles[particleIndex];
+
+            var thermalVelocity = Math.sqrt(temperature / particle.mass);
+
+            var gaussianVector = v2.alloc();
+            // TODO: maybe divide by sqrt2? probably not
+            v2.scale(particle.velocity, particle.velocity, viscosityFactor);
+            v2.set(gaussianVector, randomGaussian(), randomGaussian());
+            v2.scaleAndAdd(particle.velocity, particle.velocity,
+                gaussianVector, gaussianFactor * thermalVelocity)
+            v2.free(gaussianVector)
+        }
+    }
+}
+
+
+
+// ! Math
 
 function atLeast(a, b)
 {

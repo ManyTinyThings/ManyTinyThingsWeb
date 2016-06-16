@@ -37,41 +37,59 @@
 
         var sim = createSimulation({
             width: 500,
-            controls: ["playPauseButton", "resetButton", "thermostatTemperature", "thermostatSpeed"],
-            visualizations: ["temperature", "energy"],
-            particleGenerator: sameInitialGenerator,
-            parameters: {
-                radiusScaling: 0.05,
-                particleCount: 50,
-                gravityAcceleration: 0, //0.001,
-                collisionEnabled: true,
-                measurementEnabled: true,
-                thermostatSpeed: 0.1,
-                thermostatTemperature: 0.01,
-                isPeriodic: true,
-                dt: 0.005,
-                coulombStrength: 0.01,
-                lennardJonesStrength: 0.1,
-                separationFactor: 1.0,
-                cutoffFactor: 2.5,
-            },
+            height: 400,
+            initialize: function(sim) {
+
+                var parameters = {
+                    radiusScaling: 0.05,
+                    gravityAcceleration: 0, //0.001,
+                    collisionEnabled: true,
+                    measurementEnabled: true,
+                    thermostatSpeed: 0.1,
+                    thermostatTemperature: 0.01,
+                    isPeriodic: true,
+                    dt: 0.005,
+                    coulombStrength: 0.01,
+                    lennardJonesStrength: 0.1,
+                    separationFactor: 1.0,
+                    cutoffFactor: 2.5,
+                };
+                copyObject(sim.parameters, parameters);
+
+                generateParticles(sim, 50, sameInitialGenerator);
+
+                setInteraction(sim, 0, 0, Interaction.lennardJones);
+                setInteraction(sim, 0, 1, Interaction.repulsive);
+                setInteraction(sim, 1, 1, Interaction.lennardJones);
+
+                // setInteraction(sim, 0, 0, Interaction.coulombSame);
+                // setInteraction(sim, 0, 1, Interaction.coulombDifferent);
+                // setInteraction(sim, 1, 1, Interaction.coulombSame);
+
+                //sim.walls.length = 0;
+
+                // sim.walls.push(
+                //     new Wall(v2(0, 1), v2(0, 0.2)),
+                //     new Wall(v2(0, -1), v2(0, -0.2))
+                // );
+            }
+        });
+        createButtonHere({
+            label: "Reset",
+            action: function() { resetSimulation(sim) },
         });
 
-        setInteraction(sim, 0, 0, Interaction.lennardJones);
-        setInteraction(sim, 0, 1, Interaction.repulsive);
-        setInteraction(sim, 1, 1, Interaction.lennardJones);
 
-        // setInteraction(sim, 0, 0, Interaction.coulombSame);
-        // setInteraction(sim, 0, 1, Interaction.coulombDifferent);
-        // setInteraction(sim, 1, 1, Interaction.coulombSame);
+    </script>
 
-
-        //sim.walls.length = 0;
-
-    //    sim.walls.push(
-    //     new Wall(v2(0, 1), v2(0, 0.2)),
-    //     new Wall(v2(0, -1), v2(0, -0.2))
-    // );
+    Here is some text and a slider
+    <script>
+        createSliderHere({
+            object: sim.parameters,
+            name: "friction",
+            min: 0, max: 1,
+            minLabel: "None", maxLabel: "A lot",
+        });
     </script>
 
 </body>
