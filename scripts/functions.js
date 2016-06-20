@@ -786,7 +786,7 @@ var Particle = function()
     this.radius = 1;
     this.mass = 1;
 
-    this.particleType = 0;
+    this.type = 0;
 
     this.gridCol = -1;
     this.gridRow = -1;
@@ -1045,7 +1045,6 @@ function addParticle(simulation, particle)
     var inside = doesRectContainPoint(simulation.boxBounds, particle.position);
     if (inside)
     {
-        particle.radius *= simulation.parameters.radiusScaling;
         simulation.particles.push(particle);
     }
 }
@@ -1929,7 +1928,7 @@ var updateSimulation = function()
                                 }
                                 var otherParticle = particles[otherParticleIndex];
 
-                                var interaction = getInteraction(simulation, particle.particleType, otherParticle.particleType);
+                                var interaction = getInteraction(simulation, particle.type, otherParticle.type);
                                 if (interaction == Interaction.none)
                                 {
                                     continue;

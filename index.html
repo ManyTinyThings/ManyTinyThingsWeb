@@ -12,33 +12,10 @@
 <h1>Testing in progress!</h1>
 <div class=two_column>
     <script>
-        function sameInitialGenerator(simulation, particleIndex)
-        {
-            var particle = new Particle();
-            particle.position = rectangularLatticePosition(simulation, particleIndex);
-            var type = particleIndex % 2;
-            if (type == 0)
-            {
-                particle.particleType = 0;
-                particle.color = colors.red;
-            }
-            else if (type == 1)
-            {
-                particle.color = colors.blue;
-                particle.particleType = 1;
-            }
-            else
-            {
-                particle.particleType = 2;
-            }
-
-            return particle;
-        }
-
         var sim = createSimulation({
             width: 500,
             height: 400,
-            initialize: function(sim) {
+            initialize: function(simulation) {
 
                 var parameters = {
                     radiusScaling: 0.05,
@@ -54,21 +31,28 @@
                     separationFactor: 1.0,
                     cutoffFactor: 2.5,
                 };
-                copyObject(sim.parameters, parameters);
+                copyObject(simulation.parameters, parameters);
 
-                generateParticles(sim, 50, sameInitialGenerator);
+                var particleCount = 50;
+                for (var particleIndex = 0; particleIndex < particleCount; particleIndex++) {
+                    var particle = new Particle();
+                    particle.position = rectangularLatticePosition(simulation, particleIndex);
+                    particle.type = particleIndex % 2;
+                    particle.color = [colors.blue, colors.red][particle.type];
+                    addParticle(simulation, particle);                       
+                }
 
-                setInteraction(sim, 0, 0, Interaction.lennardJones);
-                setInteraction(sim, 0, 1, Interaction.repulsive);
-                setInteraction(sim, 1, 1, Interaction.lennardJones);
+                setInteraction(simulation, 0, 0, Interaction.lennardJones);
+                setInteraction(simulation, 0, 1, Interaction.repulsive);
+                setInteraction(simulation, 1, 1, Interaction.lennardJones);
 
-                // setInteraction(sim, 0, 0, Interaction.coulombSame);
-                // setInteraction(sim, 0, 1, Interaction.coulombDifferent);
-                // setInteraction(sim, 1, 1, Interaction.coulombSame);
+                // setInteraction(simulation, 0, 0, Interaction.coulombSame);
+                // setInteraction(simulation, 0, 1, Interaction.coulombDifferent);
+                // setInteraction(simulation, 1, 1, Interaction.coulombSame);
 
-                //sim.walls.length = 0;
+                //simulation.walls.length = 0;
 
-                // sim.walls.push(
+                // simulation.walls.push(
                 //     new Wall(v2(0, 1), v2(0, 0.2)),
                 //     new Wall(v2(0, -1), v2(0, -0.2))
                 // );
@@ -84,7 +68,9 @@
 
     <p>
     Here is some text and a slider
-    <script>
+    </p>
+    <p>
+    Friction: <br><script>
         createSliderHere({
             object: sim.parameters,
             name: "friction",
@@ -92,13 +78,14 @@
             minLabel: "None", maxLabel: "A lot",
         });
     </script>
+    </p>
     and some more text and a checkbox
     <p>
     <script>
         createCheckboxHere({
-            object: sim.parameters,
-            name: "onlyHardSpheres",
-            label: "bonkibonk",
+            object: sim,
+            name: "pausedByUser",
+            label: "paused",
         });
     </script>
     </p>
