@@ -137,6 +137,11 @@ v2.isZero = function(a)
     return (a[0] == 0) && (a[1] == 0);
 }
 
+v2.isNaN = function(a)
+{
+    return (isNaN(a[0]) || isNaN(a[1]));
+}
+
 v2.isAlmostZero = function(a)
 {
     var tolerance = 0.000001;
@@ -1525,7 +1530,11 @@ function drawSimulation(simulation)
     if (simulation.mouse.mode == "dragParticle")
     {
         var particle = simulation.particles[simulation.mouse.activeParticleIndex];
-        drawArrow(simulation.renderer, particle.position, simulation.mouse.worldPosition);
+        if (particle)
+        {
+            drawArrow(simulation.renderer, particle.position, simulation.mouse.worldPosition);
+        }
+
     }
 }
 
@@ -1670,13 +1679,12 @@ var updateSimulation = function()
 
                 // ! Equations of motion
                 var particles = simulation.particles;
-                var particleCount = simulation.particles.length;
 
                 // langevin setup
 
                 applyLangevinNoise(particles, params.thermostatSpeed, params.thermostatTemperature);
 
-                for (var particleIndex = 0; particleIndex < particleCount;
+                for (var particleIndex = 0; particleIndex < particles.length;
                     ++particleIndex)
                 {
                     var particle = particles[particleIndex];
@@ -1685,8 +1693,6 @@ var updateSimulation = function()
 
                     v2.scale(particle.velocity, particle.velocity,
                         Math.pow(params.velocityAmplification, dt));
-
-
 
                     // velocity verlet
                     v2.scaleAndAdd(particle.velocity, particle.velocity, particle.acceleration, 0.5 * dt);
@@ -1713,7 +1719,7 @@ var updateSimulation = function()
                     var collisions = [];
                     var firstCollisions = [];
 
-                    for (var particleIndex = 0; particleIndex < particleCount; ++particleIndex)
+                    for (var particleIndex = 0; particleIndex < particles.length; ++particleIndex)
                     {
                         var particle = particles[particleIndex];
 
@@ -1802,6 +1808,8 @@ var updateSimulation = function()
                             v2.scaleAndAdd(firstCollision.second.velocity, firstCollision.second.velocity,
                                 deltaVelocity, restitutionFactor * velocityScalingSecond);
 
+                            // TODO: if infinite or NaN, set velocity, acceleration to zero?
+
                             // remove collisions for involved particles
 
                             for (var collisionIndex = 0; collisionIndex < collisions.length; collisionIndex++)
@@ -1867,12 +1875,18 @@ var updateSimulation = function()
 
                 }
 
-                // move last bit
-
                 for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
                 {
+                    // move last bit
                     var particle = particles[particleIndex];
                     v2.scaleAndAdd(particle.position, particle.position, particle.velocity, remainingTime);
+
+                    // filter NaNs
+                    if (v2.isNaN(particle.position))
+                    {
+                        particles.splice(particleIndex, 1);
+                        particleIndex -= 1;
+                    }
                 }
 
                 // ! put particles in grid
@@ -1905,7 +1919,7 @@ var updateSimulation = function()
                 var squareCutoffFactor = square(params.cutoffFactor);
 
 
-                for (var particleIndex = 0; particleIndex < particleCount; particleIndex++)
+                for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
                 {
                     var particle = particles[particleIndex];
 
@@ -2050,7 +2064,7 @@ var updateSimulation = function()
                 if (simulation.mouse.activeParticleIndex >= 0)
                 {
                     var particle = particles[simulation.mouse.activeParticleIndex];
-                    if (simulation.mouse.mode === "dragParticle")
+                    if (particle && (simulation.mouse.mode === "dragParticle"))
                     {
                         // TODO: friction while dragging?
                         var dragStrength = 1;
@@ -2062,7 +2076,7 @@ var updateSimulation = function()
                     }
                 }
 
-                for (var particleIndex = 0; particleIndex < particleCount;
+                for (var particleIndex = 0; particleIndex < particles.length;
                     ++particleIndex)
                 {
                     var particle = particles[particleIndex];
