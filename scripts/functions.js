@@ -193,6 +193,13 @@ v2.periodicize = function(out, a, bounds)
     return out;
 };
 
+v2.quadrance = function(a, b)
+{
+    var dx = a[0] - b[0];
+    var dy = a[1] - b[1];
+    return (dx * dx + dy * dy);
+}
+
 // ! Generally useful
 
 function combineWithDefaults(opts, defaults)
@@ -284,6 +291,8 @@ function showElement(element)
     element.style.display = "block";
 }
 
+// ! Controls
+
 function createSliderHere(opts)
 {
     combineWithDefaults(opts,
@@ -366,20 +375,63 @@ function createButtonHere(opts)
     button.addEventListener("click", opts.action);
 }
 
+// ! Interactive Slides
+
+
+function createSlidesHere(slides)
+{
+    var slideDeck = {};
+
+    slideDeck.div = createElementHere("div");
+    slideDeck.div.className = "slideDeck";
+    slideDeck.slides = slides;
+    slideDeck.currentSlideIndex = 0;
+    slideDeck.furthestSlideIndex = 0;
+    changeSlide(slideDeck, 0);
+
+    var updater = function()
+    {
+        if (slideDeck.currentSlideIndex == slideDeck.furthestSlideIndex)
+        {
+            var currentSlide = slideDeck.slides[slideDeck.currentSlideIndex];
+            if (currentSlide.nextCondition && currentSlide.nextCondition())
+            {
+                slideDeck.currentSlideIndex += 1;
+                slideDeck.furthestSlideIndex += 1;
+                changeSlide(slideDeck, slideDeck.currentSlideIndex);
+            }
+        }
+        window.requestAnimationFrame(updater);
+    }
+
+    updater();
+}
+
+function changeSlide(slideDeck, slideIndex)
+{
+    var slide = slideDeck.slides[slideIndex];
+    slideDeck.div.innerHTML = slide.text;
+
+
+
+    // TODO: next- and previous-buttons
+}
 
 // ! Graphs/Plots
 
-function createGraph(div, label)
+function createGraphHere(opts)
 {
     var graph = {};
 
-    var span = createAndAppend("div", div);
-    span.innerHTML = label;
-    var canvas = createAndAppend("canvas", div);
+    graph.div = createElementHere("div");
+    if (opts.label)
+    {
+        graph.div.innerHTML = opts.label;
+    }
+    var canvas = createAndAppend("canvas", graph.div);
     canvas.width = 400;
     canvas.height = 200;
 
-    graph.div = div;
     graph.renderer = createRenderer(canvas);
 
     graph.curves = [];
@@ -392,8 +444,19 @@ function createGraph(div, label)
     };
     graph.isVisible = true;
 
+    graph.update = opts.update;
+    // TODO: some kind of global updater, so each thing doesn't have to have its own
+    var updater = function()
+    {
+        graph.update(graph);
+        window.requestAnimationFrame(updater);
+    }
+
+    updater();
+
     return graph;
 }
+
 
 function addCurve(graph, opts)
 {

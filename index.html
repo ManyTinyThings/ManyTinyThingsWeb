@@ -62,8 +62,16 @@
             label: "Reset",
             action: function() { resetSimulation(sim) },
         });
+    </script>
 
-
+    <script>
+        createGraphHere({
+            update: function (graph)
+            {
+                addCurve(graph, {x: sim.times, y: sim.measurementRegions[0].measurements.energy});
+                drawGraph(graph);
+            }
+        })
     </script>
 
     <p>
