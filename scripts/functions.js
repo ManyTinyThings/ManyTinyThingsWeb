@@ -305,6 +305,11 @@ function showElement(element)
 
 // ! Controls
 
+function createSliderHere(opts)
+{
+    insertHere(createSlider(opts));
+}
+
 function createSlider(opts)
 {
     combineWithDefaults(opts,
@@ -395,89 +400,100 @@ function createButton(opts)
 
 // ! Interactive Slides
 
-function createStepLogHere(steps)
+function initStepLogs()
 {
-    var stepLog = createStepLog(steps);
-    insertHere(stepLog.div);
-}
-
-function createStepLog(steps)
-{
-    var stepLog = {};
-
-    stepLog.div = createElement("div");
-    stepLog.ul = createAndAppend("ul", stepLog.div);
-    stepLog.div.className = "stepLog";
-    stepLog.currentStepIndex = 0;
-    stepLog.steps = steps;
-    stepLog.stepLis = [];
-
-    for (var stepIndex = 0; stepIndex < stepLog.steps.length; stepIndex++)
+    var stepLogElements = document.getElementsByClassName("stepLog");
+    for (var stepLogIndex = 0; stepLogIndex < stepLogElements.length; stepLogIndex++)
     {
-        var step = stepLog.steps[stepIndex];
+        var stepLogElement = stepLogElements[stepLogIndex];
+        var stepLog = {};
+        stepLog.div = stepLogElement;
+        stepLog.currentStepIndex = 0;
+        stepLog.steps = [];
 
-        var stepLi = createAndAppend("li", stepLog.ul);
-        if (step.nextCondition)
+        var step = {
+            elements: [],
+        };
+        stepLog.steps.push(step);
+        for (var childIndex = 0; childIndex < stepLogElement.children.length; childIndex++)
         {
-            stepLi.className = "incomplete";
-        }
-
-
-        for (var subElementIndex = 0; subElementIndex < step.text.length; subElementIndex++)
-        {
-            var subElement = step.text[subElementIndex];
-            if (typeof subElement == "string")
+            var child = stepLogElement.children[childIndex];
+            if (child.tagName == "SCRIPT")
             {
-                var string = subElement;
-                subElement = document.createElement("p");
-                subElement.innerHTML = string;
+                arrayLast(step.elements).className = "incomplete";
+                step.cue = child.cue;
+
+                step = {
+                    elements: [],
+                    setup: child.setup,
+                };
+                stepLog.steps.push(step);
             }
-            stepLi.insertAdjacentElement("beforeEnd", subElement);
-        }
-
-        stepLog.stepLis.push(stepLi);
-        hideElement(stepLi);
-    }
-    changeStep(stepLog, 0);
-
-    var updater = function()
-    {
-        var currentStep = stepLog.steps[stepLog.currentStepIndex];
-        if (currentStep.nextCondition)
-        {
-            if (currentStep.nextCondition())
+            else
             {
-                var stepLi = stepLog.stepLis[stepLog.currentStepIndex];
-                stepLi.className = "complete";
-                solvedSound.play();
+                step.elements.push(child);
+            }
+            hideElement(child);
+        }
+        changeStep(stepLog, 0);
 
+        var updater = function()
+        {
+            var currentStep = stepLog.steps[stepLog.currentStepIndex];
+            if (currentStep.cue)
+            {
+                if (currentStep.cue())
+                {
+                    var steps = stepLog.steps[stepLog.currentStepIndex];
+                    arrayLast(steps.elements).className = "complete";
+                    solvedSound.play();
+
+                    stepLog.currentStepIndex += 1;
+                    changeStep(stepLog, stepLog.currentStepIndex);
+                }
+            }
+            else
+            {
                 stepLog.currentStepIndex += 1;
                 changeStep(stepLog, stepLog.currentStepIndex);
             }
+            window.requestAnimationFrame(updater);
         }
-        else
-        {
-            stepLog.currentStepIndex += 1;
-            changeStep(stepLog, stepLog.currentStepIndex);
-        }
-        window.requestAnimationFrame(updater);
+
+        updater();
     }
-
-    updater();
-
-    return stepLog;
 }
+
 
 function changeStep(stepLog, stepIndex)
 {
     var step = stepLog.steps[stepIndex];
-    var stepLi = stepLog.stepLis[stepIndex]
-    showElement(stepLi);
+    for (var elementIndex = 0; elementIndex < step.elements.length; elementIndex++)
+    {
+        showElement(step.elements[elementIndex]);
+    }
 
     if (step.setup)
     {
         step.setup();
     }
+}
+
+// TODO: maybe add to previous element, to work with createdHere elements
+function continueWhen(cue)
+{
+    document.currentScript.cue = cue;
+}
+
+function doThis(setup)
+{
+    document.currentScript.setup = setup;
+}
+
+function createStepLogHere(steps)
+{
+    var stepLog = createStepLog(steps);
+    insertHere(stepLog.div);
 }
 
 function createOutput(opts)

@@ -47,98 +47,6 @@
         return ensembleSpeed;
     }
 
-    var interactionStepLog = createStepLog([
-        {
-            text: ["Try moving these particles closer to each other."], 
-            nextCondition: function () {
-                var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
-                return (distance < 0.35);
-            },
-        },
-        {
-            text: [
-                "They seem to like each other! As they come closer, they attract and snap together."
-            ],
-        },
-        {
-            text: [
-                "Can you get them to let go?",
-                ],
-            nextCondition: function () {
-                var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
-                return (distance > 0.7);
-            },
-        },
-        {
-            text: [
-                "It takes some effort!",
-            ],
-        },
-        {
-            text: [
-                "What happens if you collide them at high speed?",
-            ],
-            // setup: function () {
-            //     oppositeCorners(interactionSim);
-            //     interactionSim.mouse.mode = "";
-            // },
-            nextCondition: function () {
-                var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
-                // TODO: speed along normal instead
-                var relativeSpeed = v2.distance(interactionSim.particles[0].velocity, interactionSim.particles[1].velocity);
-                return (distance < 0.25) && (relativeSpeed > 1.0);
-            }
-        },
-        {
-            text: [
-            "The speed is too great for them to have time to stick together.",
-            ],
-        },
-        {
-            text: [
-                "Let's add some more particles! (hold _c_ on the keyboard and use the mouse)",
-            ],
-            nextCondition: function () {
-                return (interactionSim.particles.length > 20);
-            }
-        },
-        {
-            text: [
-                "They group together and form a larger shape, a _solid_, if you will.",
-            ]
-        },
-        {
-            text: [
-                "Try pulling carefully at it.",
-            ],
-            nextCondition: function () {
-                return (ensembleSpeed(interactionSim.particles) > 0.15);
-            }
-        },
-        {
-            text: [
-                "The particles collectively behave like the macroscopic objects we are used to, moving and rotating as a unit.",
-                "So far, we've have had friction, but there is no friction in the microscopic world.",
-                createSlider({
-                    object: interactionSim.parameters,
-                    name: "friction",
-                    min: 0, max: 0.1,
-                    minLabel: "None", maxLabel: "Some",
-                }),
-            ],
-            nextCondition: function () {
-                return (interactionSim.parameters.friction == 0);
-            },
-        },
-        {
-            text: [
-                "Now, the particles are constantly jiggling, meaning the system has a certain amount of heat.",
-                "Let's try amplifying the speed of each particle, in turn increasing the jiggling.",
-            ],
-        }
-
-    ]);
-
 
     insertHere(createOutput({
         label: "distance: ",
@@ -158,10 +66,84 @@
 
 We know that we can think of atoms as tiny billiard balls bouncing around endlessly. But bouncing isn't the only way particles interact.
 
-<div class="twoColumn">
+<div class="stepLog twoColumn">
+Try moving these particles closer to each other.
+
 <script>
-    insertHere(interactionStepLog.div);
+    continueWhen(function () {
+        var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
+        return (distance < 0.35);   
+    });
 </script>
+
+They seem to like each other! As they come closer, they attract and snap together.
+
+Can you get them to let go?
+
+<script>
+    continueWhen(function () {
+        var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
+        return (distance > 0.7);
+    });
+</script>
+
+It takes some effort!
+
+What happens if you collide them at high speed?
+
+<script>
+    continueWhen(function () {
+        var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
+        // TODO: speed along normal instead
+        var relativeSpeed = v2.distance(interactionSim.particles[0].velocity, interactionSim.particles[1].velocity);
+        return (distance < 0.25) && (relativeSpeed > 1.0);
+    });
+</script>
+
+The speed is too great for them to have time to stick together.
+
+Let's add some more particles! (hold _c_ on the keyboard and use the mouse)
+
+<script>
+    continueWhen(function () {
+        return (interactionSim.particles.length > 20);  
+    });
+</script>
+
+They group together and form a larger shape, a _solid_, if you will.
+
+Try moving the solid around.
+
+<script>
+    continueWhen(function () {
+        return (ensembleSpeed(interactionSim.particles) > 0.15); 
+    });
+</script>
+
+The particles collectively behave like the macroscopic objects we are used to, moving and rotating as a unit.
+
+So far, we've have had friction, but there is no friction in the microscopic world.
+
+<script>
+    createSliderHere({
+        object: interactionSim.parameters,
+        name: "friction",
+        min: 0, max: 0.1,
+        minLabel: "None", maxLabel: "Some",
+    });
+
+    continueWhen(function () {
+        return (interactionSim.parameters.friction == 0);
+    });
+</script>
+
+Now, the particles are constantly jiggling, meaning the system has a certain amount of heat.
+
+Let's try amplifying the speed of each particle, in turn increasing the jiggling.
+
+The random jiggling kicks the particles out of their positions, and what was a neat shape becomes something less ordered and more random. We have melted the _solid_ into a _liquid_.
+
+If we increase the temperature (and thus the jiggling) even further, the speed is to great to keep the particles together, and they start bouncing around randomly. The heat of the system is too high for the attraction to matter much, and we've vaporized our _liquid_ into _gas_.
 </div>
 <div class="twoColumn">
 <script>
@@ -169,26 +151,8 @@ We know that we can think of atoms as tiny billiard balls bouncing around endles
 </script>
 </div>
 
-
-<steplog>
-The random jiggling kicks the particles out of their positions, and what was a neat shape becomes something less ordered and more random. We have melted the _solid_ into a _liquid_.
-
-If we increase the temperature (and thus the jiggling) even further, the speed is to great to keep the particles together, and they start bouncing around randomly. The heat of the system is too high for the attraction to matter much, and we've vaporized our _liquid_ into _gas_.
-
 <script>
-    continueWhen(function () {
-        // the condition    
-    });
-
-    thenDoThis(function () {
-        // setup for next
-    });
-    document.currentScript.previousSibling.previousSibling.style = "color: red;";
+    initStepLogs();
 </script>
-</steplog>
 
-jlfsadjklafsd
 
-<script>console.log("another test");</script>
-
-kldsfajfdskalj
