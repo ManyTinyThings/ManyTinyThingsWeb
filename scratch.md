@@ -65,3 +65,30 @@ $$
 * Have to balance unguided exploration and guided explanation. The goal is to not have the user get lost, but also to have them trying things out because they want to. Can't have only "do this, do that", with no agency on the users part.
 * With interactivity, animation becomes important. It draws the eye to important things, and helps the user not get lost. New content popping in from nowhere is quite disorienting.
 * Steps vs pages vs free scrolling. Balance between freedom of exploration (like reading a book), and making sure user is following with small challenges (like a game).
+
+# Implementation
+
+* Browser/Javascript
+	* Because of ease of distribution and standardized, works everywhere.
+	* Not great for performance
+		* Interpreted (with JIT)
+		* Memory management
+	* Possibility of WebAssembly, asm.js and emscripten
+* Drawing
+	* Canvas
+	* WebGL
+* Authoring
+	* Separate the interactive things from this particular model
+	* Simple way of adding interactive elements to html text
+	* Simple way to make interactive steps with conditions
+	* Made simple plotting library
+* Model
+	* Integrator
+	* Potentials
+	* Collision
+	* Periodicity
+	* Brownian noise
+		* symplectic stuff
+	* Measurements
+		* Formulae
+		* Per particle, to measure different areas or groups
