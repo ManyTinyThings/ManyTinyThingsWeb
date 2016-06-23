@@ -1,9 +1,5 @@
 # Interactions / States of matter
 
-## Micro &rarr;
-
-We know that we can think of atoms as tiny billiard balls bouncing around endlessly. But bouncing isn't the only way particles interact.
-
 <script>
 
     function oppositeCorners(simulation)
@@ -18,7 +14,7 @@ We know that we can think of atoms as tiny billiard balls bouncing around endles
     }
 
     var interactionSim = createSimulation({
-        width: 500,
+        width: 400,
         height: 400,
         initialize: function(simulation) {
 
@@ -51,7 +47,7 @@ We know that we can think of atoms as tiny billiard balls bouncing around endles
         return ensembleSpeed;
     }
 
-    createSlidesHere([
+    var interactionStepLog = createStepLog([
         {
             text: ["Try moving these particles closer to each other."], 
             nextCondition: function () {
@@ -61,7 +57,11 @@ We know that we can think of atoms as tiny billiard balls bouncing around endles
         },
         {
             text: [
-                "They seem to like each other! As they come closer, they attract and snap together.", 
+                "They seem to like each other! As they come closer, they attract and snap together."
+            ],
+        },
+        {
+            text: [
                 "Can you get them to let go?",
                 ],
             nextCondition: function () {
@@ -72,6 +72,10 @@ We know that we can think of atoms as tiny billiard balls bouncing around endles
         {
             text: [
                 "It takes some effort!",
+            ],
+        },
+        {
+            text: [
                 "What happens if you collide them at high speed?",
             ],
             // setup: function () {
@@ -87,20 +91,28 @@ We know that we can think of atoms as tiny billiard balls bouncing around endles
         },
         {
             text: [
-                "The speed is too great for them to have time to stick together.",
+            "The speed is too great for them to have time to stick together.",
+            ],
+        },
+        {
+            text: [
                 "Let's add some more particles! (hold _c_ on the keyboard and use the mouse)",
             ],
             nextCondition: function () {
-                return (interactionSim.particles.length > 30);
+                return (interactionSim.particles.length > 20);
             }
         },
         {
             text: [
                 "They group together and form a larger shape, a _solid_, if you will.",
+            ]
+        },
+        {
+            text: [
                 "Try pulling carefully at it.",
             ],
             nextCondition: function () {
-                return (ensembleSpeed(interactionSim.particles) > 0.08);
+                return (ensembleSpeed(interactionSim.particles) > 0.15);
             }
         },
         {
@@ -131,38 +143,52 @@ We know that we can think of atoms as tiny billiard balls bouncing around endles
     insertHere(createOutput({
         label: "distance: ",
         update: function () {
-            return v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
+            var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
+            return distance.toFixed(2);
         }
     }));
     insertHere(createOutput({
         label: "average speed: ",
         update: function () {
-            return ensembleSpeed(interactionSim.particles);
+            var speed = ensembleSpeed(interactionSim.particles);
+            return speed.toFixed(2);
         }
     }));
 </script>
 
+We know that we can think of atoms as tiny billiard balls bouncing around endlessly. But bouncing isn't the only way particles interact.
+
+<div class="twoColumn">
+<script>
+    insertHere(interactionStepLog.div);
+</script>
+</div>
+<div class="twoColumn">
+<script>
+    insertHere(interactionSim.div);
+</script>
+</div>
 
 
-## &rarr; Macro
-
-
-
-
-
-
-
-
-## ~~Friction~~
-
-
-
-
-
-
-
-
-
+<steplog>
 The random jiggling kicks the particles out of their positions, and what was a neat shape becomes something less ordered and more random. We have melted the _solid_ into a _liquid_.
 
 If we increase the temperature (and thus the jiggling) even further, the speed is to great to keep the particles together, and they start bouncing around randomly. The heat of the system is too high for the attraction to matter much, and we've vaporized our _liquid_ into _gas_.
+
+<script>
+    continueWhen(function () {
+        // the condition    
+    });
+
+    thenDoThis(function () {
+        // setup for next
+    });
+    document.currentScript.previousSibling.previousSibling.style = "color: red;";
+</script>
+</steplog>
+
+jlfsadjklafsd
+
+<script>console.log("another test");</script>
+
+kldsfajfdskalj

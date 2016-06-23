@@ -395,66 +395,89 @@ function createButton(opts)
 
 // ! Interactive Slides
 
-function createSlidesHere(steps)
+function createStepLogHere(steps)
 {
-    var slideDeck = createSlideDeck(steps);
-    insertHere(slideDeck.div);
+    var stepLog = createStepLog(steps);
+    insertHere(stepLog.div);
 }
 
-function createSlideDeck(steps)
+function createStepLog(steps)
 {
-    var slideDeck = {};
+    var stepLog = {};
 
-    slideDeck.div = createElement("div");
-    slideDeck.div.className = "slideDeck";
-    slideDeck.steps = steps;
-    slideDeck.currentStepIndex = 0;
-    slideDeck.furthestStepIndex = 0;
-    changeSlide(slideDeck, 0);
+    stepLog.div = createElement("div");
+    stepLog.ul = createAndAppend("ul", stepLog.div);
+    stepLog.div.className = "stepLog";
+    stepLog.currentStepIndex = 0;
+    stepLog.steps = steps;
+    stepLog.stepLis = [];
+
+    for (var stepIndex = 0; stepIndex < stepLog.steps.length; stepIndex++)
+    {
+        var step = stepLog.steps[stepIndex];
+
+        var stepLi = createAndAppend("li", stepLog.ul);
+        if (step.nextCondition)
+        {
+            stepLi.className = "incomplete";
+        }
+
+
+        for (var subElementIndex = 0; subElementIndex < step.text.length; subElementIndex++)
+        {
+            var subElement = step.text[subElementIndex];
+            if (typeof subElement == "string")
+            {
+                var string = subElement;
+                subElement = document.createElement("p");
+                subElement.innerHTML = string;
+            }
+            stepLi.insertAdjacentElement("beforeEnd", subElement);
+        }
+
+        stepLog.stepLis.push(stepLi);
+        hideElement(stepLi);
+    }
+    changeStep(stepLog, 0);
 
     var updater = function()
     {
-        if (slideDeck.currentStepIndex == slideDeck.furthestStepIndex)
+        var currentStep = stepLog.steps[stepLog.currentStepIndex];
+        if (currentStep.nextCondition)
         {
-            var currentStep = slideDeck.steps[slideDeck.currentStepIndex];
-            if (currentStep.nextCondition && currentStep.nextCondition())
+            if (currentStep.nextCondition())
             {
-                slideDeck.currentStepIndex += 1;
-                slideDeck.furthestStepIndex += 1;
-                changeSlide(slideDeck, slideDeck.currentStepIndex);
+                var stepLi = stepLog.stepLis[stepLog.currentStepIndex];
+                stepLi.className = "complete";
+                solvedSound.play();
+
+                stepLog.currentStepIndex += 1;
+                changeStep(stepLog, stepLog.currentStepIndex);
             }
+        }
+        else
+        {
+            stepLog.currentStepIndex += 1;
+            changeStep(stepLog, stepLog.currentStepIndex);
         }
         window.requestAnimationFrame(updater);
     }
 
     updater();
 
-    return slideDeck;
+    return stepLog;
 }
 
-function changeSlide(slideDeck, slideIndex)
+function changeStep(stepLog, stepIndex)
 {
-    var step = slideDeck.steps[slideIndex];
-    // TODO: this is probably not the right way to do this
-    slideDeck.div.innerHTML = "";
-    for (var subElementIndex = 0; subElementIndex < step.text.length; subElementIndex++)
-    {
-        var subElement = step.text[subElementIndex];
-        if (typeof subElement == "string")
-        {
-            var string = subElement;
-            subElement = document.createElement("p");
-            subElement.innerHTML = string;
-        }
-        slideDeck.div.insertAdjacentElement("beforeEnd", subElement);
-    }
+    var step = stepLog.steps[stepIndex];
+    var stepLi = stepLog.stepLis[stepIndex]
+    showElement(stepLi);
 
     if (step.setup)
     {
         step.setup();
     }
-
-    // TODO: next- and previous-buttons
 }
 
 function createOutput(opts)
@@ -859,6 +882,9 @@ function withAlpha(color, alpha)
 var tau = 2 * Math.PI;
 
 var bonkSound = new Audio("../assets/bonk.wav");
+var solvedSound = new Audio("../assets/solved.wav");
+
+solvedSound.volume = 0.5;
 
 // ! Shapes
 
@@ -1323,6 +1349,13 @@ function pickParticle(simulation, pickPosition, extraRadius)
     return -1;
 }
 
+function createSimulationHere(opts)
+{
+    var simulation = createSimulation(opts);
+    insertHere(simulation.div);
+    return simulation;
+}
+
 function createSimulation(opts)
 {
     var simulation = {
@@ -1331,7 +1364,7 @@ function createSimulation(opts)
         initialize: opts.initialize,
     };
 
-    simulation.div = createElementHere("div");
+    simulation.div = createElement("div");
     simulation.div.setAttribute("class", "simulation");
 
     simulation.canvas = createAndAppend("canvas", simulation.div);
@@ -1407,7 +1440,6 @@ function resetSimulation(simulation)
 
     copyObject(simulation, newSimulation);
 
-    simulation.radiusScaling = simulation.parameters.radiusScaling;
 
     // ! boxes
 
@@ -1606,6 +1638,8 @@ function resetSimulation(simulation)
         simulation.parameters.dt = simulation.parameters.simulationTimePerSecond / 60;
         simulation.parameters.isParticleParticleCollisionEnabled = true;
     }
+
+    simulation.radiusScaling = simulation.parameters.radiusScaling;
 
     // ! Start simulation
 
