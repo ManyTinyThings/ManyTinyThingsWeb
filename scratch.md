@@ -56,3 +56,12 @@ $$
 	v_1' = v_1 - \frac{(1 + C_R)m_2}{m_1 + m_2} v_n \\
 	v_2' = v_2 + \frac{(1 + C_R)m_1}{m_1 + m_2} v_n
 $$
+
+
+# Interactivity
+
+* Without any gating or feedback, the user would easily miss interacting with the model and only read the text.
+* Too much gating becomes grating? Balance between checking if user is following and annoying the user?
+* Have to balance unguided exploration and guided explanation. The goal is to not have the user get lost, but also to have them trying things out because they want to. Can't have only "do this, do that", with no agency on the users part.
+* With interactivity, animation becomes important. It draws the eye to important things, and helps the user not get lost. New content popping in from nowhere is quite disorienting.
+* Steps vs pages vs free scrolling. Balance between freedom of exploration (like reading a book), and making sure user is following with small challenges (like a game).
