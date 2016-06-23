@@ -200,6 +200,11 @@ v2.quadrance = function(a, b)
     return (dx * dx + dy * dy);
 }
 
+v2.distance = function(a, b)
+{
+    return Math.sqrt(v2.quadrance(a, b));
+}
+
 // ! Generally useful
 
 function combineWithDefaults(opts, defaults)
@@ -272,13 +277,20 @@ function createAndAppend(elementType, parent)
     return element;
 }
 
-
+function createElement(type)
+{
+    return document.createElement(type);
+}
 
 function createElementHere(type)
 {
-    var element = document.createElement(type);
+    return insertHere(createElement(type));
+}
+
+function insertHere(element)
+{
     document.currentScript.insertAdjacentElement("beforeBegin", element);
-    return element;
+    return element
 }
 
 function hideElement(element)
@@ -293,7 +305,7 @@ function showElement(element)
 
 // ! Controls
 
-function createSliderHere(opts)
+function createSlider(opts)
 {
     combineWithDefaults(opts,
     {
@@ -306,7 +318,7 @@ function createSliderHere(opts)
 
     // set up elements
 
-    var p = createElementHere("p");
+    var p = createElement("p");
     p.appendChild(document.createTextNode(opts.minLabel));
     var slider = createAndAppend("input", p);
     p.appendChild(document.createTextNode(opts.maxLabel));
@@ -322,7 +334,7 @@ function createSliderHere(opts)
 
     // set up callbacks
 
-    slider.addEventListener("mousemove", function()
+    slider.addEventListener("input", function()
     {
         opts.object[opts.name] = Number(this.value);
     });
@@ -343,11 +355,14 @@ function createSliderHere(opts)
     }
 
     updater();
+
+    return p;
 }
 
-function createCheckboxHere(opts)
+
+function createCheckbox(opts)
 {
-    var label = createElementHere("label");
+    var label = createElement("label");
     var checkbox = createAndAppend("input", label);
     checkbox.setAttribute("type", "checkbox");
     checkbox.checked = opts.object[opts.name];
@@ -365,65 +380,114 @@ function createCheckboxHere(opts)
     }
 
     updater();
+
+    return label;
 }
 
-function createButtonHere(opts)
+function createButton(opts)
 {
-    var button = createElementHere("input");
+    var button = createElement("input");
     button.setAttribute("type", "button");
     button.setAttribute("value", opts.label);
     button.addEventListener("click", opts.action);
+    return button;
 }
 
 // ! Interactive Slides
 
+function createSlidesHere(steps)
+{
+    var slideDeck = createSlideDeck(steps);
+    insertHere(slideDeck.div);
+}
 
-function createSlidesHere(slides)
+function createSlideDeck(steps)
 {
     var slideDeck = {};
 
-    slideDeck.div = createElementHere("div");
+    slideDeck.div = createElement("div");
     slideDeck.div.className = "slideDeck";
-    slideDeck.slides = slides;
-    slideDeck.currentSlideIndex = 0;
-    slideDeck.furthestSlideIndex = 0;
+    slideDeck.steps = steps;
+    slideDeck.currentStepIndex = 0;
+    slideDeck.furthestStepIndex = 0;
     changeSlide(slideDeck, 0);
 
     var updater = function()
     {
-        if (slideDeck.currentSlideIndex == slideDeck.furthestSlideIndex)
+        if (slideDeck.currentStepIndex == slideDeck.furthestStepIndex)
         {
-            var currentSlide = slideDeck.slides[slideDeck.currentSlideIndex];
-            if (currentSlide.nextCondition && currentSlide.nextCondition())
+            var currentStep = slideDeck.steps[slideDeck.currentStepIndex];
+            if (currentStep.nextCondition && currentStep.nextCondition())
             {
-                slideDeck.currentSlideIndex += 1;
-                slideDeck.furthestSlideIndex += 1;
-                changeSlide(slideDeck, slideDeck.currentSlideIndex);
+                slideDeck.currentStepIndex += 1;
+                slideDeck.furthestStepIndex += 1;
+                changeSlide(slideDeck, slideDeck.currentStepIndex);
             }
         }
         window.requestAnimationFrame(updater);
     }
 
     updater();
+
+    return slideDeck;
 }
 
 function changeSlide(slideDeck, slideIndex)
 {
-    var slide = slideDeck.slides[slideIndex];
-    slideDeck.div.innerHTML = slide.text;
+    var step = slideDeck.steps[slideIndex];
+    // TODO: this is probably not the right way to do this
+    slideDeck.div.innerHTML = "";
+    for (var subElementIndex = 0; subElementIndex < step.text.length; subElementIndex++)
+    {
+        var subElement = step.text[subElementIndex];
+        if (typeof subElement == "string")
+        {
+            var string = subElement;
+            subElement = document.createElement("p");
+            subElement.innerHTML = string;
+        }
+        slideDeck.div.insertAdjacentElement("beforeEnd", subElement);
+    }
 
-
+    if (step.setup)
+    {
+        step.setup();
+    }
 
     // TODO: next- and previous-buttons
+}
+
+function createOutput(opts)
+{
+    var p = createElement("p");
+    p.insertAdjacentText("afterbegin", opts.label || "");
+    var output = createAndAppend("output", p);
+
+    var updater = function()
+    {
+        output.value = opts.update();
+        window.requestAnimationFrame(updater);
+    }
+
+    updater();
+
+    return p;
 }
 
 // ! Graphs/Plots
 
 function createGraphHere(opts)
 {
+    var graph = createGraph(opts);
+    here(graph.div);
+    return graph;
+}
+
+function createGraph(opts)
+{
     var graph = {};
 
-    graph.div = createElementHere("div");
+    graph.div = createElement("div");
     if (opts.label)
     {
         graph.div.innerHTML = opts.label;
@@ -1113,6 +1177,7 @@ function addParticle(simulation, particle)
     var inside = doesRectContainPoint(simulation.boxBounds, particle.position);
     if (inside)
     {
+        particle.radius *= simulation.parameters.radiusScaling;
         simulation.particles.push(particle);
     }
 }
@@ -1335,14 +1400,14 @@ function resetSimulation(simulation)
         previousTimestamp: 0,
         timeLeftToSimulate: 0,
         isFirstFrameAfterPause: true,
-
-        radiusScaling: 1,
     };
 
     simulation.particles = [];
     simulation.interactions = [];
 
     copyObject(simulation, newSimulation);
+
+    simulation.radiusScaling = simulation.parameters.radiusScaling;
 
     // ! boxes
 
@@ -1674,7 +1739,9 @@ var updateSimulation = function()
 
             if ((simulation.mouse.mode == "createParticles") && (!isCloseToParticle))
             {
-                addParticle(simulation, simulation.mouse.worldPosition);
+                var particle = new Particle();
+                particle.position = simulation.mouse.worldPosition;
+                addParticle(simulation, particle);
             }
             else if (simulation.mouse.mode == "destroyParticles")
             {
