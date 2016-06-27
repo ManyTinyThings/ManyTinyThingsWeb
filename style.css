@@ -1,3 +1,5 @@
+@charset "UTF-8";
+
 body {
     width: 820px;
     margin: 10px auto;
@@ -58,8 +60,37 @@ canvas:active {
     float: left;
 }
 
-.two_column {
+.twoColumn {
     width: 400px;
     display: inline-block;
     margin-right: 5px;
+    vertical-align: top;
+}
+
+.stepLog {
+    position: relative;
+}
+
+.stepLog p {
+    margin-top: 0;
+    margin-bottom: 1em;
+}
+
+.stepLog > * {
+    opacity: 0;
+    transition: opacity 1s;
+}
+
+.incomplete:before {
+    content: "☐";
+    position: absolute;
+    left: -1.5em;
+    font-size: 1.5em;
+}
+
+.complete:before {
+    content: "☑";
+    position: absolute;
+    left: -1.5em;
+    font-size: 1.5em;
 }

@@ -10,10 +10,27 @@
 </head>
 <body>
 <h1>Testing in progress!</h1>
-<div class=two_column>
+<script>
+    createGraphHere({
+        update: function (graph)
+        {
+            var xs = [];
+            var ys = [];
+            var count = 100;
+            for (var i = 0; i < count; i++) {
+                var x = lerp(0, i / count, 1);
+                xs.push(x);
+                ys.push(x*x);
+            }
+            addCurve(graph, {x: xs, y: ys});
+            addAxes(graph, {});
+        }
+    })
+</script>
+<div class="twoColumn">
     <script>
-        var sim = createSimulation({
-            width: 500,
+        var sim = createSimulationHere({
+            width: 400,
             height: 400,
             initialize: function(simulation) {
 
@@ -58,43 +75,44 @@
                 // );
             }
         });
-        createButtonHere({
+        insertHere(createButton({
             label: "Reset",
             action: function() { resetSimulation(sim) },
-        });
+        }));
     </script>
-
+</div>
+<div class="twoColumn">
     <script>
         createGraphHere({
             update: function (graph)
             {
                 addCurve(graph, {x: sim.times, y: sim.measurementRegions[0].measurements.energy});
-                drawGraph(graph);
+                addAxes(graph, {x: sim.times[0], y: 0});
             }
         })
     </script>
-
+</div>
     <p>
     Here is some text and a slider
     </p>
     <p>
     Friction: <br><script>
-        createSliderHere({
+        insertHere(createSlider({
             object: sim.parameters,
             name: "friction",
             min: 0, max: 1,
             minLabel: "None", maxLabel: "A lot",
-        });
+        }));
     </script>
     </p>
     and some more text and a checkbox
     <p>
     <script>
-        createCheckboxHere({
+        insertHere(createCheckbox({
             object: sim,
             name: "pausedByUser",
             label: "paused",
-        });
+        }));
     </script>
     </p>
     </p>

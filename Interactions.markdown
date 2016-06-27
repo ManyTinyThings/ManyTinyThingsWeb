@@ -46,22 +46,6 @@
         v2.free(totalVelocity);
         return ensembleSpeed;
     }
-
-
-    insertHere(createOutput({
-        label: "distance: ",
-        update: function () {
-            var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
-            return distance.toFixed(2);
-        }
-    }));
-    insertHere(createOutput({
-        label: "average speed: ",
-        update: function () {
-            var speed = ensembleSpeed(interactionSim.particles);
-            return speed.toFixed(2);
-        }
-    }));
 </script>
 
 We know that we can think of atoms as tiny billiard balls bouncing around endlessly. But bouncing isn't the only way particles interact.
@@ -70,9 +54,11 @@ We know that we can think of atoms as tiny billiard balls bouncing around endles
 Try moving these particles closer to each other.
 
 <script>
-    continueWhen(function () {
-        var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
-        return (distance < 0.35);   
+    cue({
+        condition: function () {
+            var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
+            return (distance < 0.35);   
+        }
     });
 </script>
 
@@ -81,9 +67,11 @@ They seem to like each other! As they come closer, they attract and snap togethe
 Can you get them to let go?
 
 <script>
-    continueWhen(function () {
-        var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
-        return (distance > 0.7);
+    cue({
+        condition: function () {
+            var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
+            return (distance > 0.7);
+        }
     });
 </script>
 
@@ -92,11 +80,13 @@ It takes some effort!
 What happens if you collide them at high speed?
 
 <script>
-    continueWhen(function () {
-        var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
-        // TODO: speed along normal instead
-        var relativeSpeed = v2.distance(interactionSim.particles[0].velocity, interactionSim.particles[1].velocity);
-        return (distance < 0.25) && (relativeSpeed > 1.0);
+    cue({
+        condition: function () {
+            var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
+            // TODO: speed along normal instead
+            var relativeSpeed = v2.distance(interactionSim.particles[0].velocity, interactionSim.particles[1].velocity);
+            return (distance < 0.25) && (relativeSpeed > 1.0);
+        }
     });
 </script>
 
@@ -105,8 +95,10 @@ The speed is too great for them to have time to stick together.
 Let's add some more particles! (hold _c_ on the keyboard and use the mouse)
 
 <script>
-    continueWhen(function () {
-        return (interactionSim.particles.length > 20);  
+    cue({
+        condition: function () {
+            return (interactionSim.particles.length > 20);  
+        }
     });
 </script>
 
@@ -115,8 +107,10 @@ They group together and form a larger shape, a _solid_, if you will.
 Try moving the solid around.
 
 <script>
-    continueWhen(function () {
-        return (ensembleSpeed(interactionSim.particles) > 0.15); 
+    cue({
+        condition: function () {
+            return (ensembleSpeed(interactionSim.particles) > 0.15); 
+        }
     });
 </script>
 
@@ -132,8 +126,10 @@ So far, we've have had friction, but there is no friction in the microscopic wor
         minLabel: "None", maxLabel: "Some",
     });
 
-    continueWhen(function () {
-        return (interactionSim.parameters.friction == 0);
+    cue({
+        condition: function () {
+            return (interactionSim.parameters.friction == 0);
+        }
     });
 </script>
 
@@ -148,6 +144,21 @@ If we increase the temperature (and thus the jiggling) even further, the speed i
 <div class="twoColumn">
 <script>
     insertHere(interactionSim.div);
+
+    insertHere(createOutput({
+        label: "distance: ",
+        update: function () {
+            var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
+            return distance.toFixed(2);
+        }
+    }));
+    insertHere(createOutput({
+        label: "average speed: ",
+        update: function () {
+            var speed = ensembleSpeed(interactionSim.particles);
+            return speed.toFixed(2);
+        }
+    }));
 </script>
 </div>
 

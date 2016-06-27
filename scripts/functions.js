@@ -418,14 +418,17 @@ function initStepLogs()
         for (var childIndex = 0; childIndex < stepLogElement.children.length; childIndex++)
         {
             var child = stepLogElement.children[childIndex];
-            if (child.tagName == "SCRIPT")
+            if (child.cue)
             {
                 arrayLast(step.elements).className = "incomplete";
-                step.cue = child.cue;
+                step.cueCondition = child.cue.condition;
+
+                // TODO: delay
 
                 step = {
                     elements: [],
-                    setup: child.setup,
+                    setup: child.cue.setup,
+                    delay: child.cue.delay || 1, // seconds
                 };
                 stepLog.steps.push(step);
             }
@@ -433,61 +436,67 @@ function initStepLogs()
             {
                 step.elements.push(child);
             }
-            hideElement(child);
         }
-        changeStep(stepLog, 0);
+        var firstStep = stepLog.steps[0];
+        firstStep.isActive = true;
+        for (var elementIndex = 0; elementIndex < firstStep.elements.length; elementIndex++)
+        {
+            var element = firstStep.elements[elementIndex];
+            element.style.opacity = 1;
+        }
 
-        var updater = function()
+        stepLog.updater = function()
         {
             var currentStep = stepLog.steps[stepLog.currentStepIndex];
-            if (currentStep.cue)
+            if (currentStep.isActive && currentStep.cueCondition && currentStep.cueCondition())
             {
-                if (currentStep.cue())
+                if ((stepLog.currentStepIndex + 1) >= stepLog.steps.length)
                 {
-                    var steps = stepLog.steps[stepLog.currentStepIndex];
-                    arrayLast(steps.elements).className = "complete";
-                    solvedSound.play();
+                    // indicate that we're done?
+                    return;
+                }
 
-                    stepLog.currentStepIndex += 1;
-                    changeStep(stepLog, stepLog.currentStepIndex);
+                var currentStep = stepLog.steps[stepLog.currentStepIndex];
+                arrayLast(currentStep.elements).className = "complete";
+                solvedSound.play();
+
+                stepLog.currentStepIndex += 1;
+                var nextStep = stepLog.steps[stepLog.currentStepIndex];
+                for (var elementIndex = 0; elementIndex < nextStep.elements.length; elementIndex++)
+                {
+                    var element = nextStep.elements[elementIndex];
+                    element.style.opacity = 1;
+                }
+
+                if (nextStep.delay > 0)
+                {
+                    nextStep.isActive = false;
+                    window.setTimeout(function()
+                    {
+                        nextStep.isActive = true;
+                    }, nextStep.delay * 1000);
+                }
+                else
+                {
+                    nextStep.isActive = true;
                 }
             }
-            else
-            {
-                stepLog.currentStepIndex += 1;
-                changeStep(stepLog, stepLog.currentStepIndex);
-            }
-            window.requestAnimationFrame(updater);
+            window.requestAnimationFrame(stepLog.updater);
         }
 
-        updater();
+        stepLog.updater();
     }
 }
 
-
-function changeStep(stepLog, stepIndex)
+function advanceStepLog(stepLog)
 {
-    var step = stepLog.steps[stepIndex];
-    for (var elementIndex = 0; elementIndex < step.elements.length; elementIndex++)
-    {
-        showElement(step.elements[elementIndex]);
-    }
 
-    if (step.setup)
-    {
-        step.setup();
-    }
 }
 
 // TODO: maybe add to previous element, to work with createdHere elements
-function continueWhen(cue)
+function cue(opts)
 {
-    document.currentScript.cue = cue;
-}
-
-function doThis(setup)
-{
-    document.currentScript.setup = setup;
+    document.currentScript.cue = opts;
 }
 
 function createStepLogHere(steps)
@@ -518,7 +527,7 @@ function createOutput(opts)
 function createGraphHere(opts)
 {
     var graph = createGraph(opts);
-    here(graph.div);
+    insertHere(graph.div);
     return graph;
 }
 
@@ -552,6 +561,7 @@ function createGraph(opts)
     var updater = function()
     {
         graph.update(graph);
+        drawGraph(graph);
         window.requestAnimationFrame(updater);
     }
 
@@ -560,6 +570,17 @@ function createGraph(opts)
     return graph;
 }
 
+function addAxes(graph, opts)
+{
+    combineWithDefaults(opts,
+    {
+        x: 0,
+        y: 0,
+    })
+    graph.axesEnabled = true;
+    graph.xAxis = opts.y;
+    graph.yAxis = opts.x;
+}
 
 function addCurve(graph, opts)
 {
@@ -715,6 +736,11 @@ function getLimits(graph)
         updateAutoLimits(autoLimits, bar.end, bar.value);
     }
 
+    if (graph.axesEnabled)
+    {
+        updateAutoLimits(autoLimits, graph.yAxis, graph.xAxis);
+    }
+
 
 
     var limits = {};
@@ -732,9 +758,9 @@ function getLimits(graph)
     }
 
     var paddingFactor = 0.05;
-    // TODO: maybe minimum padding?
-    var xPadding = paddingFactor * (limits.xMax - limits.xMin);
-    var yPadding = paddingFactor * (limits.yMax - limits.yMin);
+    var minimumPadding = 0.00001;
+    var xPadding = atLeast(minimumPadding, paddingFactor * (limits.xMax - limits.xMin));
+    var yPadding = atLeast(minimumPadding, paddingFactor * (limits.yMax - limits.yMin));
 
     var paddings = {
         xMin: -xPadding,
@@ -758,7 +784,7 @@ function drawGraph(graph)
 {
     if (graph.isVisible)
     {
-        var limits = getLimits(graph)
+        var limits = getLimits(graph);
 
         setLeftTopRightBottom(graph.renderer.bounds,
             limits.xMin, limits.yMax,
@@ -769,6 +795,13 @@ function drawGraph(graph)
         // Clear and draw
 
         clearRenderer(graph.renderer);
+
+        //drawArrow(graph.renderer, v2(0, 0), v2(100, 1));
+        if (graph.axesEnabled)
+        {
+            drawArrow(graph.renderer, v2(limits.xMin, graph.xAxis), v2(limits.xMax, graph.xAxis));
+            drawArrow(graph.renderer, v2(graph.yAxis, limits.yMin), v2(graph.yAxis, limits.yMax));
+        }
 
         for (var curveIndex = 0; curveIndex < graph.curves.length; curveIndex++)
         {
@@ -791,6 +824,67 @@ function drawGraph(graph)
 
     graph.curves.length = 0;
     graph.bars.length = 0;
+}
+
+// ! Time logs
+
+function createTimeLog(opts)
+{
+    var timeLog = {
+        range: 1,
+        time: [],
+        data:
+        {},
+    };
+
+    copyObject(timeLog, opts);
+
+    return timeLog;
+}
+
+function addToLog(timeLog, time, data)
+{
+    var tooOldCount = -1;
+    while ((time - timeLog.time[++tooOldCount]) > timeLog.range)
+    {};
+    timeLog.time.splice(0, tooOldCount);
+    for (var key in timeLog.data)
+    {
+        timeLog.data[key].splice(0, tooOldCount);
+    }
+
+    timeLog.time.push(time);
+    for (var key in data)
+    {
+        if (timeLog.data[key])
+        {
+            timeLog.data[key].push(data[key]);
+        }
+        else
+        {
+            timeLog.data[key] = [data[key]];
+        }
+    }
+}
+
+function smoothLast(data, opts)
+{
+    var options = {
+        smoothingWindowSize: data.length,
+        smoothingFactor: 0,
+    };
+    copyObject(options, opts);
+    var smoothingWindowSize = clamp(2, Math.floor(options.smoothingWindowSize), data.length);
+    var smoothingFactor = clamp(0, options.smoothingFactor, 1);
+    var cosFactor = tau / (smoothingWindowSize - 1);
+    var windowSum = 0;
+    for (var i = 0; i < smoothingWindowSize; i++)
+    {
+        var w = lerp(1, smoothingFactor, Math.cos(i * cosFactor));
+        windowSum += w * data[data.length - 1 - i];
+    }
+    var windowAverage = windowSum / smoothingWindowSize;
+    return windowAverage;
 }
 
 // ! Measurement regions
@@ -1423,7 +1517,7 @@ function resetSimulation(simulation)
 
             // measurements
             measurementWindowLength: 100,
-            measurementEnabled: false,
+            measurementEnabled: true,
 
             // forces
             velocityAmplification: 1,
@@ -2104,13 +2198,14 @@ var updateSimulation = function()
                     var particle = particles[particleIndex];
 
                     var gridRadius = 1;
-                    for (var dx = -gridRadius; dx <= gridRadius; dx++)
+                    for (var dy = -gridRadius; dy <= gridRadius; dy++)
                     {
-                        for (var dy = -gridRadius; dy <= gridRadius; dy++)
+                        var row = mod(particle.gridRow + dy, simulation.particleGrid.rowCount);
+                        var rowIndex = simulation.particleGrid.colCount * row;
+                        for (var dx = -gridRadius; dx <= gridRadius; dx++)
                         {
                             var col = mod(particle.gridCol + dx, simulation.particleGrid.colCount);
-                            var row = mod(particle.gridRow + dy, simulation.particleGrid.rowCount);
-                            var cellIndex = simulation.particleGrid.colCount * row + col;
+                            var cellIndex = rowIndex + col;
 
                             var cell = simulation.particleGrid.cells[cellIndex];
                             for (var cellIndex = 0; cellIndex < cell.length; cellIndex++)
@@ -2356,19 +2451,6 @@ var updateSimulation = function()
                     m.virialPressure.push(regionVirialPressure);
 
 
-                    var smoothingWindowSize = atMost(2, m.pressure.length);
-                    var smoothingFactor = 0;
-                    // TODO: optimize this when adding just one sample, by only computing delta from previous smoothed value
-                    var cosFactor = tau / (smoothingWindowSize - 1);
-                    var windowSum = 0;
-                    for (var i = 0; i < smoothingWindowSize; i++)
-                    {
-                        var w = lerp(1, smoothingFactor, Math.cos(i * cosFactor));
-                        windowSum += w * m.pressure[m.pressure.length - 1 - i];
-                    }
-                    var windowAverage = windowSum / smoothingWindowSize;
-                    m.smoothedPressure.push(windowAverage);
-
 
                     totalEntropy += microstateEntropy(regionCount / simulation.particles.length);
                     probabilities.push(regionArea / totalArea);
@@ -2475,9 +2557,14 @@ function atMost(a, b)
     return Math.min(a, b);
 }
 
+function clamp(a, x, b)
+{
+    return Math.max(a, Math.min(b, x));
+}
+
 function lerp(a, t, b)
 {
-    return (a + (b - a) * t);
+    return ((1 - t) * a + t * b);
 }
 
 function mod(a, b)
@@ -2624,6 +2711,15 @@ function copyRectangle(newRect, rect)
     newRect.height = rect.height;
     newRect.center = v2.clone(rect.center);
     return newRect;
+}
+
+function transformToRectFromRect(out, toRect, v, fromRect)
+{
+    var x = (v[0] - fromRect.left) / fromRect.width;
+    var y = (v[1] - fromRect.bottom) / fromRect.height;
+    out[0] = x * toRect.width + toRect.left;
+    out[1] = y * toRect.height + toRect.bottom;
+    return out;
 }
 
 function doesRectContainRect(outer, inner)

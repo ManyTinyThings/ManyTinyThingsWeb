@@ -2,19 +2,21 @@ function createRenderer(canvas)
 {
     var renderer = {
         canvas: canvas,
-        cssWidth: canvas.width,
-        cssHeight: canvas.height,
         context: canvas.getContext("2d"),
+        canvasBounds: new Rectangle(),
         bounds: new Rectangle(),
     };
 
+
     // Retina stuff
-    canvas.style.width = renderer.cssWidth + "px";
-    canvas.style.height = renderer.cssHeight + "px";
+    canvas.style.width = canvas.width + "px";
+    canvas.style.height = canvas.height + "px";
 
     var devicePixelRatio = window.devicePixelRatio || 1;
-    canvas.width = renderer.cssWidth * devicePixelRatio;
-    canvas.height = renderer.cssHeight * devicePixelRatio;
+    canvas.width = canvas.width * devicePixelRatio;
+    canvas.height = canvas.height * devicePixelRatio;
+
+    setLeftTopWidthHeight(renderer.canvasBounds, 0, 0, canvas.width, -canvas.height);
 
     return renderer;
 }
@@ -24,8 +26,8 @@ function worldFromCanvas(renderer, canvasPosition)
     var p = canvasPosition;
     var b = renderer.bounds;
     var c = renderer.canvas;
-    var worldX = b.width / renderer.cssWidth * p[0] + b.left;
-    var worldY = -b.height / renderer.cssHeight * p[1] + b.top;
+    var worldX = b.width / renderer.canvasBounds.width * p[0] + b.left;
+    var worldY = b.height / renderer.canvasBounds.height * p[1] + b.top;
     return v2(worldX, worldY);
 }
 
@@ -33,10 +35,12 @@ function updateRendererBounds(renderer)
 {
     var context = renderer.context;
     var bounds = renderer.bounds;
+    setLeftTopWidthHeight(renderer.canvasBounds, 0, 0, renderer.canvas.width, -renderer.canvas.height);
+    var w = renderer.canvasBounds.width;
+    var h = renderer.canvasBounds.height;
+
     context.setTransform(1, 0, 0, 1, 0, 0);
-    var w = renderer.canvas.width;
-    var h = renderer.canvas.height;
-    context.scale(w / bounds.width, -h / bounds.height);
+    context.scale(w / bounds.width, h / bounds.height);
     context.translate(-bounds.left, -bounds.top);
 }
 
@@ -49,20 +53,10 @@ function drawParticles(renderer, particles, isPeriodic)
         var position = particle.position;
 
         context.fillStyle = cssFromRGBA(particle.color.rgba);
-        var minScreen, maxScreen;
-        if (isPeriodic)
+        var screenRadius = isPeriodic;
+        for (var dx = -screenRadius; dx <= screenRadius; dx++)
         {
-            minScreen = -1;
-            maxScreen = 1;
-        }
-        else
-        {
-            minScreen = 0;
-            maxScreen = 0;
-        }
-        for (var dx = minScreen; dx <= maxScreen; dx++)
-        {
-            for (var dy = minScreen; dy <= maxScreen; dy++)
+            for (var dy = -screenRadius; dy <= screenRadius; dy++)
             {
                 context.beginPath();
                 var x = position[0] + renderer.bounds.width * dx;
@@ -91,30 +85,36 @@ function rotateToVector(context, v)
 
 function drawArrow(renderer, start, end)
 {
-    // TODO: make this relative to pixels, not world coordinates
-    var maxArrowheadLength = 0.1;
+    var maxArrowheadLength = 20; // pixels
+
+    var arrowStart = v2.alloc();
+    var arrowEnd = v2.alloc();
 
     var arrowVector = v2.alloc();
     var shaftEnd = v2.alloc();
 
-    v2.subtract(arrowVector, end, start);
+    transformToRectFromRect(arrowStart, renderer.canvasBounds, start, renderer.bounds);
+    transformToRectFromRect(arrowEnd, renderer.canvasBounds, end, renderer.bounds);
+
+
+    v2.subtract(arrowVector, arrowEnd, arrowStart);
     var arrowLength = v2.magnitude(arrowVector);
 
     var arrowheadLength = atMost(maxArrowheadLength, arrowLength / 2);
     var shaftLength = arrowLength - arrowheadLength;
     v2.normalize(arrowVector, arrowVector);
-    v2.scaleAndAdd(shaftEnd, start, arrowVector, shaftLength);
+    v2.scaleAndAdd(shaftEnd, arrowStart, arrowVector, shaftLength);
 
     var c = renderer.context;
-    c.beginPath();
-    c.moveTo(start[0], start[1]);
-    c.lineTo(shaftEnd[0], shaftEnd[1]);
-    screenRelativeStroke(c);
-
-
     c.save();
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.beginPath();
+    c.moveTo(arrowStart[0], arrowStart[1]);
+    c.lineTo(shaftEnd[0], shaftEnd[1]);
+    c.stroke();
+
     // rotate and move to arrow shaft
-    c.translate(end[0], end[1]);
+    c.translate(arrowEnd[0], arrowEnd[1]);
     rotateToVector(c, arrowVector);
 
     // draw arrowhead
@@ -123,12 +123,12 @@ function drawArrow(renderer, start, end)
     c.lineTo(-arrowheadLength, -arrowheadLength / 3);
     c.lineTo(-arrowheadLength, arrowheadLength / 3);
     c.closePath();
-    c.restore();
-
     c.fillStyle = cssFromRGBA(colors.black.rgba);
     c.fill();
     c.restore();
 
+    v2.free(arrowStart);
+    v2.free(arrowEnd);
     v2.free(shaftEnd);
     v2.free(arrowVector);
 }
