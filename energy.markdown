@@ -27,10 +27,10 @@ Here is a billiard ball. Try throwing it around.
 
 <script>
 	cue({
-		delay: 2,
+		confirmationDelay: 1,
 		condition: function () {
 			var speed = v2.magnitude(singleEnergySim.particles[0].velocity);
-			return (speed > 1);
+			return (speed > 0.5);
 		},
 	});
 </script>
@@ -54,9 +54,9 @@ Throw the ball around some more and see what happens in the plot.
 
 <script>
 	cue({
-		delay: 2,
+		confirmationDelay: 2,
 		condition: function () {
-			return (singleEnergySim.particles[0].kineticEnergy > 1);
+			return (singleEnergySim.particles[0].kineticEnergy > 0.5);
 		},
 	});
 </script>

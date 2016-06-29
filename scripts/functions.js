@@ -420,13 +420,16 @@ function initStepLog(stepLogElement)
         {
             arrayLast(step.elements).className = "incomplete";
             step.cueCondition = child.cue.condition;
+            step.confirmationDelay = child.cue.confirmationDelay || 0; // seconds
+            step.isCueConfirmed = false;
 
             // TODO: delay
 
             step = {
                 elements: [],
                 setup: child.cue.setup,
-                delay: child.cue.delay || 1, // seconds
+                listeningDelay: child.cue.listeningDelay || 1, // seconds
+                isListeningForCue: false,
             };
             stepLog.steps.push(step);
         }
@@ -436,7 +439,7 @@ function initStepLog(stepLogElement)
         }
     }
     var firstStep = stepLog.steps[0];
-    firstStep.isActive = true;
+    firstStep.isListeningForCue = true;
     for (var elementIndex = 0; elementIndex < firstStep.elements.length; elementIndex++)
     {
         var element = firstStep.elements[elementIndex];
@@ -446,17 +449,36 @@ function initStepLog(stepLogElement)
     stepLog.update = function()
     {
         var currentStep = stepLog.steps[stepLog.currentStepIndex];
-        if (currentStep.isActive && currentStep.cueCondition && currentStep.cueCondition())
+        if (currentStep.isListeningForCue && currentStep.cueCondition && currentStep.cueCondition())
+        {
+            currentStep.isListeningForCue = false;
+
+            if (currentStep.confirmationDelay > 0)
+            {
+                currentStep.isCueConfirmed = false;
+                window.setTimeout(function()
+                {
+                    currentStep.isCueConfirmed = true;
+                }, currentStep.confirmationDelay * 1000);
+            }
+            else
+            {
+                currentStep.isCueConfirmed = true;
+            }
+        }
+
+        if (currentStep.isCueConfirmed)
         {
             if ((stepLog.currentStepIndex + 1) >= stepLog.steps.length)
             {
-                // indicate that we're done?
                 return;
             }
 
             var currentStep = stepLog.steps[stepLog.currentStepIndex];
             arrayLast(currentStep.elements).className = "complete";
             solvedSound.play();
+
+            // new step
 
             stepLog.currentStepIndex += 1;
             var nextStep = stepLog.steps[stepLog.currentStepIndex];
@@ -466,17 +488,17 @@ function initStepLog(stepLogElement)
                 element.style.opacity = 1;
             }
 
-            if (nextStep.delay > 0)
+            if (nextStep.listeningDelay > 0)
             {
-                nextStep.isActive = false;
+                nextStep.isListeningForCue = false;
                 window.setTimeout(function()
                 {
-                    nextStep.isActive = true;
-                }, nextStep.delay * 1000);
+                    nextStep.isListeningForCue = true;
+                }, nextStep.listeningDelay * 1000);
             }
             else
             {
-                nextStep.isActive = true;
+                nextStep.isListeningForCue = true;
             }
         }
     }
@@ -518,7 +540,7 @@ function initChapter()
     {
         var currentPage = chapter.pages[chapter.currentPageIndex];
         currentPage.stepLog.update();
-        var stepLogComplete = currentPage.stepLog.currentStepIndex >= (currentPage.stepLog.steps.length - 1);
+        var stepLogComplete = (currentPage.stepLog.currentStepIndex + 1) >= currentPage.stepLog.steps.length;
         if (stepLogComplete)
         {
             if ((chapter.currentPageIndex + 1) < chapter.pages.length)
