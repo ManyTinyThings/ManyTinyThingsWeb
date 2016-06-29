@@ -400,6 +400,23 @@ function createButton(opts)
     return button;
 }
 
+function createOutput(opts)
+{
+    var p = createElement("p");
+    p.insertAdjacentText("afterbegin", opts.label || "");
+    var output = createAndAppend("output", p);
+
+    var updater = function()
+    {
+        output.value = opts.update();
+        window.requestAnimationFrame(updater);
+    }
+
+    updater();
+
+    return p;
+}
+
 // ! Interactive Slides
 
 function initStepLog(stepLogElement)
@@ -455,7 +472,6 @@ function initStepLog(stepLogElement)
 
             if (currentStep.confirmationDelay > 0)
             {
-                currentStep.isCueConfirmed = false;
                 window.setTimeout(function()
                 {
                     currentStep.isCueConfirmed = true;
@@ -490,7 +506,6 @@ function initStepLog(stepLogElement)
 
             if (nextStep.listeningDelay > 0)
             {
-                nextStep.isListeningForCue = false;
                 window.setTimeout(function()
                 {
                     nextStep.isListeningForCue = true;
@@ -563,27 +578,76 @@ function cue(opts)
     document.currentScript.cue = opts;
 }
 
-function createStepLogHere(steps)
+// ! Toolbar
+
+function createToolbar()
 {
-    var stepLog = createStepLog(steps);
-    insertHere(stepLog.div);
+    var toolbar = {
+        div: createElement("div"),
+        tools:
+        {},
+        selectedToolName: "",
+    };
+    toolbar.div.classList.add("toolbar");
+
+    document.addEventListener("keydown", function(event)
+    {
+        var downKey = String.fromCharCode(event.keyCode).toLowerCase();
+        for (var key in toolbar.tools)
+        {
+            var tool = toolbar.tools[key];
+            if (tool.key == downKey)
+            {
+                selectTool(toolbar, tool.name);
+            }
+        }
+    });
+
+    document.addEventListener("keyup", function(event)
+    {
+        var releasedKey = String.fromCharCode(event.keyCode).toLowerCase();
+    });
+
+    return toolbar;
 }
 
-function createOutput(opts)
+function addTool(toolbar, opts)
 {
-    var p = createElement("p");
-    p.insertAdjacentText("afterbegin", opts.label || "");
-    var output = createAndAppend("output", p);
-
-    var updater = function()
+    var tool = {
+        name: opts.name,
+        key: opts.key,
+        div: createAndAppend("div", toolbar.div),
+        // TODO: image
+    }
+    toolbar.tools[tool.name] = tool;
+    tool.div.classList.add("tool");
+    tool.div.innerHTML = opts.name;
+    tool.div.addEventListener("click", function()
     {
-        output.value = opts.update();
-        window.requestAnimationFrame(updater);
+        selectTool(toolbar, tool.name);
+    });
+}
+
+function selectTool(toolbar, newToolName)
+{
+    if ((!toolbar.tools.hasOwnProperty(newToolName)) || (newToolName == ""))
+    {
+        return;
     }
 
-    updater();
+    if (toolbar.selectedToolName != "")
+    {
+        var previousTool = toolbar.tools[toolbar.selectedToolName];
+        previousTool.div.classList.remove("selected");
+    }
 
-    return p;
+    toolbar.selectedToolName = newToolName;
+
+    if (newToolName != "")
+    {
+        var newTool = toolbar.tools[newToolName];
+        newTool.div.classList.add("selected");
+    }
 }
 
 // ! Graphs/Plots
@@ -1539,12 +1603,30 @@ function createSimulation(opts)
     };
 
     simulation.div = createElement("div");
-    simulation.div.setAttribute("class", "simulation");
+    simulation.div.classList.add("simulation");
 
     simulation.canvas = createAndAppend("canvas", simulation.div);
-    simulation.canvas.setAttribute("width", simulation.width);
-    simulation.canvas.setAttribute("height", simulation.height);
-    simulation.canvas.setAttribute("class", "simulation_canvas");
+    simulation.canvas.width = simulation.width;
+    simulation.canvas.height = simulation.height;
+    simulation.canvas.classList.add("simulationCanvas");
+
+    simulation.toolbar = createToolbar();
+    simulation.div.appendChild(simulation.toolbar.div);
+    addTool(simulation.toolbar,
+    {
+        name: "select",
+        key: "s"
+    });
+    addTool(simulation.toolbar,
+    {
+        name: "create",
+        key: "c",
+    });
+    addTool(simulation.toolbar,
+    {
+        name: "delete",
+        key: "d",
+    });
 
     simulation.renderer = createRenderer(simulation.canvas);
 
@@ -1701,7 +1783,7 @@ function resetSimulation(simulation)
     {
         var downKey = String.fromCharCode(event.keyCode).toLowerCase();
         simulation.downKeys.push(downKey);
-    })
+    });
 
     document.addEventListener("keyup", function(event)
     {
@@ -1710,7 +1792,7 @@ function resetSimulation(simulation)
         {
             return key != releasedKey;
         });
-    })
+    });
 
     // ! Mouse
 
@@ -1727,8 +1809,9 @@ function resetSimulation(simulation)
             down: false,
             transitionCount: 0,
         },
-        mode: "",
-        activeParticleIndex: -1,
+        mode: MouseMode.none,
+        selectedParticleIndices: [],
+        draggedParticleIndex: -1,
         billiardCue:
         {
             visible: false,
@@ -1773,6 +1856,7 @@ function resetSimulation(simulation)
 
     function pauseIfHidden(event)
     {
+        // TODO: maybe just keep one playing at a time, the one we are scrolling towards
         var divBounds = simulation.div.getBoundingClientRect();
 
         var isAboveViewport = divBounds.bottom < 0;
@@ -1827,7 +1911,14 @@ function resetSimulation(simulation)
     return simulation;
 }
 
-
+var MouseMode = Object.freeze(
+{
+    none: 0,
+    drag: 1,
+    select: 2,
+    create: 3,
+    delete: 4,
+});
 
 // ! Simulation
 
@@ -1856,16 +1947,9 @@ function drawSimulation(simulation)
         drawTrajectory(simulation.renderer, simulation.trajectory, colors.blue);
     }
 
-    var billiardCue = simulation.mouse.billiardCue;
-    if (billiardCue.visible)
+    if (simulation.mouse.mode == MouseMode.drag)
     {
-        var billiardCueTrajectory = [billiardCue.start, billiardCue.end];
-        drawTrajectory(simulation.renderer, billiardCueTrajectory, colors.black);
-    }
-
-    if (simulation.mouse.mode == "dragParticle")
-    {
-        var particle = simulation.particles[simulation.mouse.activeParticleIndex];
+        var particle = simulation.particles[simulation.mouse.draggedParticleIndex];
         if (particle)
         {
             drawArrow(simulation.renderer, particle.position, simulation.mouse.worldPosition);
@@ -1876,7 +1960,7 @@ function drawSimulation(simulation)
 
 var updateSimulation = function()
 {
-
+    // TODO: replace all of these with v2.alloc and v2.free
     var relativePosition = v2(0, 0);
     var relativeVelocity = v2(0, 0);
     var deltaVelocity = v2(0, 0);
@@ -1891,82 +1975,61 @@ var updateSimulation = function()
 
         // ! Process input
 
-        // TODO: handle periodic boundary conditions
+        // TODO: handle periodic boundary conditions in mouse input
 
         if (simulation.mouse.leftButton.transitionCount > 0)
         {
-            var billiardCue = simulation.mouse.billiardCue;
-            if ((simulation.mouse.mode === "billiardCue") && billiardCue.visible)
-            {
-                // Let go of billiardCue
-                var activeParticle = simulation.particles[simulation.mouse.activeParticleIndex]
-                v2.subtract(relativePosition, activeParticle.position, simulation.mouse.worldPosition);
-                v2.scaleAndAdd(activeParticle.velocity, activeParticle.velocity,
-                    relativePosition, billiardCue.strength);
-                billiardCue.visible = false;
-            }
-
-            simulation.mouse.mode = "";
+            simulation.mouse.mode = MouseMode.none;
         }
 
         if (simulation.mouse.leftButton.down)
         {
+            var leftButtonJustDown = (simulation.mouse.leftButton.transitionCount > 0);
+
             // TODO: make this check for the actual radius of particle added
-            var extraRadius = simulation.parameters.radiusScaling;
-            var pickedParticle = pickParticle(simulation, simulation.mouse.worldPosition, extraRadius);
-            var isCloseToParticle = (pickedParticle >= 0);
+            var extraRadius = simulation.parameters.separationFactor * simulation.parameters.radiusScaling;
+            var pickedParticleIndex = pickParticle(simulation, simulation.mouse.worldPosition, extraRadius);
+            var isCloseToParticle = (pickedParticleIndex >= 0);
 
-            var hitParticle = pickParticle(simulation, simulation.mouse.worldPosition);
-            var isOnParticle = (hitParticle >= 0);
+            var hitParticleIndex = pickParticle(simulation, simulation.mouse.worldPosition);
+            var isOnParticle = (hitParticleIndex >= 0);
 
-            if (simulation.mouse.mode === "")
+            var tool = simulation.toolbar.selectedToolName;
+            if (leftButtonJustDown)
             {
-                var latestDownKey = arrayLast(simulation.downKeys);
-                if (latestDownKey == "c")
+                simulation.mouse.mode = MouseMode[tool];
+                if (simulation.mouse.mode == MouseMode.select)
                 {
-                    simulation.mouse.mode = "createParticles";
-                }
-                else if (latestDownKey == "d")
-                {
-                    simulation.mouse.mode = "destroyParticles";
-                }
-                else if (latestDownKey == "b")
-                {
-                    if (isOnParticle)
+                    if (hitParticleIndex >= 0)
                     {
-                        simulation.mouse.mode = "billiardCue";
-                        simulation.mouse.activeParticleIndex = hitParticle;
+                        simulation.mouse.mode = MouseMode.drag;
+                        simulation.mouse.draggedParticleIndex = hitParticleIndex;
+
+                        simulation.mouse.selectedParticleIndices.length = 0;
+                        simulation.mouse.selectedParticleIndices.push(hitParticleIndex);
                     }
-                }
-                else if (isOnParticle)
-                {
-                    simulation.mouse.mode = "dragParticle";
-                    simulation.mouse.activeParticleIndex = hitParticle;
+                    else
+                    {
+                        simulation.mouse.mode = MouseMode.select;
+                        simulation.mouse.selectAnchorPoint = v2.clone(simulation.mouse.worldPosition);
+
+                        simulation.mouse.selectedParticleIndices.length = 0;
+                    }
                 }
             }
 
-            if ((simulation.mouse.mode == "createParticles") && (!isCloseToParticle))
+            if ((simulation.mouse.mode == MouseMode.create) && (!isCloseToParticle))
             {
                 var particle = new Particle();
                 particle.position = simulation.mouse.worldPosition;
                 addParticle(simulation, particle);
             }
-            else if (simulation.mouse.mode == "destroyParticles")
+            else if (simulation.mouse.mode == MouseMode.delete)
             {
-                if (hitParticle >= 0)
+                if (hitParticleIndex >= 0)
                 {
-                    removeParticle(simulation, hitParticle);
+                    removeParticle(simulation, hitParticleIndex);
                 }
-            }
-            else if (simulation.mouse.mode == "billiardCue")
-            {
-                var billiardCue = simulation.mouse.billiardCue;
-                var activeParticle = simulation.particles[simulation.mouse.activeParticleIndex]
-                v2.subtract(relativePosition, simulation.mouse.worldPosition, activeParticle.position);
-                billiardCue.visible = v2.square(relativePosition) > squared(activeParticle.radius);
-                v2.normalize(relativePosition, relativePosition);
-                v2.copy(billiardCue.start, simulation.mouse.worldPosition);
-                v2.scaleAndAdd(billiardCue.end, billiardCue.start, relativePosition, billiardCue.length);
             }
         }
 
@@ -2400,14 +2463,16 @@ var updateSimulation = function()
 
                 // ! User interaction
 
-                if (simulation.mouse.activeParticleIndex >= 0)
+                if (simulation.mouse.mode == MouseMode.drag)
                 {
-                    var particle = particles[simulation.mouse.activeParticleIndex];
-                    if (particle && (simulation.mouse.mode === "dragParticle"))
+                    var draggedParticle = particles[simulation.mouse.draggedParticleIndex];
+                    v2.subtract(relativePosition, simulation.mouse.worldPosition, draggedParticle.position);
+
+                    for (var i = 0; i < simulation.mouse.selectedParticleIndices.length; i++)
                     {
-                        // TODO: friction while dragging?
+                        var particle = particles[simulation.mouse.selectedParticleIndices[i]];
                         var dragStrength = 1;
-                        v2.subtract(relativePosition, simulation.mouse.worldPosition, particle.position);
+
                         v2.scaleAndAdd(particle.acceleration, particle.acceleration,
                             relativePosition, dragStrength / particle.mass);
                         v2.scaleAndAdd(particle.acceleration, particle.acceleration,
