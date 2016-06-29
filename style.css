@@ -76,7 +76,7 @@ canvas:active {
     margin-bottom: 1em;
 }
 
-.stepLog > * {
+.stepLog > *, .page {
     opacity: 0;
     transition: opacity 1s;
 }
