@@ -20,6 +20,8 @@ In this chapter, we learn about the important concept of _energy_, starting with
             addParticle(simulation, new Particle())
         }
     });
+
+    enableOnlyTools(singleEnergySim.toolbar, ["select"]);
 </script>
 
 <div class="stepLog twoColumn">

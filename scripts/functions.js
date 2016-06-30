@@ -244,6 +244,18 @@ function arrayLast(array)
     return array[array.length - 1];
 }
 
+function arrayContains(array, element)
+{
+    for (var i = 0; i < array.length; i++)
+    {
+        if (array[i] === element)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 function arrayMinIndex(array, f)
 {
     var minimum = Number.MAX_VALUE;
@@ -596,16 +608,11 @@ function createToolbar()
         for (var key in toolbar.tools)
         {
             var tool = toolbar.tools[key];
-            if (tool.key == downKey)
+            if ((tool.key == downKey))
             {
                 selectTool(toolbar, tool.name);
             }
         }
-    });
-
-    document.addEventListener("keyup", function(event)
-    {
-        var releasedKey = String.fromCharCode(event.keyCode).toLowerCase();
     });
 
     return toolbar;
@@ -630,7 +637,8 @@ function addTool(toolbar, opts)
 
 function selectTool(toolbar, newToolName)
 {
-    if ((!toolbar.tools.hasOwnProperty(newToolName)) || (newToolName == ""))
+    var isUnrecognizedTool = !toolbar.tools.hasOwnProperty(newToolName);
+    if (isUnrecognizedTool || (!toolbar.tools[newToolName].enabled))
     {
         return;
     }
@@ -647,6 +655,23 @@ function selectTool(toolbar, newToolName)
     {
         var newTool = toolbar.tools[newToolName];
         newTool.div.classList.add("selected");
+    }
+}
+
+function enableOnlyTools(toolbar, toolnames)
+{
+    for (var key in toolbar.tools)
+    {
+        var tool = toolbar.tools[key];
+        tool.enabled = arrayContains(toolnames, tool.name);
+        if (tool.enabled)
+        {
+            tool.div.classList.remove("disabled");
+        }
+        else
+        {
+            tool.div.classList.add("disabled");
+        }
     }
 }
 
