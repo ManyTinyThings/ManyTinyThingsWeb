@@ -449,6 +449,9 @@ function initStepLog(stepLogElement)
         {
             arrayLast(step.elements).className = "incomplete";
             step.cueCondition = child.cue.condition;
+            step.cueState = {
+                isInitalized: false
+            };
             step.confirmationDelay = child.cue.confirmationDelay || 0; // seconds
             step.isCueConfirmed = false;
 
@@ -475,10 +478,10 @@ function initStepLog(stepLogElement)
         element.style.opacity = 1;
     }
 
-    stepLog.update = function()
+    stepLog.update = function(dt)
     {
         var currentStep = stepLog.steps[stepLog.currentStepIndex];
-        if (currentStep.isListeningForCue && currentStep.cueCondition && currentStep.cueCondition())
+        if (currentStep.isListeningForCue && currentStep.cueCondition && currentStep.cueCondition(dt, currentStep.cueState))
         {
             currentStep.isListeningForCue = false;
 
@@ -565,8 +568,12 @@ function initChapter()
 
     chapter.updater = function()
     {
+        var newTimestamp = performance.now();
+        var dt = newTimestamp - chapter.timestamp;
+        chapter.timestamp = newTimestamp;
+
         var currentPage = chapter.pages[chapter.currentPageIndex];
-        currentPage.stepLog.update();
+        currentPage.stepLog.update(dt);
         var stepLogComplete = (currentPage.stepLog.currentStepIndex + 1) >= currentPage.stepLog.steps.length;
         if (stepLogComplete)
         {
@@ -580,7 +587,9 @@ function initChapter()
         window.requestAnimationFrame(chapter.updater);
     }
 
+    chapter.timestamp = performance.now();
     chapter.updater();
+
 }
 
 
@@ -651,11 +660,8 @@ function selectTool(toolbar, newToolName)
 
     toolbar.selectedToolName = newToolName;
 
-    if (newToolName != "")
-    {
-        var newTool = toolbar.tools[newToolName];
-        newTool.div.classList.add("selected");
-    }
+    var newTool = toolbar.tools[newToolName];
+    newTool.div.classList.add("selected");
 }
 
 function enableOnlyTools(toolbar, toolnames)

@@ -22,17 +22,30 @@ In this chapter, we learn about the important concept of _energy_, starting with
     });
 
     enableOnlyTools(singleEnergySim.toolbar, ["select"]);
+    selectTool(singleEnergySim.toolbar, "select");
 </script>
 
 <div class="stepLog twoColumn">
-Here is a billiard ball. Try throwing it around.
+Here is a billiard ball. Try throwing it around a few times.
 
 <script>
 	cue({
-		confirmationDelay: 1,
-		condition: function () {
+		condition: function (dt, state) {
+			if (!state.isInitialized)
+			{
+				state.isInitialized = true;
+				state.throwCount = 0;
+				state.hadHighSpeed = false;
+			}
 			var speed = v2.magnitude(singleEnergySim.particles[0].velocity);
-			return (speed > 0.5);
+			var hasHighSpeedNow = speed > 0.5;
+			if (state.hadHighSpeed && (!hasHighSpeedNow))
+			{
+				state.throwCount += 1;
+			}
+			state.hadHighSpeed = hasHighSpeedNow;
+
+			return (state.throwCount >= 3);
 		},
 	});
 </script>
@@ -96,6 +109,9 @@ When you release the ball it starts to lose energy because of the friction in th
             }
         }
     });
+
+    enableOnlyTools(totalEnergySim.toolbar, ["select"]);
+    selectTool(totalEnergySim.toolbar, "select");
 </script>
 <div class="stepLog twoColumn">
 I added some more balls. Play around with them!
