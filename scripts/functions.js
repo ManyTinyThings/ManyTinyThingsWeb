@@ -556,28 +556,78 @@ function initStepLog(stepLogElement)
 
         if (areAllCuesCompleted)
         {
-            var isLastStep = stepLog.currentStepIndex >= (stepLog.steps.length - 1);
-            if (isLastStep)
-            {
-                stepLog.isCompleted = true;
-                return;
-            }
-
-            stepLog.currentStepIndex += 1;
-            var nextStep = stepLog.steps[stepLog.currentStepIndex];
-            for (var elementIndex = 0; elementIndex < nextStep.elements.length; elementIndex++)
-            {
-                var element = nextStep.elements[elementIndex];
-                element.style.opacity = 1;
-            }
-
+            changeStep(stepLog, stepLog.currentStepIndex + 1);
         }
     }
 
     return stepLog;
 }
 
+function changeStep(stepLog, stepIndex)
+{
+    var isValidIndex = (0 <= stepIndex) && (stepIndex < stepLog.steps.length);
+    if (!isValidIndex)
+    {
+        return;
+    }
+    while (stepLog.currentStepIndex < stepIndex)
+    {
+        stepLog.currentStepIndex += 1;
+        var nextStep = stepLog.steps[stepLog.currentStepIndex];
+        for (var element of nextStep.elements)
+        {
+            element.style.opacity = 1;
+        }
+    }
 
+    while (stepLog.currentStepIndex > stepIndex)
+    {
+        var currentStep = stepLog.steps[stepLog.currentStepIndex];
+        for (var element of currentStep.elements)
+        {
+            element.style.opacity = 0;
+        }
+        stepLog.currentStepIndex -= 1;
+    }
+
+    var currentStep = stepLog.steps[stepLog.currentStepIndex];
+    for (var element of currentStep.elements)
+    {
+        element.style.opacity = 1;
+    }
+
+    stepLog.isCompleted = stepIndex == (stepLog.steps.length - 1);
+}
+
+function changePage(chapter, pageIndex)
+{
+    var isValidIndex = (0 <= pageIndex) && (pageIndex < chapter.pages.length);
+    if (!isValidIndex)
+    {
+        return;
+    }
+
+    while (chapter.currentPageIndex < pageIndex)
+    {
+        var currentPage = chapter.pages[chapter.currentPageIndex];
+        changeStep(currentPage.stepLog, currentPage.stepLog.steps.length - 1);
+        currentPage.div.style.opacity = 1;
+
+        chapter.currentPageIndex += 1;
+    }
+
+    while (chapter.currentPageIndex > pageIndex)
+    {
+        var currentPage = chapter.pages[chapter.currentPageIndex];
+        changeStep(currentPage.stepLog, 0);
+        currentPage.div.style.opacity = 0;
+
+        chapter.currentPageIndex -= 1;
+    }
+
+    var currentPage = chapter.pages[chapter.currentPageIndex];
+    currentPage.div.style.opacity = 1;
+}
 
 function initChapter()
 {
@@ -605,27 +655,31 @@ function initChapter()
         }
     }
 
-
-    // TODO: do this with anchor tags instead
-    var startPageExists = false;
-    for (var startPageIndex = 0; startPageIndex < chapter.pages.length; startPageIndex++)
+    // TODO: update the hash as we advance through the chapter
+    var updateFromHash = function()
     {
-        if (chapter.pages[startPageIndex].div.classList.contains("startPage"))
+        var hash = window.location.hash.slice(1);
+        var pageIndex, stepIndex;
+        if (hash)
         {
-            chapter.currentPageIndex = startPageIndex;
-            for (var pageIndex = 0; pageIndex <= startPageIndex; pageIndex++)
-            {
-                chapter.pages[pageIndex].div.style.opacity = 1;
-            }
-            startPageExists = true;
-            break;
+            var indices = hash.split("-");
+            pageIndex = Number(indices[0]);
+            stepIndex = Number(indices[1]);
         }
+        else
+        {
+            pageIndex = 0;
+            stepIndex = 0;
+        }
+
+        changePage(chapter, pageIndex);
+        var currentPage = chapter.pages[chapter.currentPageIndex];
+        changeStep(currentPage.stepLog, stepIndex);
     }
 
-    if (!startPageExists)
-    {
-        chapter.pages[0].div.style.opacity = 1;
-    }
+    window.addEventListener("hashchange", updateFromHash);
+
+    updateFromHash();
 
     chapter.updater = function()
     {
@@ -637,12 +691,7 @@ function initChapter()
         currentPage.stepLog.update(dtInSeconds);
         if (currentPage.stepLog.isCompleted)
         {
-            if ((chapter.currentPageIndex + 1) < chapter.pages.length)
-            {
-                chapter.currentPageIndex += 1;
-                var newPage = chapter.pages[chapter.currentPageIndex];
-                newPage.div.style.opacity = 1;
-            }
+            changePage(chapter, chapter.currentPageIndex + 1);
         }
         window.requestAnimationFrame(chapter.updater);
     }
@@ -650,6 +699,7 @@ function initChapter()
     chapter.timestamp = performance.now();
     chapter.updater();
 
+    return chapter;
 }
 
 
@@ -1763,7 +1813,7 @@ function resetSimulation(simulation)
             ljSoftness: 0,
             ljn: 6,
             ljm: 1,
-            separationFactor: 1.1,
+            separationFactor: 1.0,
             cutoffFactor: 2.5,
             onlyHardSpheres: false,
 
