@@ -123,7 +123,7 @@ function drawArrow(renderer, start, end)
     c.lineTo(-arrowheadLength, -arrowheadLength / 3);
     c.lineTo(-arrowheadLength, arrowheadLength / 3);
     c.closePath();
-    c.fillStyle = cssFromRGBA(colors.black.rgba);
+    c.fillStyle = cssFromRGBA(Color.black.rgba);
     c.fill();
     c.restore();
 

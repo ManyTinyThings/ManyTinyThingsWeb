@@ -303,7 +303,8 @@ function createElementHere(type)
 
 function insertHere(element)
 {
-    document.currentScript.insertAdjacentElement("beforeBegin", element);
+
+    document.currentScript.parentNode.insertBefore(element, document.currentScript);
     return element
 }
 
@@ -431,43 +432,84 @@ function createOutput(opts)
 
 // ! Interactive Slides
 
+
+// TODO: maybe add to previous element, to work with createdHere elements
+function cue(opts)
+{
+    if (opts.isStepEnd === undefined)
+    {
+        opts.isStepEnd = true;
+    }
+
+    document.currentScript.cue = opts;
+}
+
+function setup(setupFunction)
+{
+    document.currentScript.setup = setupFunction;
+}
+
+
+var Step = function()
+{
+    this.elements = [];
+    this.cues = [];
+    this.setup = null;
+    this.isListeningForCue = false;
+}
+
+var Cue = function()
+{
+    this.condition = null;
+    this.isCompleted = false;
+    this.element = null;
+    this.listeningDelay = 1;
+}
+
 function initStepLog(stepLogElement)
 {
     var stepLog = {};
     stepLog.div = stepLogElement;
     stepLog.currentStepIndex = 0;
     stepLog.steps = [];
+    stepLog.isCompleted = false;
 
-    var step = {
-        elements: [],
-    };
+    var step = new Step();
     stepLog.steps.push(step);
     for (var childIndex = 0; childIndex < stepLogElement.children.length; childIndex++)
     {
-        var child = stepLogElement.children[childIndex];
-        if (child.cue)
+        var stepLogChild = stepLogElement.children[childIndex];
+        var isScriptNode = false;
+        if (stepLogChild.cue)
         {
-            arrayLast(step.elements).className = "incomplete";
-            step.cueCondition = child.cue.condition;
-            step.cueState = {
-                isInitalized: false
-            };
-            step.confirmationDelay = child.cue.confirmationDelay || 0; // seconds
-            step.isCueConfirmed = false;
+            isScriptNode = true;
 
-            // TODO: delay
+            var previousChild = stepLogElement.children[childIndex - 1];
 
-            step = {
-                elements: [],
-                setup: child.cue.setup,
-                listeningDelay: child.cue.listeningDelay || 1, // seconds
-                isListeningForCue: false,
-            };
-            stepLog.steps.push(step);
+            var cue = new Cue();
+            cue.condition = stepLogChild.cue.condition;
+            cue.element = previousChild;
+            cue.element.classList.add("incomplete");
+            cue.listeningDelay = stepLogChild.cue.listeningDelay || 1; // seconds
+            step.cues.push(cue);
+
+            if (stepLogChild.cue.isStepEnd)
+            {
+                step = new Step();
+                step.setup = stepLogChild.cue.setup;
+                stepLog.steps.push(step);
+            }
         }
-        else
+
+        if (stepLogChild.setup)
         {
-            step.elements.push(child);
+            isScriptNode = true;
+            step.setup = stepLogChild.setup;
+        }
+
+        if (!isScriptNode)
+        {
+            step.elements.push(stepLogChild);
         }
     }
     var firstStep = stepLog.steps[0];
@@ -478,38 +520,48 @@ function initStepLog(stepLogElement)
         element.style.opacity = 1;
     }
 
-    stepLog.update = function(dt)
+    var timeUntilListening = 0;
+
+    stepLog.update = function(dtInSeconds)
     {
         var currentStep = stepLog.steps[stepLog.currentStepIndex];
-        if (currentStep.isListeningForCue && currentStep.cueCondition && currentStep.cueCondition(dt, currentStep.cueState))
-        {
-            currentStep.isListeningForCue = false;
 
-            if (currentStep.confirmationDelay > 0)
+        if (timeUntilListening > 0)
+        {
+            timeUntilListening -= dtInSeconds;
+            return;
+        }
+
+        var areAllCuesCompleted = true;
+        for (var cue of currentStep.cues)
+        {
+            if (cue.isCompleted)
             {
-                window.setTimeout(function()
-                {
-                    currentStep.isCueConfirmed = true;
-                }, currentStep.confirmationDelay * 1000);
+                continue;
+            }
+            else if (cue.condition(dtInSeconds))
+            {
+                cue.isCompleted = true;
+                cue.element.classList.remove("incomplete");
+                cue.element.classList.add("complete");
+                solvedSound.play();
+
+                timeUntilListening = cue.listeningDelay;
             }
             else
             {
-                currentStep.isCueConfirmed = true;
+                areAllCuesCompleted = false;
             }
         }
 
-        if (currentStep.isCueConfirmed)
+        if (areAllCuesCompleted)
         {
-            if ((stepLog.currentStepIndex + 1) >= stepLog.steps.length)
+            var isLastStep = stepLog.currentStepIndex >= (stepLog.steps.length - 1);
+            if (isLastStep)
             {
+                stepLog.isCompleted = true;
                 return;
             }
-
-            var currentStep = stepLog.steps[stepLog.currentStepIndex];
-            arrayLast(currentStep.elements).className = "complete";
-            solvedSound.play();
-
-            // new step
 
             stepLog.currentStepIndex += 1;
             var nextStep = stepLog.steps[stepLog.currentStepIndex];
@@ -519,17 +571,6 @@ function initStepLog(stepLogElement)
                 element.style.opacity = 1;
             }
 
-            if (nextStep.listeningDelay > 0)
-            {
-                window.setTimeout(function()
-                {
-                    nextStep.isListeningForCue = true;
-                }, nextStep.listeningDelay * 1000);
-            }
-            else
-            {
-                nextStep.isListeningForCue = true;
-            }
         }
     }
 
@@ -564,18 +605,37 @@ function initChapter()
         }
     }
 
-    chapter.pages[0].div.style.opacity = 1;
+
+    // TODO: do this with anchor tags instead
+    var startPageExists = false;
+    for (var startPageIndex = 0; startPageIndex < chapter.pages.length; startPageIndex++)
+    {
+        if (chapter.pages[startPageIndex].div.classList.contains("startPage"))
+        {
+            chapter.currentPageIndex = startPageIndex;
+            for (var pageIndex = 0; pageIndex <= startPageIndex; pageIndex++)
+            {
+                chapter.pages[pageIndex].div.style.opacity = 1;
+            }
+            startPageExists = true;
+            break;
+        }
+    }
+
+    if (!startPageExists)
+    {
+        chapter.pages[0].div.style.opacity = 1;
+    }
 
     chapter.updater = function()
     {
         var newTimestamp = performance.now();
-        var dt = newTimestamp - chapter.timestamp;
+        var dtInSeconds = (newTimestamp - chapter.timestamp) / 1000;
         chapter.timestamp = newTimestamp;
 
         var currentPage = chapter.pages[chapter.currentPageIndex];
-        currentPage.stepLog.update(dt);
-        var stepLogComplete = (currentPage.stepLog.currentStepIndex + 1) >= currentPage.stepLog.steps.length;
-        if (stepLogComplete)
+        currentPage.stepLog.update(dtInSeconds);
+        if (currentPage.stepLog.isCompleted)
         {
             if ((chapter.currentPageIndex + 1) < chapter.pages.length)
             {
@@ -592,12 +652,6 @@ function initChapter()
 
 }
 
-
-// TODO: maybe add to previous element, to work with createdHere elements
-function cue(opts)
-{
-    document.currentScript.cue = opts;
-}
 
 // ! Toolbar
 
@@ -717,14 +771,18 @@ function createGraph(opts)
 
     graph.update = opts.update;
     // TODO: some kind of global updater, so each thing doesn't have to have its own
-    var updater = function()
-    {
-        graph.update(graph);
-        drawGraph(graph);
-        window.requestAnimationFrame(updater);
-    }
 
-    updater();
+    if (graph.update)
+    {
+        var updater = function()
+        {
+            graph.update(graph);
+            drawGraph(graph);
+            window.requestAnimationFrame(updater);
+        }
+
+        updater();
+    }
 
     return graph;
 }
@@ -745,7 +803,7 @@ function addCurve(graph, opts)
 {
     combineWithDefaults(opts,
     {
-        color: colors.black,
+        color: Color.black,
     });
 
     var curve = {
@@ -780,7 +838,7 @@ function addHistogram(graph, opts)
             start: opts.min + i * barWidth,
             end: opts.min + (i + 1) * barWidth,
             value: 0,
-            color: colors.red,
+            color: Color.red,
         };
         bars.push(bar);
     }
@@ -1052,8 +1110,8 @@ function createMeasurementRegion()
 {
     var region = {};
     region.bounds = new Rectangle();
-    region.color = colors.black;
-    region.overlayColor = colors.transparent;
+    region.color = Color.black;
+    region.overlayColor = Color.transparent;
     region.measurements = {
         time: [],
         energy: [],
@@ -1070,24 +1128,24 @@ function setColdHotRegions(simulation)
 {
     var leftRegion = createMeasurementRegion();
     copyRectangle(leftRegion.bounds, simulation.leftRect);
-    leftRegion.color = colors.blue;
-    leftRegion.overlayColor = withAlpha(colors.blue, 0.2);
+    leftRegion.color = Color.blue;
+    leftRegion.overlayColor = withAlpha(Color.blue, 0.2);
 
     var rightRegion = createMeasurementRegion();
     copyRectangle(rightRegion.bounds, simulation.rightRect);
-    rightRegion.color = colors.red;
-    rightRegion.overlayColor = withAlpha(colors.red, 0.2);
+    rightRegion.color = Color.red;
+    rightRegion.overlayColor = withAlpha(Color.red, 0.2);
 
     simulation.measurementRegions = [leftRegion, rightRegion];
 }
 
 // ! Colors
 
-var colors = {};
+var Color = {};
 
 function addColor(color)
 {
-    colors[color.name] = color;
+    Color[color.name] = color;
 }
 
 addColor(
@@ -1208,7 +1266,7 @@ var Particle = function()
     this.pressure = 0;
     this.virial = 0;
 
-    this.color = colors.black;
+    this.color = Color.black;
     this.bounds = new Rectangle();
     this.radius = 1;
     this.mass = 1;
@@ -1351,11 +1409,11 @@ function twoColors(simulation, particleIndex)
 {
     if (particleIndex % 2 == 0)
     {
-        return colors.black;
+        return Color.black;
     }
     else
     {
-        return colors.red;
+        return Color.red;
     }
 }
 
@@ -1419,11 +1477,11 @@ function billiardsPosition(simulation, particleIndex)
     var position = v2(0, 0);
     if (particleIndex == 0)
     {
-        v2.set(position, -0.5, 0);
+        v2.set(position, -0.8, 0);
     }
     else
     {
-        v2.set(position, 0.3, 0)
+        v2.set(position, 0.2, 0)
         v2.add(position, position, triangularLatticePosition(simulation, particleIndex - 1));
     }
     return position;
@@ -1458,7 +1516,7 @@ function getInteraction(simulation, a, b)
 {
     var index = symmetricIndex(a, b);
     var interaction = simulation.interactions[index];
-    if (interaction == undefined)
+    if (interaction === undefined)
     {
         interaction = Interaction.repulsive;
     }
@@ -1672,7 +1730,7 @@ function resetSimulation(simulation)
         controls: ["resetButton"],
         visualizations: [],
         measurementRegions: [],
-        walls: undefined,
+        walls: null,
         particleGenerator: latticeParticleGenerator,
         parameters:
         {
@@ -1784,7 +1842,7 @@ function resetSimulation(simulation)
     }
 
     // ! Walls
-    if (simulation.walls == undefined)
+    if (simulation.walls === null)
     {
         simulation.walls = [];
         for (var i = 0; i < corners.length; i++)
@@ -1900,12 +1958,12 @@ function resetSimulation(simulation)
             if (simulation.requestFrameId)
             {
                 window.cancelAnimationFrame(simulation.requestFrameId);
-                simulation.requestFrameId = undefined;
+                simulation.requestFrameId = null;
             }
         }
         else
         {
-            if (!simulation.requestFrameId)
+            if (simulation.requestFrameId === null)
             {
                 simulation.isFirstFrameAfterPause = true;
                 simulation.requestFrameId = window.requestAnimationFrame(simulation.updateFunction);
@@ -1968,14 +2026,14 @@ function drawSimulation(simulation)
     {
         var wall = simulation.walls[i];
         // TODO: one drawWalls call, to reduce number of draw calls
-        drawTrajectory(simulation.renderer, wall.vertices, colors.black);
+        drawTrajectory(simulation.renderer, wall.vertices, Color.black);
     }
 
     drawParticles(simulation.renderer, simulation.particles, simulation.parameters.isPeriodic);
 
     if (simulation.parameters.trajectoryEnabled)
     {
-        drawTrajectory(simulation.renderer, simulation.trajectory, colors.blue);
+        drawTrajectory(simulation.renderer, simulation.trajectory, Color.blue);
     }
 
     if (simulation.mouse.mode == MouseMode.drag)
@@ -2999,8 +3057,8 @@ function createCollision()
         time: 0,
         normal: v2(),
         type: CollisionType.particleParticle,
-        first: undefined,
-        second: undefined,
+        first: null,
+        second: null,
     };
 }
 
@@ -3380,7 +3438,7 @@ function searchForContact(stillShape, movingShape, velocity)
     var result = {
         isOverlapping: false,
         time: Infinity,
-        normal: undefined,
+        normal: null,
     };
 
     if (v2.isZero(velocity))
@@ -3607,7 +3665,7 @@ var Quadtree = function(bounds, maxObjects, maxDepth)
 {
     this.objects = [];
     this.bounds = bounds;
-    this.subtrees = undefined;
+    this.subtrees = null;
     this.maxObjects = maxObjects || 4;
     this.maxDepth = maxDepth || 7;
 }

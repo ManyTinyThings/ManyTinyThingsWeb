@@ -13,8 +13,7 @@ In this chapter, we learn about the important concept of _energy_, starting with
 
             copyObject(simulation.parameters, {
                 radiusScaling: 0.1,
-                friction: 0.1,
-                coefficientOfRestitution: 0.7,
+                friction: 0.3,
             });
 
             addParticle(simulation, new Particle())
@@ -29,14 +28,9 @@ In this chapter, we learn about the important concept of _energy_, starting with
 Here is a billiard ball. Try throwing it around a few times.
 
 <script>
+	var state = {throwCount: 0, hadHighSpeed: false};
 	cue({
-		condition: function (dt, state) {
-			if (!state.isInitialized)
-			{
-				state.isInitialized = true;
-				state.throwCount = 0;
-				state.hadHighSpeed = false;
-			}
+		condition: function (dt) {
 			var speed = v2.magnitude(singleEnergySim.particles[0].velocity);
 			var hasHighSpeedNow = speed > 0.5;
 			if (state.hadHighSpeed && (!hasHighSpeedNow))
@@ -88,7 +82,7 @@ When you release the ball it starts to lose energy because of the friction in th
 
 
 
-<div class="page">
+<div class="page startPage">
 <script>
     var totalEnergySim = createSimulation({
         width: 400,
@@ -97,14 +91,15 @@ When you release the ball it starts to lose energy because of the friction in th
 
             copyObject(simulation.parameters, {
                 radiusScaling: 0.1,
-                friction: 0.1,
-                coefficientOfRestitution: 0.7,
+                friction: 0.3,
             });
 
             var particleCount = 11;
             for (var i = 0; i < particleCount; i++) {
             	var particle = new Particle();
             	particle.position = billiardsPosition(simulation, i);
+            	var colors = [Color.red, Color.blue, Color.green, Color.black, Color.gray, Color.yellow];
+            	particle.color = colors[i % colors.length];
             	addParticle(simulation, particle);
             }
         }
@@ -114,11 +109,10 @@ When you release the ball it starts to lose energy because of the friction in th
     selectTool(totalEnergySim.toolbar, "select");
 </script>
 <div class="stepLog twoColumn">
-I added some more balls. Play around with them!
+I added some more balls in a conspicuous pattern. You know what to do!
 
 <script>
 	cue({
-		delay: 2,
 		condition: function () {
 			var speed = v2.magnitude(totalEnergySim.particles[0].velocity);
 			return (speed > 1);
@@ -126,7 +120,9 @@ I added some more balls. Play around with them!
 	});
 </script>
 
-Here I show the total energy, which is what you get by adding up the energy of each particle.
+As the balls collide, they bounce off each other, transferring energy from one to the other.
+
+Below as a graph of the total energy, which is the energy for all particles combined. Note how the curve behaves very similarly to how it did with just one particle.
 
 <script>
 	// TODO: one color for each particle
@@ -140,6 +136,35 @@ Here I show the total energy, which is what you get by adding up the energy of e
 		}
 	});
 </script>
+
+Give the group of particles some energy and look at what happens to the energy over time.
+
+<script>
+	cue({
+		isStepEnd: false,
+		condition: function (dt, state) {
+			var speed = v2.magnitude(totalEnergySim.particles[0].velocity);
+			return (speed > 1);
+		},
+	});
+</script>
+
+Do the same with the lone particle above: give it a shove, and look at the energy graph.
+
+<script>
+	cue({
+		isStepEnd: true,
+		condition: function (dt, state) {
+			var speed = v2.magnitude(singleEnergySim.particles[0].velocity);
+			return (speed > 1);
+		},
+	});
+</script>
+
+They look the same! Let's look at it a bit closer.
+
+
+
 </div>
 <div class="twoColumn">
 <script>
@@ -167,8 +192,8 @@ Here I show the total energy, which is what you get by adding up the energy of e
 
 ## The rest
 
-Balls knocking each other around is actually a pretty good model of how the world work at the atomic level.
-One big difference: _there is no friction_. Lower the friction of the system below an see what happens.
+Balls knocking each other around is actually a pretty good model of how the world works at the atomic level.
+One big difference: _there is no friction_. Lower the friction of the system below and see what happens.
 
 <cript>
     createSimulation({
