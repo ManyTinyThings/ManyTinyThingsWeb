@@ -1,5 +1,5 @@
 ---
-title: Energy and Heat
+title: Kinetic energy
 ---
 
 In this chapter, we learn about the important concept of _energy_, starting with _kinetic energy_ (a fancy term for _movement energy_).
@@ -25,7 +25,31 @@ In this chapter, we learn about the important concept of _energy_, starting with
 </script>
 
 <div class="stepLog twoColumn">
-Here is a billiard ball. Try throwing it around a few times.
+Here is a billiard ball. Try throwing it!
+
+<script>
+	cue({
+		condition: function () {
+			var speed = v2.magnitude(singleEnergySim.particles[0].velocity);
+			return (speed > 0.5);
+		},
+	});
+</script>
+
+As you pick up and throw the ball, you give it speed, and in turn, energy. This kind of energy is called
+_kinetic energy_, or _movement energy_. This plot shows how the energy changes over time:
+
+<script>
+	createTimeSeriesHere({
+		range: 50,
+		update: function() {
+			var energy = getTotalEnergy(singleEnergySim);
+			return {time: singleEnergySim.time, data: [energy]};
+		},
+	});
+</script>
+
+Throw the ball around some more and see what happens in the plot.
 
 <script>
 	var state = {throwCount: 0, hadHighSpeed: false};
@@ -44,33 +68,7 @@ Here is a billiard ball. Try throwing it around a few times.
 	});
 </script>
 
-As you pick up and throw the ball, you give it speed, and in turn, energy. This kind of energy is called
-_kinetic energy_, or _movement energy_. This plot shows how the energy changes over time:
-
-<script>
-	var energyLog = createTimeLog({range: 50});
-	createGraphHere({
-		update: graph => {
-			var energy = singleEnergySim.particles.reduce((acc, p) => acc + p.potentialEnergy + p.kineticEnergy, 0);
-			addToLog(energyLog, singleEnergySim.time, {energy: energy});
-			addCurve(graph, {x: energyLog.time, y: energyLog.data.energy});
-			addAxes(graph, {x: arrayLast(energyLog.time) - energyLog.range, y: 0});
-		}
-	});
-</script>
-
-Throw the ball around some more and see what happens in the plot.
-
-<script>
-	cue({
-		confirmationDelay: 2,
-		condition: function () {
-			return (singleEnergySim.particles[0].kineticEnergy > 0.5);
-		},
-	});
-</script>
-
-When you release the ball it starts to lose energy because of the friction in the air and in the collisions with the table.
+When you release the ball it starts to lose energy because of the friction in the table and air, which looks like a little hill in the plot. 
 </div>
 <div class="twoColumn">
 <script>
@@ -82,7 +80,7 @@ When you release the ball it starts to lose energy because of the friction in th
 
 
 
-<div class="page startPage">
+<div class="page">
 <script>
     var totalEnergySim = createSimulation({
         width: 400,
@@ -98,8 +96,6 @@ When you release the ball it starts to lose energy because of the friction in th
             for (var i = 0; i < particleCount; i++) {
             	var particle = new Particle();
             	particle.position = billiardsPosition(simulation, i);
-            	var colors = [Color.red, Color.blue, Color.green, Color.black, Color.gray, Color.yellow];
-            	particle.color = colors[i % colors.length];
             	addParticle(simulation, particle);
             }
         }
@@ -126,14 +122,12 @@ Below as a graph of the total energy, which is the energy for all particles comb
 
 <script>
 	// TODO: one color for each particle
-	var totalEnergyLog = createTimeLog({range: 50});
-	createGraphHere({
-		update: graph => {
-			var energy = totalEnergySim.particles.reduce((acc, p) => acc + p.potentialEnergy + p.kineticEnergy, 0);
-			addToLog(totalEnergyLog, totalEnergySim.time, {energy: energy});
-			addCurve(graph, {x: totalEnergyLog.time, y: totalEnergyLog.data.energy});
-			addAxes(graph, {x: arrayLast(totalEnergyLog.time) - totalEnergyLog.range, y: 0});
-		}
+	createTimeSeriesHere({
+		range: 50,
+		update: function() {
+			var energy = getTotalEnergy(totalEnergySim);
+			return {time: singleEnergySim.time, data: [energy]};
+		},
 	});
 </script>
 
@@ -143,8 +137,8 @@ Give the group of particles some energy and look at what happens to the energy o
 	cue({
 		isStepEnd: false,
 		condition: function (dt, state) {
-			var speed = v2.magnitude(totalEnergySim.particles[0].velocity);
-			return (speed > 1);
+			var energy = totalEnergySim.particles.reduce((acc, p) => acc + p.potentialEnergy + p.kineticEnergy, 0);
+			return (energy > 1);
 		},
 	});
 </script>
@@ -169,6 +163,54 @@ They look the same! Let's look at it a bit closer.
 <div class="twoColumn">
 <script>
 	insertHere(totalEnergySim.div);
+</script>
+</div>
+</div>
+
+<div class="page">
+<script>
+    var energyAdditionSim = createSimulation({
+    	width: 400,
+        height: 400,
+        initialize: function(simulation) {
+
+            copyObject(simulation.parameters, {
+                radiusScaling: 0.1,
+                friction: 0.3,
+            });
+
+            var particleCount = 7;
+            for (var i = 0; i < particleCount; i++) {
+            	var particle = new Particle();
+            	particle.position = billiardsPosition(simulation, i);
+            	var colors = [Color.red, Color.blue, Color.green, Color.black, Color.gray, Color.yellow];
+            	particle.color = colors[i % colors.length];
+            	addParticle(simulation, particle);
+            }
+        }
+    });
+
+    enableOnlyTools(energyAdditionSim.toolbar, ["select"]);
+    selectTool(energyAdditionSim.toolbar, "select");
+</script>
+<div class="stepLog twoColumn">
+To understand what happens to the energy as the particles collide, I have colored each particle in a unique color.
+
+<script>
+	// TODO: one color for each particle
+	createTimeSeriesHere({
+		range: 50,
+		update: function() {
+			var energy = getTotalEnergy(energyAdditionSim);
+			return {time: energyAdditionSim.time, data: [energy]};
+		},
+	});
+</script>
+
+</div>
+<div class="twoColumn">
+<script>
+	insertHere(energyAdditionSim.div);
 </script>
 </div>
 </div>

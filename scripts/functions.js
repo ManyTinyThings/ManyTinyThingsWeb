@@ -1154,6 +1154,64 @@ function smoothLast(data, opts)
     return windowAverage;
 }
 
+// ! Time series
+
+function createTimeSeriesHere(opts)
+{
+    var timeSeries = createTimeSeries(opts);
+    insertHere(timeSeries.div);
+    return timeSeries;
+}
+
+function createTimeSeries(opts)
+{
+    var timeSeries = {
+        graph: createGraph(
+        {}),
+        timeLog: createTimeLog(
+        {
+            range: opts.range,
+        }),
+        update: opts.update,
+        updater: null,
+        div: null,
+    }
+
+    timeSeries.div = timeSeries.graph.div;
+    timeSeries.updater = function()
+    {
+        var newData = timeSeries.update();
+        addToLog(timeSeries.timeLog, newData.time, newData.data);
+        for (var key in timeSeries.timeLog.data)
+        {
+            var values = timeSeries.timeLog.data[key];
+            addCurve(timeSeries.graph,
+            {
+                x: timeSeries.timeLog.time,
+                y: values
+            });
+        }
+        addAxes(timeSeries.graph,
+        {
+            x: arrayLast(timeSeries.timeLog.time) - timeSeries.timeLog.range,
+            y: 0,
+        });
+        drawGraph(timeSeries.graph);
+        window.requestAnimationFrame(timeSeries.updater);
+    }
+
+    timeSeries.updater();
+
+    return timeSeries;
+}
+
+// ! Measurements
+
+function getTotalEnergy(simulation)
+{
+    return simulation.particles.reduce((acc, p) => acc + p.potentialEnergy + p.kineticEnergy, 0);
+}
+
 // ! Measurement regions
 
 function createMeasurementRegion()
