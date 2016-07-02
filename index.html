@@ -35,11 +35,11 @@
             initialize: function(simulation) {
 
                 var parameters = {
-                    radiusScaling: 0.05,
+                    radiusScaling: 0.2,
                     gravityAcceleration: 0, //0.001,
                     collisionEnabled: true,
                     measurementEnabled: true,
-                    thermostatSpeed: 0.1,
+                    thermostatSpeed: 0,
                     thermostatTemperature: 0.01,
                     isPeriodic: true,
                     dt: 0.005,
@@ -50,18 +50,18 @@
                 };
                 copyObject(simulation.parameters, parameters);
 
-                var particleCount = 50;
+                var particleCount = 2;
                 for (var particleIndex = 0; particleIndex < particleCount; particleIndex++) {
                     var particle = new Particle();
                     particle.position = rectangularLatticePosition(simulation, particleIndex);
                     particle.type = particleIndex % 2;
-                    particle.color = [colors.blue, colors.red][particle.type];
+                    particle.color = [Color.blue, Color.red][particle.type];
                     addParticle(simulation, particle);                       
                 }
 
-                setInteraction(simulation, 0, 0, Interaction.lennardJones);
-                setInteraction(simulation, 0, 1, Interaction.repulsive);
-                setInteraction(simulation, 1, 1, Interaction.lennardJones);
+                // setInteraction(simulation, 0, 0, Interaction.lennardJones);
+                // setInteraction(simulation, 0, 1, Interaction.repulsive);
+                // setInteraction(simulation, 1, 1, Interaction.lennardJones);
 
                 // setInteraction(simulation, 0, 0, Interaction.coulombSame);
                 // setInteraction(simulation, 0, 1, Interaction.coulombDifferent);
@@ -83,13 +83,28 @@
 </div>
 <div class="twoColumn">
     <script>
+        var timeLog = createTimeLog({range: 50});
         createGraphHere({
-            update: function (graph)
-            {
-                addCurve(graph, {x: sim.times, y: sim.measurementRegions[0].measurements.energy});
-                addAxes(graph, {x: sim.times[0], y: 0});
-            }
-        })
+            update: function(graph) {
+                var accumulatedEnergyData = [0];
+                var currentEnergy = 0;
+                for (var particleIndex = 0; particleIndex < sim.particles.length; particleIndex++) {
+                    var particle = sim.particles[particleIndex];
+                    currentEnergy += (particle.kineticEnergy + particle.potentialEnergy);
+                    accumulatedEnergyData.push(currentEnergy);
+                }
+                addToLog(timeLog, sim.time, accumulatedEnergyData);
+                for (var particleIndex = 0; particleIndex < sim.particles.length; particleIndex++) {
+                    addArea(graph, {
+                        x: timeLog.time,
+                        yMin: timeLog.data[particleIndex],
+                        yMax: timeLog.data[particleIndex + 1],
+                        color: sim.particles[particleIndex].color,
+                    });
+
+                }
+            },
+        });
     </script>
 </div>
     <p>

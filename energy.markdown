@@ -183,7 +183,7 @@ They look the same! Let's look at it a bit closer.
             for (var i = 0; i < particleCount; i++) {
             	var particle = new Particle();
             	particle.position = billiardsPosition(simulation, i);
-            	var colors = [Color.red, Color.blue, Color.green, Color.black, Color.gray, Color.yellow];
+            	var colors = [Color.red, Color.blue, Color.green, Color.black, Color.gray, Color.yellow, Color.purple];
             	particle.color = colors[i % colors.length];
             	addParticle(simulation, particle);
             }
@@ -198,14 +198,50 @@ To understand what happens to the energy as the particles collide, I have colore
 
 <script>
 	// TODO: one color for each particle
-	createTimeSeriesHere({
-		range: 50,
-		update: function() {
-			var energy = getTotalEnergy(energyAdditionSim);
-			return {time: energyAdditionSim.time, data: [energy]};
+	var timeLog = createTimeLog({range: 50});
+	createGraphHere({
+		update: function(graph) {
+			var stackedEnergy = [0];
+			var currentEnergy = 0;
+			var sim = energyAdditionSim;
+			for (var particleIndex = 0; particleIndex < sim.particles.length; particleIndex++) {
+				var particle = sim.particles[particleIndex];
+				currentEnergy += particle.kineticEnergy;
+				stackedEnergy.push(currentEnergy);
+			}
+			addToLog(timeLog, sim.time, stackedEnergy);
+			for (var particleIndex = 0; particleIndex < sim.particles.length; particleIndex++) {
+				addArea(graph, {
+                    x: timeLog.time,
+                    yMin: timeLog.data[particleIndex],
+                    yMax: timeLog.data[particleIndex + 1],
+                    color: sim.particles[particleIndex].color,
+                });
+			}
+
 		},
 	});
 </script>
+
+Balls knocking each other around is actually a pretty good model of how the world works at the atomic level.
+One big difference: _there is no friction_. Lower the friction of the system below and see what happens.
+
+
+<script>
+	insertHere(createSlider({
+		object: energyAdditionSim.parameters,
+		name: "friction",
+		min: 0, max: 0.3,
+		minLabel: "None", maxLabel: "Some",
+	}));
+	cue({
+		condition: function() {
+			return (energyAdditionSim.parameters.friction == 0);
+		}
+	});
+</script>
+
+The overall energy stays constant, but the amount of energy in each particle varies wildly.
 
 </div>
 <div class="twoColumn">
@@ -234,8 +270,7 @@ To understand what happens to the energy as the particles collide, I have colore
 
 ## The rest
 
-Balls knocking each other around is actually a pretty good model of how the world works at the atomic level.
-One big difference: _there is no friction_. Lower the friction of the system below and see what happens.
+
 
 <cript>
     createSimulation({

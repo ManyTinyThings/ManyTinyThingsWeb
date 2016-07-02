@@ -737,6 +737,7 @@ function addTool(toolbar, opts)
         name: opts.name,
         key: opts.key,
         div: createAndAppend("div", toolbar.div),
+        enabled: true,
         // TODO: image
     }
     toolbar.tools[tool.name] = tool;
@@ -810,6 +811,7 @@ function createGraph(opts)
     graph.renderer = createRenderer(canvas);
 
     graph.curves = [];
+    graph.areas = [];
     graph.bars = [];
     graph.limits = {
         xMin: "auto",
@@ -864,6 +866,28 @@ function addCurve(graph, opts)
     };
 
     graph.curves.push(curve);
+}
+
+function addArea(graph, opts)
+{
+    combineWithDefaults(opts,
+    {
+        color: Color.black,
+    });
+    var count = opts.x.length;
+    var area = {
+        count: count,
+        x: function(i)
+        {
+            return (i < count) ? opts.x[i] : opts.x[2 * count - 1 - i];
+        },
+        y: function(i)
+        {
+            return (i < count) ? opts.yMin[i] : opts.yMax[2 * count - 1 - i];
+        },
+        color: opts.color,
+    }
+    graph.areas.push(area);
 }
 
 function addBars(graph, opts)
@@ -996,6 +1020,19 @@ function getLimits(graph)
         }
     }
 
+    for (var areaIndex = 0; areaIndex < graph.areas.length; areaIndex++)
+    {
+        var area = graph.areas[areaIndex];
+        for (var i = 0; i < area.count; i++)
+        {
+            var x = area.x(i);
+            var yMin = area.y(i);
+            var yMax = area.y(area.count + i);
+            updateAutoLimits(autoLimits, x, yMin);
+            updateAutoLimits(autoLimits, x, yMax);
+        }
+    }
+
     for (var barIndex = 0; barIndex < graph.bars.length; barIndex++)
     {
         var bar = graph.bars[barIndex];
@@ -1070,6 +1107,12 @@ function drawGraph(graph)
             drawArrow(graph.renderer, v2(graph.yAxis, limits.yMin), v2(graph.yAxis, limits.yMax));
         }
 
+        for (var areaIndex = 0; areaIndex < graph.areas.length; areaIndex++)
+        {
+            var area = graph.areas[areaIndex];
+            drawPolygonFunctions(graph.renderer, area.x, area.y, 2 * area.count, area.color);
+        }
+
         for (var curveIndex = 0; curveIndex < graph.curves.length; curveIndex++)
         {
             var curve = graph.curves[curveIndex];
@@ -1088,7 +1131,7 @@ function drawGraph(graph)
     }
 
     // Reset state
-
+    graph.areas.length = 0;
     graph.curves.length = 0;
     graph.bars.length = 0;
 }
@@ -1251,58 +1294,24 @@ function setColdHotRegions(simulation)
 
 var Color = {};
 
-function addColor(color)
+function addColor(colorName, colorRGBA)
 {
-    Color[color.name] = color;
+    Color[colorName] = {
+        name: colorName,
+        rgba: colorRGBA
+    };
 }
 
-addColor(
-{
-    name: "blue",
-    rgba: [0, 0, 1, 1],
-});
-
-addColor(
-{
-    name: "red",
-    rgba: [1, 0, 0, 1],
-});
-
-addColor(
-{
-    name: "green",
-    rgba: [0, 1, 0, 1],
-});
-
-addColor(
-{
-    name: "yellow",
-    rgba: [1, 0.8, 0, 1],
-});
-
-addColor(
-{
-    name: "black",
-    rgba: [0, 0, 0, 1],
-})
-
-addColor(
-{
-    name: "white",
-    rgba: [0, 0, 0, 1],
-})
-
-addColor(
-{
-    name: "gray",
-    rgba: [0.5, 0.5, 0.5, 1],
-})
-
-addColor(
-{
-    name: "transparent",
-    rgba: [0, 0, 0, 0],
-})
+addColor("red", [1, 0, 0, 1]);
+addColor("green", [0, 1, 0, 1]);
+addColor("blue", [0, 0, 1, 1]);
+addColor("yellow", [1, 0.8, 0, 1]);
+addColor("orange", [1, 0.3, 0, 1]);
+addColor("purple", [1, 0, 1, 1]);
+addColor("black", [0, 0, 0, 1]);
+addColor("white", [0, 0, 0, 1]);
+addColor("gray", [0.5, 0.5, 0.5, 1]);
+addColor("transparent", [0, 0, 0, 0]);
 
 function withAlpha(color, alpha)
 {
@@ -1824,6 +1833,8 @@ function createSimulation(opts)
         name: "delete",
         key: "d",
     });
+
+    selectTool(simulation.toolbar, "select");
 
     simulation.renderer = createRenderer(simulation.canvas);
 

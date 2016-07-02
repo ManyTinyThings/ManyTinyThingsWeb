@@ -174,6 +174,20 @@ function drawRectangle(renderer, rectangle, color)
     c.fillRect(topLeft[0], topLeft[1], width, height);
 }
 
+function drawPolygonFunctions(renderer, x, y, count, color)
+{
+    var c = renderer.context;
+    c.beginPath();
+    c.moveTo(x(0), y(0));
+    for (var i = 1; i < count; i++)
+    {
+        c.lineTo(x(i), y(i));
+    }
+    c.closePath();
+    c.fillStyle = cssFromRGBA(color.rgba);
+    c.fill()
+}
+
 function clearRenderer(renderer)
 {
     var b = renderer.bounds;
