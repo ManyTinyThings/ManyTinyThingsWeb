@@ -2655,11 +2655,15 @@ var updateSimulation = function()
                                     continue;
                                 }
 
-                                // compensate truncation
-                                // NOTE: not really necessary
-                                var b2 = 1 / squareCutoffFactor;
-                                var b6 = b2 * b2 * b2;
-                                potentialEnergy -= params.lennardJonesStrength * (b6 - 2) * b6;
+                                // TODO: unsure about this one
+                                if (interaction != Interaction.repulsive)
+                                {
+                                    // compensate truncation
+                                    // NOTE: not really necessary
+                                    var b2 = 1 / squareCutoffFactor;
+                                    var b6 = b2 * b2 * b2;
+                                    potentialEnergy -= params.lennardJonesStrength * (b6 - 2) * b6;
+                                }
 
                                 // ! Lennard-jones
                                 var a2 = squareSeparation * invQuadrance;
