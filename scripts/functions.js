@@ -1294,12 +1294,40 @@ function setColdHotRegions(simulation)
 
 var Color = {};
 
-function addColor(colorName, colorRGBA)
+function addColor(name, rgba)
 {
-    Color[colorName] = {
-        name: colorName,
-        rgba: colorRGBA
+    Color[name] = {
+        name: name,
+        rgba: rgba,
+        css: cssFromRGBA(rgba),
     };
+}
+
+function hexColor(name, hex)
+{
+    var rgba = [];
+    for (var i = 0; i < 3; i++)
+    {
+        var shift = hex >> ((2 - i) * 8);
+        rgba[i] = (shift & 0xFF) / 0xFF;
+    }
+    rgba[3] = 1.0;
+
+    return {
+        name: name,
+        rgba: rgba,
+        css: cssFromRGBA(rgba),
+    };
+}
+
+function cssFromRGBA(rgba)
+{
+    return ["rgba(",
+        Math.round(rgba[0] * 255), ",",
+        Math.round(rgba[1] * 255), ",",
+        Math.round(rgba[2] * 255), ",",
+        rgba[3], ")"
+    ].join("");
 }
 
 addColor("red", [1, 0, 0, 1]);
@@ -1313,11 +1341,23 @@ addColor("white", [0, 0, 0, 1]);
 addColor("gray", [0.5, 0.5, 0.5, 1]);
 addColor("transparent", [0, 0, 0, 0]);
 
+Color.niceSwatch = [
+    Color.black,
+    hexColor("blue", 0x4E638E),
+    hexColor("brown", 0xd4996a),
+    hexColor("greenish", 0x41817F),
+    hexColor("lightBrown", 0xD4B06A),
+    hexColor("darkBlue", 0x152A55),
+    hexColor("purple", 0x8D478A),
+];
+
 function withAlpha(color, alpha)
 {
+    var rgba = [color.rgba[0], color.rgba[1], color.rgba[2], alpha];
     return {
         name: color.name,
-        rgba: [color.rgba[0], color.rgba[1], color.rgba[2], alpha],
+        rgba: rgba,
+        css: cssFromRGBA(rgba),
     }
 }
 

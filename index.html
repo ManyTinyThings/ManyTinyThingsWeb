@@ -10,23 +10,6 @@
 </head>
 <body>
 <h1>Testing in progress!</h1>
-<script>
-    createGraphHere({
-        update: function (graph)
-        {
-            var xs = [];
-            var ys = [];
-            var count = 100;
-            for (var i = 0; i < count; i++) {
-                var x = lerp(0, i / count, 1);
-                xs.push(x);
-                ys.push(x*x);
-            }
-            addCurve(graph, {x: xs, y: ys});
-            addAxes(graph, {});
-        }
-    })
-</script>
 <div class="twoColumn">
     <script>
         var sim = createSimulationHere({
@@ -42,8 +25,8 @@
                     thermostatSpeed: 0,
                     thermostatTemperature: 0.01,
                     isPeriodic: true,
-                    dt: 0.005,
-                    coulombStrength: 0.01,
+                    dt: 0.001,
+                    coulombStrength: 0.1,
                     lennardJonesStrength: 0.1,
                     separationFactor: 1.0,
                     cutoffFactor: 2.5,

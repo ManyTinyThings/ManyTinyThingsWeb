@@ -177,14 +177,15 @@ They look the same! Let's look at it a bit closer.
             copyObject(simulation.parameters, {
                 radiusScaling: 0.1,
                 friction: 0.3,
+                dt: 0.001,
             });
 
             var particleCount = 7;
             for (var i = 0; i < particleCount; i++) {
             	var particle = new Particle();
             	particle.position = billiardsPosition(simulation, i);
-            	var colors = [Color.red, Color.blue, Color.green, Color.black, Color.gray, Color.yellow, Color.purple];
-            	particle.color = colors[i % colors.length];
+            	var swatch = Color.niceSwatch;
+            	particle.color = swatch[i % swatch.length];
             	addParticle(simulation, particle);
             }
         }
@@ -206,7 +207,7 @@ To understand what happens to the energy as the particles collide, I have colore
 			var sim = energyAdditionSim;
 			for (var particleIndex = 0; particleIndex < sim.particles.length; particleIndex++) {
 				var particle = sim.particles[particleIndex];
-				currentEnergy += particle.kineticEnergy;
+				currentEnergy += (particle.kineticEnergy + particle.potentialEnergy);
 				stackedEnergy.push(currentEnergy);
 			}
 			addToLog(timeLog, sim.time, stackedEnergy);

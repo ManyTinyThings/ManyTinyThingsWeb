@@ -52,7 +52,7 @@ function drawParticles(renderer, particles, isPeriodic)
         var particle = particles[i];
         var position = particle.position;
 
-        context.fillStyle = cssFromRGBA(particle.color.rgba);
+        context.fillStyle = particle.color.css;
         var screenRadius = isPeriodic;
         for (var dx = -screenRadius; dx <= screenRadius; dx++)
         {
@@ -123,7 +123,7 @@ function drawArrow(renderer, start, end)
     c.lineTo(-arrowheadLength, -arrowheadLength / 3);
     c.lineTo(-arrowheadLength, arrowheadLength / 3);
     c.closePath();
-    c.fillStyle = cssFromRGBA(Color.black.rgba);
+    c.fillStyle = Color.black.css;
     c.fill();
     c.restore();
 
@@ -136,7 +136,7 @@ function drawArrow(renderer, start, end)
 function drawTrajectoryUnzipped(renderer, xs, ys, color)
 {
     var c = renderer.context;
-    c.strokeStyle = cssFromRGBA(color.rgba);
+    c.strokeStyle = color.css;
 
     c.beginPath();
     c.moveTo(xs[0], ys[0]);
@@ -150,7 +150,7 @@ function drawTrajectoryUnzipped(renderer, xs, ys, color)
 function drawTrajectory(renderer, trajectory, color)
 {
     var c = renderer.context;
-    c.strokeStyle = cssFromRGBA(color.rgba);
+    c.strokeStyle = color.css;
     var startPoint = trajectory[0];
 
     c.beginPath();
@@ -166,7 +166,7 @@ function drawTrajectory(renderer, trajectory, color)
 function drawRectangle(renderer, rectangle, color)
 {
     var c = renderer.context;
-    c.fillStyle = cssFromRGBA(color.rgba);
+    c.fillStyle = color.css;
     var topLeft = v2(rectangle.left, rectangle.top);
     var bottomRight = v2(rectangle.right, rectangle.bottom);
     var width = bottomRight[0] - topLeft[0];
@@ -184,7 +184,7 @@ function drawPolygonFunctions(renderer, x, y, count, color)
         c.lineTo(x(i), y(i));
     }
     c.closePath();
-    c.fillStyle = cssFromRGBA(color.rgba);
+    c.fillStyle = color.css;
     c.fill()
 }
 
@@ -192,14 +192,4 @@ function clearRenderer(renderer)
 {
     var b = renderer.bounds;
     renderer.context.clearRect(b.left, b.bottom, b.width, b.height);
-}
-
-function cssFromRGBA(rgba)
-{
-    return ["rgba(",
-        Math.round(rgba[0] * 255), ",",
-        Math.round(rgba[1] * 255), ",",
-        Math.round(rgba[2] * 255), ",",
-        rgba[3], ")"
-    ].join("");
 }
