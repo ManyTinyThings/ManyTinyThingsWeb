@@ -33,14 +33,19 @@
                 };
                 copyObject(simulation.parameters, parameters);
 
-                var particleCount = 2;
+                var spacing = 0.08;
+                var particleCount = 25;
+                var newParticles = [];
                 for (var particleIndex = 0; particleIndex < particleCount; particleIndex++) {
                     var particle = new Particle();
-                    particle.position = rectangularLatticePosition(simulation, particleIndex);
+                    particle.position = rectangularLatticePosition(particleIndex, 2*spacing);
                     particle.type = particleIndex % 2;
                     particle.color = [Color.blue, Color.red][particle.type];
-                    addParticle(simulation, particle);                       
+                    particle.radius = spacing;
+                    newParticles.push(particle);
                 }
+
+                addParticlesRandomly(simulation, newParticles);
 
                 // setInteraction(simulation, 0, 0, Interaction.lennardJones);
                 // setInteraction(simulation, 0, 1, Interaction.repulsive);

@@ -239,9 +239,20 @@ function copyObject(destination, source)
     }
 }
 
+function arrayRemoveElementAt(array, index)
+{
+    array.splice(index, 1);
+}
+
 function arrayLast(array)
 {
     return array[array.length - 1];
+}
+
+function arrayRandomElement(array)
+{
+    var randomIndex = randomInt(array.length);
+    return array[randomIndex];
 }
 
 function arrayContains(array, element)
@@ -1469,14 +1480,13 @@ var triangularLatticePosition = function()
     var latticeX = v2(0, 0);
     var latticeY = v2(0, 0);
 
-    return function(simulation, particleIndex)
+    return function(particleIndex, latticeSpacing)
     {
         // NOTE: this is the formula for triangular numbers inverted
         var triangularNumber = Math.floor((Math.sqrt(8 * particleIndex + 1) - 1) / 2);
         var rest = particleIndex - triangularNumber * (triangularNumber + 1) / 2;
         var integerX = rest;
         var integerY = triangularNumber - rest;
-        var latticeSpacing = 2 * simulation.parameters.radiusScaling * simulation.parameters.separationFactor;
         var overallRotation = -tau / 12;
         v2.setPolar(latticeX, latticeSpacing * integerX, overallRotation);
         v2.setPolar(latticeY, latticeSpacing * integerY, overallRotation + tau / 6);
@@ -1489,7 +1499,7 @@ var rectangularLatticePosition = function()
     var latticeX = v2(0, 0);
     var latticeY = v2(0, 0);
 
-    return function(simulation, particleIndex)
+    return function(particleIndex, latticeSpacing)
     {
         if (particleIndex == 0)
         {
@@ -1500,7 +1510,6 @@ var rectangularLatticePosition = function()
         var quadrant = Math.floor(rest / (2 * layer));
         var integerX = layer;
         var integerY = (rest % (2 * layer)) - layer + 1;
-        var latticeSpacing = 2 * simulation.parameters.radiusScaling * simulation.parameters.separationFactor;
         var rotationAngle = quadrant * tau / 4;
         v2.setPolar(latticeX, latticeSpacing * integerX, rotationAngle);
         v2.setPolar(latticeY, latticeSpacing * integerY, rotationAngle + tau / 4);
@@ -1514,7 +1523,7 @@ var hexagonalLatticePosition = function()
     var latticeX = v2(0, 0);
     var latticeY = v2(0, 0);
 
-    return function(simulation, particleIndex)
+    return function(particleIndex, latticeSpacing)
     {
         // NOTE: this adds the particles in a spiral by figuring out their coordinates in
         // one of 6 triangular lattices
@@ -1528,7 +1537,6 @@ var hexagonalLatticePosition = function()
         var triangleIndex = Math.floor(rest / layer);
         var integerX = layer;
         var integerY = rest % layer;
-        var latticeSpacing = 2 * simulation.parameters.radiusScaling * simulation.parameters.separationFactor;
         var rotationAngle = triangleIndex * tau / 6;
         v2.setPolar(latticeX, latticeSpacing * integerX, rotationAngle);
         var shape = 2; // 1: spiral, 2: hexagon
@@ -1628,6 +1636,76 @@ function latticeParticleGenerator(simulation, particleIndex)
     return particle;
 }
 
+function addParticlesRandomly(simulation, newParticles)
+{
+    var maxTryCount = 10;
+    var candidates = [];
+    var startingNewParticleIndex = 0;
+
+    if (simulation.particles.length == 0)
+    {
+        var newParticle = newParticles[0];
+        var r = newParticle.radius;
+        var b = simulation.boxBounds;
+        var x = randomInInterval(b.left + r, b.right - r);
+        var y = randomInInterval(b.bottom + r, b.top - r);
+        v2.set(newParticle.position, x, y);
+        addParticle(simulation, newParticle);
+        candidates.push(newParticle);
+        startingNewParticleIndex = 1;
+    }
+    else
+    {
+        for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++)
+        {
+            candidates.push(simulation.particles[particleIndex]);
+        }
+    }
+
+    for (var newParticleIndex = startingNewParticleIndex; newParticleIndex < newParticles.length; newParticleIndex++)
+    {
+        var newParticle = newParticles[newParticleIndex];
+        var isSearching = true;
+        while (isSearching)
+        {
+            var randomCandidateIndex = randomInt(candidates.length);
+            var candidate = candidates[randomCandidateIndex];
+            var minRadius = candidate.radius + newParticle.radius;
+            var maxRadius = 2 * minRadius;
+            var tryCount = 0;
+            while (isSearching)
+            {
+                tryCount += 1;
+                if (tryCount > maxTryCount)
+                {
+                    arrayRemoveElementAt(candidates, randomCandidateIndex);
+                    if (candidates.length == 0)
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                var randomRadius = randomInInterval(minRadius, maxRadius);
+                var deltaPosition = randomUnitVector();
+                v2.scale(deltaPosition, deltaPosition, randomRadius);
+                v2.add(newParticle.position, candidate.position, deltaPosition);
+                if (!isColliding(simulation, newParticle))
+                {
+                    isSearching = false;
+                }
+            }
+        }
+
+        if (addParticle(simulation, newParticle))
+        {
+            candidates.push(newParticle);
+        };
+    }
+}
+
 
 function billiardsPosition(simulation, particleIndex)
 {
@@ -1684,12 +1762,14 @@ function getInteraction(simulation, a, b)
 
 function addParticle(simulation, particle)
 {
+    // TODO: better checks here
     var inside = doesRectContainPoint(simulation.boxBounds, particle.position);
-    if (inside)
+    var isSuccessful = inside;
+    if (isSuccessful)
     {
-        particle.radius *= simulation.parameters.radiusScaling;
         simulation.particles.push(particle);
     }
+    return isSuccessful;
 }
 
 function moveOutOfCollision(simulation, particle)
@@ -1777,16 +1857,25 @@ function moveOutOfCollision(simulation, particle)
 
 function isColliding(simulation, particle)
 {
-    var hitParticle = pickParticle(simulation, particle.position, particle.radius);
-    if (hitParticle >= 0)
+    var hitParticleIndex = pickParticle(simulation, particle.position, particle.radius);
+    if (hitParticleIndex >= 0)
     {
-        return true;
+        var hitParticle = simulation.particles[hitParticleIndex];
+        if (hitParticle !== particle)
+        {
+            return true;
+        }
     }
     for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
     {
         var wall = simulation.walls[wallIndex];
-        var result = searchForContact(wall, particle, v2(1, 0));
-        if (result.isOverlapping)
+        var wallVector = v2.alloc();
+        var relativeWallStart = v2.alloc();
+        v2.subtract(wallVector, wall.vertices[1], wall.vertices[0]);
+        v2.subtract(relativeWallStart, wall.vertices[0], particle.position);
+        var intersection = intersectionOriginCircleLine(particle.radius, relativeWallStart, wallVector);
+        var isIntersecting = intersection.isIntersecting && (intersection.t1 < 1) && (intersection.t2 > 0);
+        if (isIntersecting)
         {
             return true;
         }
@@ -1843,8 +1932,8 @@ function createSimulationHere(opts)
 function createSimulation(opts)
 {
     var simulation = {
-        width: opts.width,
-        height: opts.height,
+        width: opts.width || 400,
+        height: opts.height || 400,
         initialize: opts.initialize,
     };
 
@@ -1894,7 +1983,6 @@ function resetSimulation(simulation)
         parameters:
         {
             maxInitialSpeed: 0.1,
-            radiusScaling: 0.08,
             soundEnabled: false,
             isPeriodic: false,
 
@@ -1904,7 +1992,6 @@ function resetSimulation(simulation)
             coefficientOfRestitution: 1,
 
             // time-related
-            pressureWindowSize: 1000,
             simulationTimePerSecond: 5,
             dt: 0.005,
             simulationSpeed: 1,
@@ -1912,6 +1999,7 @@ function resetSimulation(simulation)
             // measurements
             measurementWindowLength: 100,
             measurementEnabled: true,
+            pressureWindowSize: 1000,
 
             // forces
             velocityAmplification: 1,
@@ -1919,6 +2007,7 @@ function resetSimulation(simulation)
             friction: 0,
             coulombStrength: 0.001,
             lennardJonesStrength: 1.0,
+            lennardJonesSeparation: 0.08,
             ljSoftness: 0,
             ljn: 6,
             ljm: 1,
@@ -1983,7 +2072,7 @@ function resetSimulation(simulation)
     // ! Particle grid
 
 
-    var minGridSideLength = 2 * simulation.parameters.radiusScaling * simulation.parameters.cutoffFactor;
+    var minGridSideLength = simulation.parameters.lennardJonesSeparation * simulation.parameters.cutoffFactor;
     var colCount = atLeast(3, Math.floor(simulation.boxBounds.width / minGridSideLength));
     var rowCount = atLeast(3, Math.floor(simulation.boxBounds.height / minGridSideLength));
 
@@ -2145,8 +2234,6 @@ function resetSimulation(simulation)
         simulation.parameters.isParticleParticleCollisionEnabled = true;
     }
 
-    simulation.radiusScaling = simulation.parameters.radiusScaling;
-
     // ! Start simulation
 
     simulation.updateFunction = function(timestamp)
@@ -2234,20 +2321,13 @@ var updateSimulation = function()
         {
             var leftButtonJustDown = (simulation.mouse.leftButton.transitionCount > 0);
 
-            // TODO: make this check for the actual radius of particle added
-            var extraRadius = simulation.parameters.separationFactor * simulation.parameters.radiusScaling;
-            var pickedParticleIndex = pickParticle(simulation, simulation.mouse.worldPosition, extraRadius);
-            var isCloseToParticle = (pickedParticleIndex >= 0);
-
-            var hitParticleIndex = pickParticle(simulation, simulation.mouse.worldPosition);
-            var isOnParticle = (hitParticleIndex >= 0);
-
             var tool = simulation.toolbar.selectedToolName;
             if (leftButtonJustDown)
             {
                 simulation.mouse.mode = MouseMode[tool];
                 if (simulation.mouse.mode == MouseMode.select)
                 {
+                    var hitParticleIndex = pickParticle(simulation, simulation.mouse.worldPosition);
                     if (hitParticleIndex >= 0)
                     {
                         simulation.mouse.mode = MouseMode.drag;
@@ -2266,29 +2346,29 @@ var updateSimulation = function()
                 }
             }
 
-            if ((simulation.mouse.mode == MouseMode.create) && (!isCloseToParticle))
+            if (simulation.mouse.mode == MouseMode.create)
             {
                 var particle = new Particle();
                 particle.position = simulation.mouse.worldPosition;
-                addParticle(simulation, particle);
+
+                // TODO: this check should be made in addParticle
+                var extraRadius = simulation.parameters.lennardJonesSeparation;
+                var isCloseToParticle = (pickParticle(simulation, simulation.mouse.worldPosition, extraRadius) >= 0);
+
+                if (!isCloseToParticle)
+                {
+                    addParticle(simulation, particle);
+                }
             }
             else if (simulation.mouse.mode == MouseMode.delete)
             {
+                var hitParticleIndex = pickParticle(simulation, simulation.mouse.worldPosition);
                 if (hitParticleIndex >= 0)
                 {
                     removeParticle(simulation, hitParticleIndex);
                 }
             }
         }
-
-        // ! Rescale radii
-
-        for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++)
-        {
-            var particle = simulation.particles[particleIndex];
-            particle.radius *= simulation.parameters.radiusScaling / simulation.radiusScaling;
-        }
-        simulation.radiusScaling = simulation.parameters.radiusScaling;
 
         if (!simulation.pausedByUser)
         {
@@ -3126,6 +3206,18 @@ function randomPointInRect(rect)
 function randomInInterval(a, b)
 {
     return lerp(a, Math.random(), b);
+}
+
+function randomInt(max)
+{
+    return Math.floor(Math.random() * max);
+}
+
+function randomIntBetween(min, max)
+{
+    var d = max - min;
+    var result = min + randomInt(d + 1);
+    return result;
 }
 
 // NOTE: generates 2 at a time, saves the one not immediately returned
