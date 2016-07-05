@@ -1987,8 +1987,8 @@ function resetSimulation(simulation)
             isPeriodic: false,
 
             // collision-related
-            collisionEnabled: true,
-            isParticleParticleCollisionEnabled: false,
+            isSlowCollisionEnabled: false,
+            isSlowParticleParticleCollisionEnabled: false,
             coefficientOfRestitution: 1,
 
             // time-related
@@ -2231,7 +2231,8 @@ function resetSimulation(simulation)
     if (simulation.parameters.onlyHardSpheres)
     {
         simulation.parameters.dt = simulation.parameters.simulationTimePerSecond / 60;
-        simulation.parameters.isParticleParticleCollisionEnabled = true;
+        simulation.parameters.isSlowCollisionEnabled = true;
+        simulation.parameters.isSlowParticleParticleCollisionEnabled = true;
     }
 
     // ! Start simulation
@@ -2411,7 +2412,7 @@ var updateSimulation = function()
 
                 // langevin setup
 
-                applyLangevinNoise(particles, params.thermostatSpeed, params.thermostatTemperature);
+                applyLangevinNoise(particles, params.thermostatSpeed, params.thermostatTemperature, dt);
 
                 for (var particleIndex = 0; particleIndex < particles.length;
                     ++particleIndex)
@@ -2442,7 +2443,7 @@ var updateSimulation = function()
 
                 var remainingTime = dt;
 
-                if (params.collisionEnabled)
+                if (params.isSlowCollisionEnabled)
                 {
                     var collisionPool = new Pool(createCollision);
                     var collisions = [];
@@ -2452,7 +2453,7 @@ var updateSimulation = function()
                     {
                         var particle = particles[particleIndex];
 
-                        if (params.isParticleParticleCollisionEnabled)
+                        if (params.isSlowParticleParticleCollisionEnabled)
                         {
                             for (var otherParticleIndex = 0; otherParticleIndex < particleIndex; ++otherParticleIndex)
                             {
@@ -2556,7 +2557,7 @@ var updateSimulation = function()
 
                             var isParticleParticleCollision = (firstCollision.type == CollisionType.particleParticle);
 
-                            if (params.isParticleParticleCollisionEnabled)
+                            if (params.isSlowParticleParticleCollisionEnabled)
                             {
 
                                 for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
@@ -2789,6 +2790,59 @@ var updateSimulation = function()
                     // Friction
                     v2.scaleAndAdd(particle.acceleration, particle.acceleration,
                         particle.velocity, -params.friction / particle.mass);
+
+                    if (!params.isSlowCollisionEnabled)
+                    {
+                        // Wall forces
+                        var wallVector = v2.alloc();
+                        var relativeWallStart = v2.alloc();
+
+                        for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
+                        {
+                            var wall = simulation.walls[wallIndex];
+                            var wallStart = wall.vertices[0];
+                            var wallEnd = wall.vertices[1];
+                            v2.subtract(relativeWallStart, wallStart, particle.position);
+                            v2.subtract(wallVector, wallEnd, wallStart);
+                            var t = -v2.inner(relativeWallStart, wallVector) / v2.square(wallVector);
+                            if (t <= 0)
+                            {
+                                v2.copy(relativePosition, relativeWallStart);
+                            }
+                            else if (t >= 1)
+                            {
+                                v2.subtract(relativePosition, wallEnd, particle.position);
+                            }
+                            else
+                            {
+                                v2.scaleAndAdd(relativePosition, relativeWallStart, wallVector, t);
+                            }
+
+                            var quadranceToWall = v2.square(relativePosition);
+                            var squareSeparation = square(particle.radius);
+
+                            if (quadranceToWall < squareSeparation)
+                            {
+                                var invQuadrance = 1 / quadranceToWall;
+
+                                var a2 = squareSeparation * invQuadrance;
+                                var a6 = a2 * a2 * a2;
+                                var wallStrength = 0.001;
+                                particle.potentialEnergy += wallStrength * (a6 - 2) * a6;
+                                particle.potentialEnergy += wallStrength; // NOTE: for repulsive
+                                var virial = wallStrength * 12 * (a6 - 1) * a6;
+                                particle.virial = virial;
+
+                                var forceFactor = -virial * invQuadrance;
+
+                                v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                                    relativePosition, forceFactor / particle.mass);
+                            }
+                        }
+
+                        v2.free(relativeWallStart);
+                        v2.free(wallVector);
+                    }
                 }
 
 
@@ -2831,7 +2885,7 @@ var updateSimulation = function()
                     }
                 }
 
-                applyLangevinNoise(particles, params.thermostatSpeed, params.thermostatTemperature);
+                applyLangevinNoise(particles, params.thermostatSpeed, params.thermostatTemperature, dt);
 
             }
 
@@ -2979,7 +3033,7 @@ function softLennardJonesForce(r, softness, n, m)
     return preFactor * 2 * (term * term - term);
 }
 
-function applyLangevinNoise(particles, viscosity, temperature)
+function applyLangevinNoise(particles, viscosity, temperature, dt)
 {
     if (viscosity > 0)
     {
@@ -3235,7 +3289,7 @@ var randomGaussian = function()
             return outX;
         }
 
-        var x, y;
+        var x, y, w;
         do {
             x = 2 * Math.random() - 1;
             y = 2 * Math.random() - 1;

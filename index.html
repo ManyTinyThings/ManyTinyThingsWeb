@@ -19,12 +19,12 @@
 
                 var parameters = {
                     radiusScaling: 0.2,
-                    gravityAcceleration: 0, //0.001,
-                    collisionEnabled: true,
+                    gravityAcceleration: 0.01, //0.001,
+                    isSlowCollisionEnabled: false,
                     measurementEnabled: true,
-                    thermostatSpeed: 0,
+                    thermostatSpeed: 0.00,
                     thermostatTemperature: 0.01,
-                    isPeriodic: true,
+                    isPeriodic: false,
                     dt: 0.001,
                     coulombStrength: 0.1,
                     lennardJonesStrength: 0.1,
@@ -34,7 +34,7 @@
                 copyObject(simulation.parameters, parameters);
 
                 var spacing = 0.08;
-                var particleCount = 25;
+                var particleCount = 100;
                 var newParticles = [];
                 for (var particleIndex = 0; particleIndex < particleCount; particleIndex++) {
                     var particle = new Particle();
@@ -71,28 +71,12 @@
 </div>
 <div class="twoColumn">
     <script>
-        var timeLog = createTimeLog({range: 50});
-        createGraphHere({
-            update: function(graph) {
-                var accumulatedEnergyData = [0];
-                var currentEnergy = 0;
-                for (var particleIndex = 0; particleIndex < sim.particles.length; particleIndex++) {
-                    var particle = sim.particles[particleIndex];
-                    currentEnergy += (particle.kineticEnergy + particle.potentialEnergy);
-                    accumulatedEnergyData.push(currentEnergy);
-                }
-                addToLog(timeLog, sim.time, accumulatedEnergyData);
-                for (var particleIndex = 0; particleIndex < sim.particles.length; particleIndex++) {
-                    addArea(graph, {
-                        x: timeLog.time,
-                        yMin: timeLog.data[particleIndex],
-                        yMax: timeLog.data[particleIndex + 1],
-                        color: sim.particles[particleIndex].color,
-                    });
-
-                }
+        createTimeSeriesHere({
+            range: 50,
+            update: function () {
+                return {time: sim.time, data: [getTotalEnergy(sim)]};
             },
-        });
+        })
     </script>
 </div>
     <p>
