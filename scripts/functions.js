@@ -443,23 +443,41 @@ function createOutput(opts)
 
 // ! Interactive Slides
 
-
-// TODO: maybe add to previous element, to work with createdHere elements
-function cue(opts)
+function cue(cueCondition)
 {
-    if (opts.isStepEnd === undefined)
-    {
-        opts.isStepEnd = true;
-    }
+    var cue = new Cue();
+    cue.condition = cueCondition;
+    cue.element = document.currentScript.previousElementSibling;
+    setCompleted(cue, false);
+    addAction(cue);
+}
 
-    document.currentScript.cue = opts;
+function endStep()
+{
+    var stepEnd = new StepEnd();
+    addAction(stepEnd);
 }
 
 function setup(setupFunction)
 {
-    document.currentScript.setup = setupFunction;
+    var setup = new Setup();
+    setup.function = setupFunction;
+    addAction(setup);
 }
 
+function addAction(action)
+{
+    var script = document.currentScript;
+    script.actions = script.actions || [];
+    script.actions.push(action);
+}
+
+var StepEnd = function() {};
+
+var Setup = function()
+{
+    this.function = null;
+}
 
 var Step = function()
 {
@@ -467,6 +485,7 @@ var Step = function()
     this.cues = [];
     this.setup = null;
     this.isListeningForCue = false;
+    this.isCompleted = false;
 }
 
 var Cue = function()
@@ -474,7 +493,21 @@ var Cue = function()
     this.condition = null;
     this.isCompleted = false;
     this.element = null;
-    this.listeningDelay = 1;
+}
+
+function setCompleted(cue, isCompleted)
+{
+    cue.isCompleted = isCompleted;
+    if (isCompleted)
+    {
+        cue.element.classList.remove("incomplete");
+        cue.element.classList.add("complete");
+    }
+    else
+    {
+        cue.element.classList.add("incomplete");
+        cue.element.classList.remove("complete");
+    }
 }
 
 function initStepLog(stepLogElement)
@@ -491,34 +524,26 @@ function initStepLog(stepLogElement)
     {
         var stepLogChild = stepLogElement.children[childIndex];
         var isScriptNode = false;
-        if (stepLogChild.cue)
+        if (stepLogChild.actions)
         {
-            isScriptNode = true;
-
-            var previousChild = stepLogElement.children[childIndex - 1];
-
-            var cue = new Cue();
-            cue.condition = stepLogChild.cue.condition;
-            cue.element = previousChild;
-            cue.element.classList.add("incomplete");
-            cue.listeningDelay = stepLogChild.cue.listeningDelay || 1; // seconds
-            step.cues.push(cue);
-
-            if (stepLogChild.cue.isStepEnd)
+            for (var action of stepLogChild.actions)
             {
-                step = new Step();
-                step.setup = stepLogChild.cue.setup;
-                stepLog.steps.push(step);
+                if (action instanceof Setup)
+                {
+                    step.setup = action.function;
+                }
+                else if (action instanceof Cue)
+                {
+                    step.cues.push(action);
+                }
+                else if (action instanceof StepEnd)
+                {
+                    step = new Step();
+                    stepLog.steps.push(step);
+                }
             }
         }
-
-        if (stepLogChild.setup)
-        {
-            isScriptNode = true;
-            step.setup = stepLogChild.setup;
-        }
-
-        if (!isScriptNode)
+        else
         {
             step.elements.push(stepLogChild);
         }
@@ -552,12 +577,10 @@ function initStepLog(stepLogElement)
             }
             else if (cue.condition(dtInSeconds))
             {
-                cue.isCompleted = true;
-                cue.element.classList.remove("incomplete");
-                cue.element.classList.add("complete");
+                setCompleted(cue, true);
                 solvedSound.play();
 
-                timeUntilListening = cue.listeningDelay;
+                timeUntilListening = 1; // seconds
             }
             else
             {
@@ -583,6 +606,14 @@ function changeStep(stepLog, stepIndex)
     }
     while (stepLog.currentStepIndex < stepIndex)
     {
+        var currentStep = stepLog.steps[stepLog.currentStepIndex];
+        for (var cue of currentStep.cues)
+        {
+            setCompleted(cue, true);
+        }
+        currentStep.isCompleted = true;
+
+
         stepLog.currentStepIndex += 1;
         var nextStep = stepLog.steps[stepLog.currentStepIndex];
         for (var element of nextStep.elements)
@@ -598,7 +629,14 @@ function changeStep(stepLog, stepIndex)
         {
             element.style.opacity = 0;
         }
+        for (var cue of currentStep.cues)
+        {
+            setCompleted(cue, false);
+        }
+        currentStep.isCompleted = false;
         stepLog.currentStepIndex -= 1;
+
+
     }
 
     var currentStep = stepLog.steps[stepLog.currentStepIndex];
@@ -1527,7 +1565,7 @@ var hexagonalLatticePosition = function()
     var latticeX = v2(0, 0);
     var latticeY = v2(0, 0);
 
-    return function(particleIndex, latticeSpacing)
+    return function(out, particleIndex, latticeSpacing)
     {
         // NOTE: this adds the particles in a spiral by figuring out their coordinates in
         // one of 6 triangular lattices

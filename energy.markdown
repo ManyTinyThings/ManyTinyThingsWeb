@@ -2,7 +2,7 @@
 title: Kinetic energy
 ---
 
-In this chapter, we learn about the important conceptee of _energy_, starting with _kinetic energy_ (a fancy term for _movement energy_).
+In this chapter, we learn about the important concept of _energy_, starting with _kinetic energy_ (a fancy term for _movement energy_).
 
 <div class="page">
 <script>
@@ -27,12 +27,11 @@ In this chapter, we learn about the important conceptee of _energy_, starting wi
 Here is a billiard ball. Try throwing it!
 
 <script>
-	cue({
-		condition: function () {
-			var speed = v2.magnitude(singleEnergySim.particles[0].velocity);
-			return (speed > 0.5);
-		},
+	cue(function () {
+		var speed = v2.magnitude(singleEnergySim.particles[0].velocity);
+        return (speed > 0.5);
 	});
+    endStep();
 </script>
 
 As you pick up and throw the ball, you give it speed, and in turn, energy. This kind of energy is called
@@ -52,8 +51,7 @@ Throw the ball around some more and see what happens in the plot.
 
 <script>
 	var state = {throwCount: 0, hadHighSpeed: false};
-	cue({
-		condition: function (dt) {
+	cue(function (dt) {
 			var speed = v2.magnitude(singleEnergySim.particles[0].velocity);
 			var hasHighSpeedNow = speed > 0.5;
 			if (state.hadHighSpeed && (!hasHighSpeedNow))
@@ -63,8 +61,8 @@ Throw the ball around some more and see what happens in the plot.
 			state.hadHighSpeed = hasHighSpeedNow;
 
 			return (state.throwCount >= 3);
-		},
 	});
+    endStep();
 </script>
 
 When you release the ball it starts to lose energy because of the friction in the table and air, which looks like a little hill in the plot. 
@@ -103,12 +101,11 @@ When you release the ball it starts to lose energy because of the friction in th
 I added some more balls in a conspicuous pattern. You know what to do!
 
 <script>
-	cue({
-		condition: function () {
+	cue(function () {
 			var speed = v2.magnitude(totalEnergySim.particles[0].velocity);
 			return (speed > 0.5);
-		},
-	});
+    });
+    endStep();
 </script>
 
 As the balls collide, they bounce off each other, transferring energy from one to the other.
@@ -129,25 +126,20 @@ Below as a graph of the total energy, which is the energy for all particles comb
 Give the group of particles some energy and look at what happens to the energy over time.
 
 <script>
-	cue({
-		isStepEnd: false,
-		condition: function (dt, state) {
+	cue(function (dt, state) {
 			var energy = totalEnergySim.particles.reduce((acc, p) => acc + p.potentialEnergy + p.kineticEnergy, 0);
 			return (energy > 1);
-		},
 	});
 </script>
 
 Do the same with the lone particle above: give it a shove, and look at the energy graph.
 
 <script>
-	cue({
-		isStepEnd: true,
-		condition: function (dt, state) {
+	cue(function (dt, state) {
 			var speed = v2.magnitude(singleEnergySim.particles[0].velocity);
 			return (speed > 1);
-		},
 	});
+    endStep();
 </script>
 
 They look the same! Let's look at it a bit closer.
@@ -165,8 +157,6 @@ They look the same! Let's look at it a bit closer.
 <div class="page">
 <script>
     var energyAdditionSim = createSimulation({
-    	width: 400,
-        height: 400,
         initialize: function(simulation) {
 
             copyObject(simulation.parameters, {
@@ -178,7 +168,8 @@ They look the same! Let's look at it a bit closer.
             var particleCount = 7;
             for (var i = 0; i < particleCount; i++) {
             	var particle = new Particle();
-            	particle.position = billiardsPosition(simulation, i);
+                particle.radius = 0.1;
+            	billiardsPosition(particle.position, i, 2*particle.radius);
             	var swatch = Color.niceSwatch;
             	particle.color = swatch[i % swatch.length];
             	addParticle(simulation, particle);
@@ -230,11 +221,10 @@ One big difference: _there is no friction_. Lower the friction of the system bel
 		min: 0, max: 0.3,
 		minLabel: "None", maxLabel: "Some",
 	}));
-	cue({
-		condition: function() {
+	cue(function() {
 			return (energyAdditionSim.parameters.friction == 0);
-		}
 	});
+    endStep();
 </script>
 
 The overall energy stays constant, but the amount of energy in each particle varies wildly.
