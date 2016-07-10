@@ -2,21 +2,20 @@
 title: Kinetic energy
 ---
 
-In this chapter, we learn about the important concept of _energy_, starting with _kinetic energy_ (a fancy term for _movement energy_).
+In this chapter, we learn about the important conceptee of _energy_, starting with _kinetic energy_ (a fancy term for _movement energy_).
 
 <div class="page">
 <script>
     var singleEnergySim = createSimulation({
-        width: 400,
-        height: 400,
         initialize: function(simulation) {
 
             copyObject(simulation.parameters, {
                 radiusScaling: 0.1,
                 friction: 0.3,
             });
-
-            addParticle(simulation, new Particle())
+            var particle = new Particle();
+            particle.radius = 0.1;
+            addParticle(simulation, particle);
         }
     });
 
@@ -83,19 +82,15 @@ When you release the ball it starts to lose energy because of the friction in th
 <div class="page">
 <script>
     var totalEnergySim = createSimulation({
-        width: 400,
-        height: 400,
         initialize: function(simulation) {
+            var p = simulation.parameters;
+            p.friction = 0.3;
 
-            copyObject(simulation.parameters, {
-                radiusScaling: 0.1,
-                friction: 0.3,
-            });
-
-            var particleCount = 11;
+            var particleCount = 7;
             for (var i = 0; i < particleCount; i++) {
             	var particle = new Particle();
-            	particle.position = billiardsPosition(simulation, i);
+                particle.radius = 0.1;
+            	billiardsPosition(particle.position, i, 2 * particle.radius);
             	addParticle(simulation, particle);
             }
         }
@@ -111,7 +106,7 @@ I added some more balls in a conspicuous pattern. You know what to do!
 	cue({
 		condition: function () {
 			var speed = v2.magnitude(totalEnergySim.particles[0].velocity);
-			return (speed > 1);
+			return (speed > 0.5);
 		},
 	});
 </script>

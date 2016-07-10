@@ -5,6 +5,7 @@ function createRenderer(canvas)
         context: canvas.getContext("2d"),
         canvasBounds: new Rectangle(),
         bounds: new Rectangle(),
+        devicePixelRatio: window.devicePixelRatio || 1,
     };
 
 
@@ -12,9 +13,8 @@ function createRenderer(canvas)
     canvas.style.width = canvas.width + "px";
     canvas.style.height = canvas.height + "px";
 
-    var devicePixelRatio = window.devicePixelRatio || 1;
-    canvas.width = canvas.width * devicePixelRatio;
-    canvas.height = canvas.height * devicePixelRatio;
+    canvas.width = canvas.width * renderer.devicePixelRatio;
+    canvas.height = canvas.height * renderer.devicePixelRatio;
 
     setLeftTopWidthHeight(renderer.canvasBounds, 0, 0, canvas.width, -canvas.height);
 
@@ -25,9 +25,10 @@ function worldFromCanvas(renderer, canvasPosition)
 {
     var p = canvasPosition;
     var b = renderer.bounds;
-    var c = renderer.canvas;
-    var worldX = b.width / renderer.canvasBounds.width * p[0] + b.left;
-    var worldY = b.height / renderer.canvasBounds.height * p[1] + b.top;
+    var canvasWidth = renderer.canvasBounds.width / renderer.devicePixelRatio;
+    var canvasHeight = renderer.canvasBounds.height / renderer.devicePixelRatio;
+    var worldX = b.width / canvasWidth * p[0] + b.left;
+    var worldY = b.height / canvasHeight * p[1] + b.top;
     return v2(worldX, worldY);
 }
 

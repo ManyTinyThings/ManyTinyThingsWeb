@@ -139,9 +139,9 @@ v2.isZero = function(a)
     return (a[0] == 0) && (a[1] == 0);
 }
 
-v2.isNaN = function(a)
+v2.isFinite = function(a)
 {
-    return (isNaN(a[0]) || isNaN(a[1]));
+    return (isFinite(a[0]) && isFinite(a[1]));
 }
 
 v2.isAlmostZero = function(a)
@@ -1263,7 +1263,10 @@ function createTimeSeries(opts)
 
 function getTotalEnergy(simulation)
 {
-    return simulation.particles.reduce((acc, p) => acc + p.potentialEnergy + p.kineticEnergy, 0);
+    return simulation.particles.reduce(function(acc, p)
+    {
+        return (acc + p.potentialEnergy + p.kineticEnergy);
+    }, 0);
 }
 
 // ! Measurement regions
@@ -1480,7 +1483,7 @@ var triangularLatticePosition = function()
     var latticeX = v2(0, 0);
     var latticeY = v2(0, 0);
 
-    return function(particleIndex, latticeSpacing)
+    return function(out, particleIndex, latticeSpacing)
     {
         // NOTE: this is the formula for triangular numbers inverted
         var triangularNumber = Math.floor((Math.sqrt(8 * particleIndex + 1) - 1) / 2);
@@ -1490,7 +1493,7 @@ var triangularLatticePosition = function()
         var overallRotation = -tau / 12;
         v2.setPolar(latticeX, latticeSpacing * integerX, overallRotation);
         v2.setPolar(latticeY, latticeSpacing * integerY, overallRotation + tau / 6);
-        return v2.add(v2(0, 0), latticeX, latticeY);
+        return v2.add(out, latticeX, latticeY);
     }
 }();
 
@@ -1499,11 +1502,12 @@ var rectangularLatticePosition = function()
     var latticeX = v2(0, 0);
     var latticeY = v2(0, 0);
 
-    return function(particleIndex, latticeSpacing)
+    return function(out, particleIndex, latticeSpacing)
     {
         if (particleIndex == 0)
         {
-            return v2(0, 0);
+            v2.set(out, 0, 0);
+            return out;
         }
         var layer = Math.floor((Math.sqrt(particleIndex) + 1) / 2);
         var rest = particleIndex - squared(2 * layer - 1);
@@ -1513,7 +1517,7 @@ var rectangularLatticePosition = function()
         var rotationAngle = quadrant * tau / 4;
         v2.setPolar(latticeX, latticeSpacing * integerX, rotationAngle);
         v2.setPolar(latticeY, latticeSpacing * integerY, rotationAngle + tau / 4);
-        return v2.add(v2(0, 0), latticeX, latticeY);
+        return v2.add(out, latticeX, latticeY);
     }
 }();
 
@@ -1529,7 +1533,8 @@ var hexagonalLatticePosition = function()
         // one of 6 triangular lattices
         if (particleIndex == 0)
         {
-            return v2(0, 0);
+            v2.set(out, 0, 0);
+            return out;
         }
         var k = particleIndex - 1;
         var layer = Math.floor((Math.sqrt(8 * (k / 6) + 1) - 1) / 2) + 1; // NOTE: 1-indexed
@@ -1541,7 +1546,7 @@ var hexagonalLatticePosition = function()
         v2.setPolar(latticeX, latticeSpacing * integerX, rotationAngle);
         var shape = 2; // 1: spiral, 2: hexagon
         v2.setPolar(latticeY, latticeSpacing * integerY, rotationAngle + shape * tau / 6);
-        return v2.add(v2(0, 0), latticeX, latticeY);
+        return v2.add(out, latticeX, latticeY);
     }
 }();
 
@@ -1707,19 +1712,18 @@ function addParticlesRandomly(simulation, newParticles)
 }
 
 
-function billiardsPosition(simulation, particleIndex)
+function billiardsPosition(out, particleIndex, latticeSpacing)
 {
-    var position = v2(0, 0);
     if (particleIndex == 0)
     {
-        v2.set(position, -0.8, 0);
+        v2.set(out, -0.8, 0);
     }
     else
     {
-        v2.set(position, 0.2, 0)
-        v2.add(position, position, triangularLatticePosition(simulation, particleIndex - 1));
+        triangularLatticePosition(out, particleIndex - 1, latticeSpacing)
+        out[0] += 0.2;
     }
-    return position;
+    return out;
 }
 
 // ! Particle types
@@ -1764,7 +1768,7 @@ function addParticle(simulation, particle)
 {
     // TODO: better checks here
     var inside = doesRectContainPoint(simulation.boxBounds, particle.position);
-    var isSuccessful = inside;
+    var isSuccessful = inside && (simulation.particles.length < simulation.parameters.maxParticleCount);
     if (isSuccessful)
     {
         simulation.particles.push(particle);
@@ -1979,12 +1983,16 @@ function resetSimulation(simulation)
         visualizations: [],
         measurementRegions: [],
         walls: null,
-        particleGenerator: latticeParticleGenerator,
+        particleGenerator: function()
+        {
+            return new Particle();
+        },
         parameters:
         {
             maxInitialSpeed: 0.1,
             soundEnabled: false,
             isPeriodic: false,
+            maxParticleCount: 100,
 
             // collision-related
             isSlowCollisionEnabled: false,
@@ -2014,6 +2022,7 @@ function resetSimulation(simulation)
             separationFactor: 1.0,
             cutoffFactor: 2.5,
             onlyHardSpheres: false,
+            dragStrength: 1,
 
             // thermostat
             thermostatSpeed: 0,
@@ -2030,6 +2039,7 @@ function resetSimulation(simulation)
 
     simulation.particles = [];
     simulation.interactions = [];
+    simulation.trajectory = [];
 
     copyObject(simulation, newSimulation);
 
@@ -2349,8 +2359,8 @@ var updateSimulation = function()
 
             if (simulation.mouse.mode == MouseMode.create)
             {
-                var particle = new Particle();
-                particle.position = simulation.mouse.worldPosition;
+                var particle = simulation.particleGenerator();
+                v2.copy(particle.position, simulation.mouse.worldPosition);
 
                 // TODO: this check should be made in addParticle
                 var extraRadius = simulation.parameters.lennardJonesSeparation;
@@ -2358,6 +2368,7 @@ var updateSimulation = function()
 
                 if (!isCloseToParticle)
                 {
+
                     addParticle(simulation, particle);
                 }
             }
@@ -2475,7 +2486,7 @@ var updateSimulation = function()
                         }
                     }
 
-                    var maxCollisionPassCount = 100;
+                    var maxCollisionPassCount = 1000;
                     var collisionPassCount = 0;
                     while (collisions.length != 0)
                     {
@@ -2611,8 +2622,8 @@ var updateSimulation = function()
                     var particle = particles[particleIndex];
                     v2.scaleAndAdd(particle.position, particle.position, particle.velocity, remainingTime);
 
-                    // filter NaNs
-                    if (v2.isNaN(particle.position))
+                    // filter NaNs and infinities
+                    if (!v2.isFinite(particle.position))
                     {
                         particles.splice(particleIndex, 1);
                         particleIndex -= 1;
@@ -2827,7 +2838,7 @@ var updateSimulation = function()
 
                                 var a2 = squareSeparation * invQuadrance;
                                 var a6 = a2 * a2 * a2;
-                                var wallStrength = 0.001;
+                                var wallStrength = 1e-5;
                                 particle.potentialEnergy += wallStrength * (a6 - 2) * a6;
                                 particle.potentialEnergy += wallStrength; // NOTE: for repulsive
                                 var virial = wallStrength * 12 * (a6 - 1) * a6;
@@ -2857,10 +2868,9 @@ var updateSimulation = function()
                     for (var i = 0; i < simulation.mouse.selectedParticleIndices.length; i++)
                     {
                         var particle = particles[simulation.mouse.selectedParticleIndices[i]];
-                        var dragStrength = 1;
 
                         v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                            relativePosition, dragStrength / particle.mass);
+                            relativePosition, params.dragStrength / particle.mass);
                         v2.scaleAndAdd(particle.acceleration, particle.acceleration,
                             particle.velocity, -1 / particle.mass);
                     }
