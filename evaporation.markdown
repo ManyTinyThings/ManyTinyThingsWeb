@@ -1,0 +1,104 @@
+---
+title: Evaporation
+---
+
+If you leave a glass of water somewhere and come back a few days later, some or all of the water will be gone.
+
+<iframe width="800" height="450" src="https://www.youtube.com/embed/VQ0qky-MNP8?showinfo=0&rel=0" frameborder="0" allowfullscreen></iframe>
+
+The water is turning from liquid to gas form, which is called _evaporating_.
+
+<div class="page">
+<script>
+
+	var glassTopY = 0;
+	var glassHalfWidth = 15;
+	var glassBottomY = -20;
+	var freezingTemperature = 0.1;
+	var meltingTemperature = 0.5;
+
+    var evaporationSim = createSimulation({
+        initialize: function(simulation) {
+        	var p = simulation.parameters;
+        	p.gravityAcceleration = 0.1;
+        	p.thermostatSpeed = 0.02;
+        	p.thermostatTemperature = freezingTemperature;
+        	p.maxParticleCount = 100;
+			p.boxWidth = 50;
+
+        	simulation.particleGenerator = function () {
+        		var particle = new Particle();
+        		return particle;
+        	}
+
+        	simulation.walls = [
+        		new Wall(v2(glassHalfWidth, glassBottomY), v2(glassHalfWidth, glassTopY)),
+        		new Wall(v2(glassHalfWidth, glassBottomY), v2(-glassHalfWidth, glassBottomY)),
+        		new Wall(v2(-glassHalfWidth, glassBottomY), v2(-glassHalfWidth, glassTopY)),
+        		];
+
+	            var ljInteraction = new LennardJonesInteraction();
+	            ljInteraction.strength = 1;
+	            setInteraction(simulation, 0, 0, ljInteraction);
+        }
+    });
+
+    selectTool(evaporationSim.toolbar, "create");
+    var glassRect = new Rectangle();
+    setLeftTopRightBottom(glassRect, -glassHalfWidth, glassTopY, glassHalfWidth, glassBottomY);
+
+   
+</script>
+
+<div class="stepLog twoColumn">
+Here is a model of a glass. Fill it with particles!
+
+<script>
+	cue(function () {
+		var particleCount = 0;
+		for (var particleIndex = 0; particleIndex < evaporationSim.particles.length; particleIndex++) {
+			var particle = evaporationSim.particles[particleIndex];
+			if (doesRectContainPoint(glassRect, particle.position)) 
+			{
+				particleCount += 1;
+			};
+		}
+		return (particleCount >= 80);
+	});
+	endStep();
+</script>
+
+I've put the thermostat on really cold, so the "water" is now frozen solid. Heat it up!
+
+<script>
+	insertHere(createSlider(
+	{
+		object: evaporationSim.parameters,
+		name: "thermostatTemperature",
+		label: "Thermostat",
+		min: freezingTemperature, max: meltingTemperature,
+		minLabel: "Frozen", maxLabel: "Melting",
+	}));
+
+	cue(function () {
+		var epsilon = (meltingTemperature - freezingTemperature) / 100;
+		return (evaporationSim.parameters.thermostatTemperature > (meltingTemperature - 0.001));
+	});
+	endStep();
+</script>
+
+As the contents of the glass melts, the particles start tumbling around. Sometimes, this random tumbling will give one of the surface particles a lot of kinetic energy. If the energy, and therefore the speed, is great enough, the particle will escape the glass! (You might have to wait a little while for this to happen.)
+
+This also means that the rest of the particles will lose energy and get a little colder. But the temperature difference with the rest of the room will soon even out again.
+
+</div>
+<div class="twoColumn">
+<script>
+	insertHere(evaporationSim.div);
+</script>
+</div>
+</div>
+
+<script>
+	initChapter();
+</script>
