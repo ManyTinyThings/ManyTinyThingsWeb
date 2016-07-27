@@ -443,6 +443,8 @@ function createOutput(opts)
 
 // ! Interactive Slides
 
+// TODO: rename these to stepEnd, stepTask/stepCondition, stepSetup
+
 function cue(cueCondition)
 {
     var cue = new Cue();
@@ -995,7 +997,11 @@ function setGraphLimits(graph, limits)
 {
     for (var key in limits)
     {
-        graph.limits[key] = limits[key];
+        var value = limits[key];
+        if (value !== undefined)
+        {
+            graph.limits[key] = limits[key];
+        }
     }
 }
 
@@ -1262,8 +1268,10 @@ function createTimeSeries(opts)
         {}),
         timeLog: createTimeLog(
         {
-            range: opts.range,
+            range: opts.timeRange,
         }),
+        yMin: opts.yMin,
+        yMax: opts.yMax,
         update: opts.update,
         updater: null,
         div: null,
@@ -1287,6 +1295,11 @@ function createTimeSeries(opts)
         {
             x: arrayLast(timeSeries.timeLog.time) - timeSeries.timeLog.range,
             y: 0,
+        });
+        setGraphLimits(timeSeries.graph,
+        {
+            yMin: timeSeries.yMin,
+            yMax: timeSeries.yMax,
         });
         drawGraph(timeSeries.graph);
         window.requestAnimationFrame(timeSeries.updater);
@@ -1754,26 +1767,29 @@ function billiardsPosition(out, particleIndex, latticeSpacing)
 {
     if (particleIndex == 0)
     {
-        v2.set(out, -0.8, 0);
+        v2.set(out, -3 * latticeSpacing, 0);
     }
     else
     {
         triangularLatticePosition(out, particleIndex - 1, latticeSpacing)
-        out[0] += 0.2;
+        out[0] += 2 * latticeSpacing;
     }
     return out;
 }
 
 // ! Particle types
 
-var Interaction = Object.freeze(
+var LennardJonesInteraction = function()
 {
-    none: 0,
-    repulsive: 1,
-    lennardJones: 2,
-    coulombSame: 3,
-    coulombDifferent: 4,
-});
+    this.strength = 1;
+    this.separation = 2;
+}
+
+var RepulsiveInteraction = function()
+{
+    this.strength = 1;
+    this.separation = 2;
+}
 
 function symmetricIndex(a, b)
 {
@@ -1787,18 +1803,108 @@ function setInteraction(simulation, a, b, interaction)
 {
     var index = symmetricIndex(a, b);
     simulation.interactions[index] = interaction;
+    updateGrid(simulation);
 }
 
 function getInteraction(simulation, a, b)
 {
     var index = symmetricIndex(a, b);
-    var interaction = simulation.interactions[index];
-    if (interaction === undefined)
+    if (simulation.interactions[index] === undefined)
     {
-        interaction = Interaction.repulsive;
+        simulation.interactions[index] = new RepulsiveInteraction();
     }
-    return interaction;
+    return simulation.interactions[index];
 }
+
+function setWallsAlongBorder(simulation)
+{
+    var b = simulation.boxBounds;
+    var corners = [
+        v2(b.left, b.bottom),
+        v2(b.right, b.bottom),
+        v2(b.right, b.top),
+        v2(b.left, b.top),
+    ];
+
+    simulation.walls.length = 0;
+    for (var i = 0; i < corners.length; i++)
+    {
+        var wall = new Wall(corners[i], corners[(i + 1) % corners.length]);
+        simulation.walls.push(wall);
+    }
+}
+
+function updateBounds(simulation)
+{
+	// ! boxes
+
+    var aspectRatio = simulation.canvas.width / simulation.canvas.height;
+    var boxWidth = simulation.parameters.boxWidth;
+    var boxHeight = boxWidth / aspectRatio;
+
+    if (simulation.parameters.boxHeight !== null)
+    {
+        boxHeight = simulation.parameters.boxHeight;
+        boxWidth = simulation.parameters.boxHeight * aspectRatio;
+    }
+
+    var origin = v2(0, 0);
+
+    setCenterWidthHeight(
+        simulation.renderer.bounds,
+        origin, boxWidth, boxHeight
+    );
+
+    updateRendererBounds(simulation.renderer);
+
+    simulation.boxBounds = new Rectangle();
+    simulation.leftRect = new Rectangle();
+    simulation.rightRect = new Rectangle();
+
+    var b = simulation.boxBounds;
+    setCenterWidthHeight(b,
+        origin, boxWidth, boxHeight
+    );
+
+    setLeftTopRightBottom(simulation.rightRect,
+        b.center[0], b.top,
+        b.right, b.bottom);
+    setLeftTopRightBottom(simulation.leftRect,
+        b.left, b.top,
+        b.center[0], b.bottom);
+
+    updateGrid(simulation);
+}
+
+function updateGrid(simulation)
+{
+    var maxSeparationIndex = arrayMinIndex(simulation.interactions, function(interaction)
+    {
+        if ((!interaction) || (!interaction.separation))
+        {
+            return Infinity;
+        }
+        return (1 / interaction.separation);
+    });
+    var maxSeparation = (maxSeparationIndex >= 0) ? simulation.interactions[maxSeparationIndex].separation : 1;
+    var minGridSideLength = maxSeparation * simulation.parameters.cutoffFactor;
+    var colCount = atLeast(3, Math.floor(simulation.boxBounds.width / minGridSideLength));
+    var rowCount = atLeast(3, Math.floor(simulation.boxBounds.height / minGridSideLength));
+
+    simulation.particleGrid = {
+        cells: [],
+        colCount: colCount,
+        rowCount: rowCount,
+        dx: simulation.boxBounds.width / colCount,
+        dy: simulation.boxBounds.height / rowCount,
+    };
+
+    for (var cellIndex = 0; cellIndex < (colCount * rowCount); cellIndex++)
+    {
+        simulation.particleGrid.cells[cellIndex] = [];
+    }
+}
+
 
 // ! Particle updating
 
@@ -1908,19 +2014,22 @@ function isColliding(simulation, particle)
             return true;
         }
     }
-    for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
+    if (simulation.walls !== null)
     {
-        var wall = simulation.walls[wallIndex];
-        var wallVector = v2.alloc();
-        var relativeWallStart = v2.alloc();
-        v2.subtract(wallVector, wall.vertices[1], wall.vertices[0]);
-        v2.subtract(relativeWallStart, wall.vertices[0], particle.position);
-        var intersection = intersectionOriginCircleLine(particle.radius, relativeWallStart, wallVector);
-        var isIntersecting = intersection.isIntersecting && (intersection.t1 < 1) && (intersection.t2 > 0);
-        if (isIntersecting)
+        for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
         {
-            return true;
-        }
+            var wall = simulation.walls[wallIndex];
+            var wallVector = v2.alloc();
+            var relativeWallStart = v2.alloc();
+            v2.subtract(wallVector, wall.vertices[1], wall.vertices[0]);
+            v2.subtract(relativeWallStart, wall.vertices[0], particle.position);
+            var intersection = intersectionOriginCircleLine(particle.radius, relativeWallStart, wallVector);
+            var isIntersecting = intersection.isIntersecting && (intersection.t1 < 1) && (intersection.t2 > 0);
+            if (isIntersecting)
+            {
+                return true;
+            }
+        }    
     }
     return false;
 }
@@ -1974,8 +2083,10 @@ function createSimulationHere(opts)
 function createSimulation(opts)
 {
     var simulation = {
-        width: opts.width || 400,
-        height: opts.height || 400,
+        pixelWidth: opts.pixelWidth || 400,
+        pixelHeight: opts.pixelHeight || 400,
+		worldWidth: opts.worldWidth || 20,
+		worldHeight: opts.worldHeight,
         initialize: opts.initialize,
     };
 
@@ -1983,8 +2094,8 @@ function createSimulation(opts)
     simulation.div.classList.add("simulation");
 
     simulation.canvas = createAndAppend("canvas", simulation.div);
-    simulation.canvas.width = simulation.width;
-    simulation.canvas.height = simulation.height;
+    simulation.canvas.width = simulation.pixelWidth;
+    simulation.canvas.height = simulation.pixelHeight;
     simulation.canvas.classList.add("simulationCanvas");
 
     simulation.toolbar = createToolbar();
@@ -2032,6 +2143,11 @@ function resetSimulation(simulation)
             isPeriodic: false,
             maxParticleCount: 100,
 
+            // box
+
+            boxWidth: 20,
+            boxHeight: null,
+
             // collision-related
             isSlowCollisionEnabled: false,
             isSlowParticleParticleCollisionEnabled: false,
@@ -2061,6 +2177,7 @@ function resetSimulation(simulation)
             cutoffFactor: 2.5,
             onlyHardSpheres: false,
             dragStrength: 1,
+            wallStrength: 1e-4,
 
             // thermostat
             thermostatSpeed: 0,
@@ -2079,75 +2196,31 @@ function resetSimulation(simulation)
     simulation.interactions = [];
     simulation.trajectory = [];
 
+    // TODO: just set the defaults instead of this copy business
     copyObject(simulation, newSimulation);
 
+    // NOTE: this get sets up default interaction
+    getInteraction(simulation, 0, 0);
+    updateBounds(simulation);
 
-    // ! boxes
+    // ! User initialization
 
-    var aspectRatio = simulation.canvas.width / simulation.canvas.height;
-    var origin = v2(0, 0);
+    simulation.initialize(simulation);
 
-    setCenterWidthHeight(
-        simulation.renderer.bounds,
-        origin, 2 * aspectRatio, 2
-    );
-
-    updateRendererBounds(simulation.renderer);
-
-    simulation.boxBounds = new Rectangle();
-    simulation.leftRect = new Rectangle();
-    simulation.rightRect = new Rectangle();
-
-    var b = simulation.boxBounds;
-    setCenterWidthHeight(b,
-        origin, 2 * aspectRatio, 2
-    );
-
-    setLeftTopRightBottom(simulation.rightRect,
-        b.center[0], b.top,
-        b.right, b.bottom);
-    setLeftTopRightBottom(simulation.leftRect,
-        b.left, b.top,
-        b.center[0], b.bottom);
-
-    var corners = [
-        v2(b.left, b.bottom),
-        v2(b.right, b.bottom),
-        v2(b.right, b.top),
-        v2(b.left, b.top),
-    ];
-
-    // ! Particle grid
-
-
-    var minGridSideLength = simulation.parameters.lennardJonesSeparation * simulation.parameters.cutoffFactor;
-    var colCount = atLeast(3, Math.floor(simulation.boxBounds.width / minGridSideLength));
-    var rowCount = atLeast(3, Math.floor(simulation.boxBounds.height / minGridSideLength));
-
-    simulation.particleGrid = {
-        cells: [],
-        colCount: colCount,
-        rowCount: rowCount,
-        dx: simulation.boxBounds.width / colCount,
-        dy: simulation.boxBounds.height / rowCount,
-    };
-
-    for (var cellIndex = 0; cellIndex < (colCount * rowCount); cellIndex++)
+    if (simulation.parameters.onlyHardSpheres)
     {
-        simulation.particleGrid.cells[cellIndex] = [];
+        simulation.parameters.dt = simulation.parameters.simulationTimePerSecond / 60;
+        simulation.parameters.isSlowCollisionEnabled = true;
+        simulation.parameters.isSlowParticleParticleCollisionEnabled = true;
     }
 
-    // ! Walls
+    updateBounds(simulation);
+
     if (simulation.walls === null)
     {
         simulation.walls = [];
-        for (var i = 0; i < corners.length; i++)
-        {
-            var wall = new Wall(corners[i], corners[(i + 1) % corners.length]);
-            simulation.walls.push(wall);
-        }
+        setWallsAlongBorder(simulation);    
     }
-
 
     // ! Measurements
 
@@ -2157,7 +2230,6 @@ function resetSimulation(simulation)
 
     simulation.entropy = [];
     simulation.probability = [];
-
 
 
     // ! Keyboard
@@ -2207,19 +2279,30 @@ function resetSimulation(simulation)
         }
     }
 
-    function updateMouseButton(button, willBeDown)
+    function updateMouseButton(button, isDown)
     {
-        button.transitionCount += button.down ^ willBeDown;
-        button.down = willBeDown;
+	    button.transitionCount += button.down ^ isDown;
+		button.down = isDown;
     }
+	
+	function updateMouseButtonsFromEvent(event, isDown)
+	{
+		if (simulation.mouse.active)
+		{
+			if (event.button == 0) {
+				updateMouseButton(simulation.mouse.leftButton, isDown);
+			}
+			if (event.button == 2) {
+				updateMouseButton(simulation.mouse.rightButton, isDown);
+			}
+		}
+	}
 
-    function updateMouseFromEvent(event)
+    function updateMousePositionFromEvent(event)
     {
         if (simulation.mouse.active)
         {
             simulation.mouse.worldPosition = worldFromPage(simulation.renderer, v2(event.clientX, event.clientY));
-            updateMouseButton(simulation.mouse.leftButton, (event.buttons & 1) != 0);
-            updateMouseButton(simulation.mouse.rightButton, (event.buttons & 2) != 0);
             event.preventDefault();
         }
     }
@@ -2228,14 +2311,16 @@ function resetSimulation(simulation)
     simulation.canvas.addEventListener("mousedown", function(event)
     {
         simulation.mouse.active = true;
-        updateMouseFromEvent(event);
+        updateMouseButtonsFromEvent(event, true);
+        updateMousePositionFromEvent(event);
     });
     document.addEventListener("mouseup", function(event)
     {
-        updateMouseFromEvent(event);
+		updateMouseButtonsFromEvent(event, false);
+        updateMousePositionFromEvent(event);
         simulation.mouse.active = false;
     });
-    document.addEventListener("mousemove", updateMouseFromEvent);
+    document.addEventListener("mousemove", updateMousePositionFromEvent);
 
     // ! Pause when simulation is not visible
 
@@ -2272,16 +2357,6 @@ function resetSimulation(simulation)
     document.addEventListener("resize", pauseIfHidden);
     window.addEventListener("load", pauseIfHidden);
 
-    // ! User initialization
-
-    simulation.initialize(simulation);
-
-    if (simulation.parameters.onlyHardSpheres)
-    {
-        simulation.parameters.dt = simulation.parameters.simulationTimePerSecond / 60;
-        simulation.parameters.isSlowCollisionEnabled = true;
-        simulation.parameters.isSlowParticleParticleCollisionEnabled = true;
-    }
 
     // ! Start simulation
 
@@ -2401,7 +2476,7 @@ var updateSimulation = function()
                 v2.copy(particle.position, simulation.mouse.worldPosition);
 
                 // TODO: this check should be made in addParticle
-                var extraRadius = simulation.parameters.lennardJonesSeparation;
+                var extraRadius = 2;
                 var isCloseToParticle = (pickParticle(simulation, simulation.mouse.worldPosition, extraRadius) >= 0);
 
                 if (!isCloseToParticle)
@@ -2723,15 +2798,10 @@ var updateSimulation = function()
                                 var otherParticle = particles[otherParticleIndex];
 
                                 var interaction = getInteraction(simulation, particle.type, otherParticle.type);
-                                if (interaction == Interaction.none)
+                                if (interaction === null)
                                 {
                                     continue;
                                 }
-                                var isCoulombInteraction = (interaction == Interaction.coulombSame) || (interaction == Interaction.coulombDifferent);
-
-                                var separationFactor = params.separationFactor;
-                                var distanceLimit = (particle.radius + otherParticle.radius);
-                                var separation = separationFactor * distanceLimit;
 
                                 v2.subtract(relativePosition, otherParticle.position, particle.position);
 
@@ -2740,6 +2810,7 @@ var updateSimulation = function()
                                     v2.periodicize(relativePosition, relativePosition, simulation.boxBounds);
                                 }
 
+                                // NOTE: no forces across walls
 
                                 var wallVector = v2.alloc();
                                 var wallToParticle = v2.alloc();
@@ -2763,20 +2834,24 @@ var updateSimulation = function()
                                     continue;
                                 }
 
+                                // ! Lennard Jones
+
                                 var quadrance = v2.square(relativePosition);
                                 var invQuadrance = 1 / quadrance;
-                                var squareSeparation = square(separation);
+                                var squareSeparation = square(interaction.separation);
 
                                 var potentialEnergy = 0;
                                 var virial = 0;
 
-                                if (interaction == Interaction.repulsive)
+                                var isRepulsive = interaction instanceof RepulsiveInteraction;
+
+                                if (isRepulsive)
                                 {
                                     if (quadrance > squareSeparation)
                                     {
                                         continue;
                                     }
-                                    potentialEnergy += params.lennardJonesStrength;
+                                    potentialEnergy += interaction.strength;
                                 }
 
                                 // truncation
@@ -2786,23 +2861,24 @@ var updateSimulation = function()
                                 }
 
                                 // TODO: unsure about this one
-                                if (interaction != Interaction.repulsive)
+                                if (!isRepulsive)
                                 {
                                     // compensate truncation
                                     // NOTE: not really necessary
+                                    // TODO: move this out of loop
                                     var b2 = 1 / squareCutoffFactor;
                                     var b6 = b2 * b2 * b2;
-                                    potentialEnergy -= params.lennardJonesStrength * (b6 - 2) * b6;
+                                    potentialEnergy -= interaction.strength * (b6 - 2) * b6;
                                 }
 
                                 // ! Lennard-jones
                                 var a2 = squareSeparation * invQuadrance;
                                 var a6 = a2 * a2 * a2;
-                                potentialEnergy += params.lennardJonesStrength * (a6 - 2) * a6;
-                                virial += params.lennardJonesStrength * 12 * (a6 - 1) * a6;
+                                potentialEnergy += interaction.strength * (a6 - 2) * a6;
+                                virial += interaction.strength * 12 * (a6 - 1) * a6;
 
-
-                                if (isCoulombInteraction)
+                                // TODO: reimplement coulomb
+                                if (false && isCoulombInteraction)
                                 {
                                     // TODO: energy is positive in ground state, is that correct?
                                     var chargeProduct = (interaction == Interaction.coulombSame) ? 1 : -1;
@@ -2876,10 +2952,9 @@ var updateSimulation = function()
 
                                 var a2 = squareSeparation * invQuadrance;
                                 var a6 = a2 * a2 * a2;
-                                var wallStrength = 1e-5;
-                                particle.potentialEnergy += wallStrength * (a6 - 2) * a6;
-                                particle.potentialEnergy += wallStrength; // NOTE: for repulsive
-                                var virial = wallStrength * 12 * (a6 - 1) * a6;
+                                particle.potentialEnergy += params.wallStrength * (a6 - 2) * a6;
+                                particle.potentialEnergy += params.wallStrength; // NOTE: for repulsive
+                                var virial = params.wallStrength * 12 * (a6 - 1) * a6;
                                 particle.virial = virial;
 
                                 var forceFactor = -virial * invQuadrance;

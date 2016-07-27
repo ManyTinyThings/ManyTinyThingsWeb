@@ -2,19 +2,27 @@
 title: Kinetic energy
 ---
 
+<script>
+    // Global constants
+    var pageGlobal = {
+        timeRange: 35,
+        friction: 0.2,
+        radius: 1,
+        energyPlotMax: 100,
+    }
+</script>
+
 In this chapter, we learn about the important concept of _energy_, starting with _kinetic energy_ (a fancy term for _movement energy_).
 
 <div class="page">
 <script>
     var singleEnergySim = createSimulation({
         initialize: function(simulation) {
+            var p = simulation.parameters;
+            p.friction = pageGlobal.friction;
 
-            copyObject(simulation.parameters, {
-                radiusScaling: 0.1,
-                friction: 0.3,
-            });
             var particle = new Particle();
-            particle.radius = 0.1;
+            particle.radius = pageGlobal.radius;
             addParticle(simulation, particle);
         }
     });
@@ -28,9 +36,9 @@ Here is a billiard ball. Try throwing it!
 
 <script>
 	cue(function () {
-		var speed = v2.magnitude(singleEnergySim.particles[0].velocity);
-        return (speed > 0.5);
-	});
+        var energy = getTotalEnergy(singleEnergySim);
+        return (energy > 2);
+    });
     endStep();
 </script>
 
@@ -39,7 +47,8 @@ _kinetic energy_, or _movement energy_. This plot shows how the energy changes o
 
 <script>
 	createTimeSeriesHere({
-		range: 50,
+		timeRange: pageGlobal.timeRange,
+        yMax: pageGlobal.energyPlotMax,
 		update: function() {
 			var energy = getTotalEnergy(singleEnergySim);
 			return {time: singleEnergySim.time, data: [energy]};
@@ -82,12 +91,12 @@ When you release the ball it starts to lose energy because of the friction in th
     var totalEnergySim = createSimulation({
         initialize: function(simulation) {
             var p = simulation.parameters;
-            p.friction = 0.3;
+            p.friction = pageGlobal.friction;
 
             var particleCount = 7;
             for (var i = 0; i < particleCount; i++) {
             	var particle = new Particle();
-                particle.radius = 0.1;
+                particle.radius = pageGlobal.radius;
             	billiardsPosition(particle.position, i, 2 * particle.radius);
             	addParticle(simulation, particle);
             }
@@ -102,20 +111,20 @@ I added some more balls in a conspicuous pattern. You know what to do!
 
 <script>
 	cue(function () {
-			var speed = v2.magnitude(totalEnergySim.particles[0].velocity);
-			return (speed > 0.5);
+        var energy = getTotalEnergy(totalEnergySim);
+        return (energy > 0.2);
     });
     endStep();
 </script>
 
 As the balls collide, they bounce off each other, transferring energy from one to the other.
 
-Below as a graph of the total energy, which is the energy for all particles combined. Note how the curve behaves very similarly to how it did with just one particle.
+Below is a graph of the total energy, which is the energy for all particles combined. Note how, even when the particles are bumping into each other, the curve looks the same as it did with just one particle.
 
 <script>
-	// TODO: one color for each particle
 	createTimeSeriesHere({
-		range: 50,
+		timeRange: pageGlobal.timeRange,
+        yMax: pageGlobal.energyPlotMax,
 		update: function() {
 			var energy = getTotalEnergy(totalEnergySim);
 			return {time: singleEnergySim.time, data: [energy]};
@@ -123,28 +132,17 @@ Below as a graph of the total energy, which is the energy for all particles comb
 	});
 </script>
 
-Give the group of particles some energy and look at what happens to the energy over time.
+Throw the particles into each other some more and compare the energy curve with the one of the single particle above.
 
 <script>
-	cue(function (dt, state) {
-			var energy = totalEnergySim.particles.reduce((acc, p) => acc + p.potentialEnergy + p.kineticEnergy, 0);
-			return (energy > 1);
-	});
-</script>
-
-Do the same with the lone particle above: give it a shove, and look at the energy graph.
-
-<script>
-	cue(function (dt, state) {
-			var speed = v2.magnitude(singleEnergySim.particles[0].velocity);
-			return (speed > 1);
+	cue(function () {
+			var energy = getTotalEnergy(totalEnergySim);
+			return (energy > 0.2);
 	});
     endStep();
 </script>
 
-They look the same! Let's look at it a bit closer.
-
-
+Don't they look awfully similar?
 
 </div>
 <div class="twoColumn">
@@ -158,17 +156,14 @@ They look the same! Let's look at it a bit closer.
 <script>
     var energyAdditionSim = createSimulation({
         initialize: function(simulation) {
-
-            copyObject(simulation.parameters, {
-                radiusScaling: 0.1,
-                friction: 0.3,
-                dt: 0.001,
-            });
+            var p = simulation.parameters;
+            p.friction = pageGlobal.friction;
+            p.dt = 0.005;
 
             var particleCount = 7;
             for (var i = 0; i < particleCount; i++) {
             	var particle = new Particle();
-                particle.radius = 0.1;
+                particle.radius = pageGlobal.radius;
             	billiardsPosition(particle.position, i, 2*particle.radius);
             	var swatch = Color.niceSwatch;
             	particle.color = swatch[i % swatch.length];
@@ -181,11 +176,27 @@ They look the same! Let's look at it a bit closer.
     selectTool(energyAdditionSim.toolbar, "select");
 </script>
 <div class="stepLog twoColumn">
+
 To understand what happens to the energy as the particles collide, I have colored each particle in a unique color.
 
+Play with the particles and look at how their energy changes over time in the graph below.
+
 <script>
+    var energyAdditionState = {throwCount: 0, hadHighSpeed: false};
+    cue(function (dt) {
+            var energy = getTotalEnergy(energyAdditionSim);
+            var hasHighSpeedNow = energy > 0.2;
+            if (energyAdditionState.hadHighSpeed && (!hasHighSpeedNow))
+            {
+                energyAdditionState.throwCount += 1;
+            }
+            energyAdditionState.hadHighSpeed = hasHighSpeedNow;
+
+            return (energyAdditionState.throwCount >= 3);
+    });
+
 	// TODO: one color for each particle
-	var timeLog = createTimeLog({range: 50});
+	var timeLog = createTimeLog({range: pageGlobal.timeRange});
 	createGraphHere({
 		update: function(graph) {
 			var stackedEnergy = [0];
@@ -205,29 +216,54 @@ To understand what happens to the energy as the particles collide, I have colore
                     color: sim.particles[particleIndex].color,
                 });
 			}
+            var totalEnergies = timeLog.data[sim.particles.length];
+            var limits = getLimits(graph);
+            var epsilon = 0.01;
+            var maxIndex = arrayMinIndex(totalEnergies, function(x) { return -x; });
+
+            setGraphLimits(graph, 
+            {
+                yMax: pageGlobal.energyPlotMax,
+            });
+            addAxes(graph, {x: arrayLast(timeLog.time) - timeLog.range, y: 0});
 
 		},
 	});
+
+    endStep();
 </script>
 
-Balls knocking each other around is actually a pretty good model of how the world works at the atomic level.
-One big difference: _there is no friction_. Lower the friction of the system below and see what happens.
+We can now see how the total energy is made up of the individual energy of each particle. And while the total energy always has the same shape, the energy of the individual particles vary a lot.
 
+Balls knocking each other around is actually a pretty good model of how the world works at the atomic level.
+One big difference: _there is no friction_.
+
+Remove the friction of the system using the slider below.
 
 <script>
+    cue(function() {
+            return (energyAdditionSim.parameters.friction == 0);
+    });
 	insertHere(createSlider({
 		object: energyAdditionSim.parameters,
 		name: "friction",
 		min: 0, max: 0.3,
-		minLabel: "None", maxLabel: "Some",
+		minLabel: "No friction", maxLabel: "Some",
 	}));
-	cue(function() {
-			return (energyAdditionSim.parameters.friction == 0);
-	});
+</script>
+
+Then give the particles a little bit of energy.
+
+<script>
+    cue(function() {
+        var isFrictionless = energyAdditionSim.parameters.friction == 0;
+        var hasEnoughEnergy = getTotalEnergy(energyAdditionSim) > 0.1;
+        return (isFrictionless && hasEnoughEnergy);
+    });
     endStep();
 </script>
 
-The overall energy stays constant, but the amount of energy in each particle varies wildly.
+Without friction, the particles never stop bouncing! The total energy is the same, even though each individual particle changes its speed often. Because the energy keeps steady, the particles will on the whole neither speed up nor slow down.
 
 </div>
 <div class="twoColumn">
@@ -253,10 +289,8 @@ The overall energy stays constant, but the amount of energy in each particle var
 
 
 
-
+<!-- 
 ## The rest
-
-
 
 <cript>
     createSimulation({
@@ -434,3 +468,4 @@ _Heat is a kind of energy: the movement energy of many small things moving aroun
     * ask to decrease the energy
 * then to billiards frictionless
     * ask to decrease energy
+ -->

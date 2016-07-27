@@ -7,13 +7,14 @@ title: Friction
     var dropBallSim = createSimulation({
         initialize: function (simulation) {
             var p = simulation.parameters;
-            p.gravityAcceleration = 0.1;
+            p.gravityAcceleration = 0.5;
             p.coefficientOfRestitution = 0.7;
             p.friction = 0.1;
+            p.boxHeight = 10;
+            p.wallStrength = 1;
 
             var particle = new Particle();
-            particle.radius = 0.2;
-            v2.set(particle.position, 0, -1 + particle.radius);
+            v2.set(particle.position, 0, -p.boxHeight / 2 + particle.radius);
             addParticle(simulation, particle);
         },
     });
@@ -27,17 +28,15 @@ Drag and drop the ball from a reasonable height.
 
 <script>
     var wasDown = false;
-    cue({
-        condition: function() 
-        {
-            var sim = dropBallSim;
-            var isAtReasonableHeight = sim.particles[0].position[1] > 0;
-            var isDown = sim.mouse.leftButton.down;
-            var justUp = wasDown && (!isDown);
-            wasDown = isDown;
-            return (justUp && isAtReasonableHeight);
-        }
-    })
+    cue(function() {
+        var sim = dropBallSim;
+        var isAtReasonableHeight = sim.particles[0].position[1] > 0;
+        var isDown = sim.mouse.leftButton.down;
+        var justUp = wasDown && (!isDown);
+        wasDown = isDown;
+        return (justUp && isAtReasonableHeight);
+    });
+    endStep();
 </script>
 
 There are two things at play here: **air drag** and **inelastic collisions**. Let me show you!
@@ -50,38 +49,47 @@ There are two things at play here: **air drag** and **inelastic collisions**. Le
 </div>
 
 
+
+
 <div class="page">
 ## Air drag
 <script>
     var airDragSim = createSimulation({
         initialize: function (simulation) {
             var p = simulation.parameters;
-            p.gravityAcceleration = 0.001;
-            p.onlyHardSpheres = true;
+            p.gravityAcceleration = 0.1;
+            // p.onlyHardSpheres = true;
+            p.lennardJonesStrength = 0.1;
+            p.dt = 0.01;
+            p.boxWidth = 50;
+
+
+            var bigRadius = 5;
+            var tinyRadius = 1;
 
             var particle = new Particle();
-            particle.radius = 0.2;
             particle.type = 0;
-            v2.set(particle.position, 0, -1 + particle.radius + 0.001);
+            v2.set(particle.position, 0, -1 + particle.radius + 0.01);
+            particle.radius = bigRadius;
+            particle.mass = 25;
             addParticle(simulation, particle);
 
             var newParticles = [];
             for (var particleIndex = 0; particleIndex < 200; particleIndex++) {
                 var tinyParticle = new Particle();
-                tinyParticle.radius = 0.03;
-                tinyParticle.velocity = randomVelocity(0.2);
-                do {
-                    tinyParticle.position = randomPointInRect(simulation.boxBounds);
-                } while(isColliding(simulation, tinyParticle))
+                tinyParticle.radius = tinyRadius;
+                tinyParticle.velocity = randomVelocity(10);
                 tinyParticle.type = 1;
-                tinyParticle.mass = 0.001;
+                tinyParticle.mass = 1;
                 newParticles.push(tinyParticle);
             }
             addParticlesRandomly(simulation, newParticles);
 
-            setInteraction(simulation, 1, 1, Interaction.none);
-            setInteraction(simulation, 0, 0, Interaction.none);
-            setInteraction(simulation, 0, 1, Interaction.none);
+            setInteraction(simulation, 1, 1, null);
+            setInteraction(simulation, 0, 0, null);
+            var repulsiveInteraction = new RepulsiveInteraction();
+            repulsiveInteraction.separation = tinyRadius + bigRadius;
+            setInteraction(simulation, 0, 1, repulsiveInteraction);
         },
         
 
@@ -96,17 +104,15 @@ Drag and drop the ball from a reasonable height.
 
 <script>
     var wasDown = false;
-    cue({
-        condition: function() 
-        {
-            var sim = dropBallSim;
-            var isAtReasonableHeight = sim.particles[0].position[1] > 0;
-            var isDown = sim.mouse.leftButton.down;
-            var justUp =  wasDown && (!isDown);
-            wasDown = isDown;
-            return (justUp && isAtReasonableHeight);
-        }
-    })
+    cue(function() {
+        var sim = dropBallSim;
+        var isAtReasonableHeight = sim.particles[0].position[1] > 0;
+        var isDown = sim.mouse.leftButton.down;
+        var justUp =  wasDown && (!isDown);
+        wasDown = isDown;
+        return (justUp && isAtReasonableHeight);
+    });
+    endStep();
 </script>
 
 There are two things at play here: **air drag** and **inelastic collisions**. Let me show you!
@@ -118,33 +124,8 @@ There are two things at play here: **air drag** and **inelastic collisions**. Le
 </div>
 </div>
 
+
+
 <script>
     initChapter();
-</script>
-
-
-
-<script>
-    // function oneMassiveParticleGenerator(simulation, particleIndex)
-    // {
-    //     var particle = uniformParticleGenerator(simulation, particleIndex);
-    //     if (particleIndex == 0)
-    //     {
-    //         particle.mass = 50;
-    //         particle.radius = Math.sqrt(50);
-    //     }
-    //     return particle;
-    // }
-
-    // createSimulation({
-    //     controls: ["trajectoryEnabled"],
-    //     graphs: ["energy"],
-    //     particleGenerator: oneMassiveParticleGenerator,
-    //     parameters: {
-    //         particleCount: 500,
-    //         radiusScaling: 0.005,
-    //         bondEnergy: 0,
-    //         maxInitialSpeed: 0.05,
-    //     },
-    // });
 </script>

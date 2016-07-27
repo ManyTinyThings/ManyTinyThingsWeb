@@ -2,35 +2,27 @@
 
 <script>
 
-    function oppositeCorners(simulation)
-    {
-        v2.set(simulation.particles[0].position, -0.5, -0.5);
-        v2.set(simulation.particles[1].position, 0.5, 0.5);
-        for (var i = 0; i < 2; i++) {
-            v2.set(simulation.particles[i].velocity, 0, 0);
-            v2.set(simulation.particles[i].acceleration, 0, 0);
-        }
-        
-    }
-
     var interactionSim = createSimulation({
-        width: 400,
-        height: 400,
         initialize: function(simulation) {
+            var p = simulation.parameters;
+            p.friction = 0.1;
 
-            copyObject(simulation.parameters, {
-                radiusScaling: 0.1,
-                friction: 0.1,
-                lennardJonesStrength: 0.5,
-            });
-
-            for (var i = 0; i < 2; i++) {
-                addParticle(simulation, new Particle());
+            simulation.particleGenerator = function() {
+                var particle = new Particle();
+                return particle;
             }
 
-            oppositeCorners(simulation);
+            for (var i = 0; i < 2; i++) {
+                addParticle(simulation, simulation.particleGenerator());
+            }
 
-            setInteraction(simulation, 0, 0, Interaction.lennardJones);
+            var d = 5;
+            v2.set(simulation.particles[0].position, -d, -d);
+            v2.set(simulation.particles[1].position, d, d);
+
+            var ljInteraction = new LennardJonesInteraction();
+            ljInteraction.strength = 10;
+            setInteraction(simulation, 0, 0, ljInteraction);
         }
     });
 
@@ -48,18 +40,16 @@
     }
 </script>
 
-We know that we can think of atoms as tiny billiard balls bouncing around endlessly. But bouncing isn't the only way particles interact.
-
+<div class="page">
 <div class="stepLog twoColumn">
 Try moving these particles closer to each other.
 
 <script>
-    cue({
-        condition: function () {
-            var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
-            return (distance < 0.35);   
-        }
+    cue(function () {
+        var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
+        return (distance < 3);   
     });
+    endStep();
 </script>
 
 They seem to like each other! As they come closer, they attract and snap together.
@@ -67,12 +57,11 @@ They seem to like each other! As they come closer, they attract and snap togethe
 Can you get them to let go?
 
 <script>
-    cue({
-        condition: function () {
-            var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
-            return (distance > 0.7);
-        }
+    cue(function () {
+        var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
+        return (distance > 6);
     });
+    endStep();
 </script>
 
 It takes some effort!
@@ -80,14 +69,13 @@ It takes some effort!
 What happens if you collide them at high speed?
 
 <script>
-    cue({
-        condition: function () {
-            var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
-            // TODO: speed along normal instead
-            var relativeSpeed = v2.distance(interactionSim.particles[0].velocity, interactionSim.particles[1].velocity);
-            return (distance < 0.25) && (relativeSpeed > 1.0);
-        }
+    cue(function () {
+        var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
+        // TODO: speed along normal instead
+        var relativeSpeed = v2.distance(interactionSim.particles[0].velocity, interactionSim.particles[1].velocity);
+        return (distance < 3) && (relativeSpeed > 1.0);
     });
+    endStep();
 </script>
 
 The speed is too great for them to have time to stick together.
@@ -95,11 +83,10 @@ The speed is too great for them to have time to stick together.
 Let's add some more particles! (hold _c_ on the keyboard and use the mouse)
 
 <script>
-    cue({
-        condition: function () {
-            return (interactionSim.particles.length > 20);  
-        }
+    cue(function () {
+        return (interactionSim.particles.length > 20);  
     });
+    endStep();
 </script>
 
 They group together and form a larger shape, a _solid_, if you will.
@@ -107,33 +94,40 @@ They group together and form a larger shape, a _solid_, if you will.
 Try moving the solid around.
 
 <script>
-    cue({
-        condition: function () {
-            return (ensembleSpeed(interactionSim.particles) > 0.15); 
-        }
+    cue(function () {
+        return (ensembleSpeed(interactionSim.particles) > 0.15); 
     });
+    endStep();
 </script>
 
 The particles collectively behave like the macroscopic objects we are used to, moving and rotating as a unit.
 
 So far, we've have had friction, but there is no friction in the microscopic world.
 
+Turn off the friction.
+
 <script>
+    cue(function () {
+        return (interactionSim.parameters.friction == 0);
+    });
     createSliderHere({
         object: interactionSim.parameters,
         name: "friction",
         min: 0, max: 0.1,
-        minLabel: "None", maxLabel: "Some",
-    });
-
-    cue({
-        condition: function () {
-            return (interactionSim.parameters.friction == 0);
-        }
+        minLabel: "No friction", maxLabel: "Some",
     });
 </script>
 
-Now, the particles are constantly jiggling, meaning the system has a certain amount of heat.
+Give the particles some energy.
+
+<script>
+    cue(function() {
+        return (getTotalEnergy(interactionSim) > 0.3);
+    });
+    endStep();
+</script>
+
+
 
 Let's try amplifying the speed of each particle, in turn increasing the jiggling.
 
@@ -161,9 +155,10 @@ If we increase the temperature (and thus the jiggling) even further, the speed i
     }));
 </script>
 </div>
+</div>
 
 <script>
-    initStepLogs();
+    initChapter();
 </script>
 
 
