@@ -1320,6 +1320,22 @@ function getTotalEnergy(simulation)
     }, 0);
 }
 
+function getTotalPressure(simulation)
+{
+    var wallVector = v2.alloc();
+    var pressure = 0;
+    for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++) {
+        var wall = simulation.walls[wallIndex];
+        v2.subtract(wallVector, wall.vertices[1], wall.vertices[0]);
+        var wallLength = v2.magnitude(wallVector);
+        var wallPressure = v2.magnitude(wall.force) / wallLength;
+        pressure += wallPressure;
+    }
+    v2.free(wallVector);
+
+    return pressure;
+}
+
 // ! Measurement regions
 
 function createMeasurementRegion()
@@ -1470,8 +1486,11 @@ function Wall(start, end)
     this.shapeType = ShapeType.polygon;
     this.vertices = [start, end];
 
+    this.force = v2(0, 0);
+
     this.mass = Infinity;
     this.velocity = v2(0, 0);
+
 }
 
 // ! Particle object
@@ -2162,6 +2181,7 @@ function resetSimulation(simulation)
             measurementWindowLength: 100,
             measurementEnabled: true,
             pressureWindowSize: 1000,
+            displayWallPressure: false,
 
             // forces
             velocityAmplification: 1,
@@ -2177,7 +2197,7 @@ function resetSimulation(simulation)
             cutoffFactor: 2.5,
             onlyHardSpheres: false,
             dragStrength: 1,
-            wallStrength: 1e-4,
+            wallStrength: 1,
 
             // thermostat
             thermostatSpeed: 0,
@@ -2414,6 +2434,25 @@ function drawSimulation(simulation)
             drawArrow(simulation.renderer, particle.position, simulation.mouse.worldPosition);
         }
 
+    }
+
+    if (simulation.parameters.displayWallPressure)
+    {
+        var arrowStart = v2.alloc();
+        var arrowEnd = v2.alloc();
+        for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++) {
+            var wall = simulation.walls[wallIndex];
+            v2.add(arrowStart, wall.vertices[0], wall.vertices[1]);
+            v2.scale(arrowStart, arrowStart, 0.5);
+
+            var length = 10;
+            v2.scaleAndAdd(arrowEnd, arrowStart, 
+                wall.force, - 1 / length);
+
+            drawArrow(simulation.renderer, arrowStart, arrowEnd);
+        }
+        v2.free(arrowStart);
+        v2.free(arrowEnd);
     }
 }
 
@@ -2741,6 +2780,14 @@ var updateSimulation = function()
                         particles.splice(particleIndex, 1);
                         particleIndex -= 1;
                     }
+
+                    // TODO: remove particles that move outside box if we are not periodic?
+                }
+
+                // reset wall forces
+                for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++) {
+                    var wall = simulation.walls[wallIndex];
+                    v2.set(wall.force, 0, 0);
                 }
 
                 // ! put particles in grid
@@ -2912,13 +2959,13 @@ var updateSimulation = function()
                         }
                     }
 
-                    // Friction
+                    // ! Friction
                     v2.scaleAndAdd(particle.acceleration, particle.acceleration,
                         particle.velocity, -params.friction / particle.mass);
 
                     if (!params.isSlowCollisionEnabled)
                     {
-                        // Wall forces
+                        // ! Wall forces
                         var wallVector = v2.alloc();
                         var relativeWallStart = v2.alloc();
 
@@ -2958,6 +3005,9 @@ var updateSimulation = function()
                                 particle.virial = virial;
 
                                 var forceFactor = -virial * invQuadrance;
+
+                                v2.scaleAndAdd(wall.force, wall.force, 
+                                    relativePosition, -forceFactor);
 
                                 v2.scaleAndAdd(particle.acceleration, particle.acceleration,
                                     relativePosition, forceFactor / particle.mass);
