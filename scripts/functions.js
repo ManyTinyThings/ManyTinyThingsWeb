@@ -1,5 +1,61 @@
 "use strict";
 
+// ! Dependency graph
+
+function Chapter(name)
+{
+    this.name = name;
+    this.requiredChapters = [];
+}
+
+var chapters = {};
+
+function addChapter(name, requiredChapters)
+{
+    var chapter = new Chapter(name);
+    chapter.requiredChapters = requiredChapters;
+    chapters[name] = chapter;
+}
+
+addChapter("kineticEnergy", []);
+addChapter("potentialEnergy", [chapters.kineticEnergy]);
+addChapter("heat", [chapters.kineticEnergy]);
+addChapter("phasesOfMatter", [chapters.potentialEnergy, chapters.heat]);
+addChapter("evaporation", [chapters.phasesOfMatter]);
+
+
+function availableChapters(finishedChapters)
+{
+    var available = [];
+    for (var chapterKey in chapters)
+    {
+        var chapter = chapters[chapterKey];
+        var isChapterAvailable = true;
+        for (var requiredChapter of chapter.requiredChapters)
+        {
+            var isRequiredChapterFinished = false
+            for (var finishedChapter of finishedChapters)
+            {
+                if (requiredChapter === finishedChapter)
+                {
+                    isRequiredChapterFinished = true;
+                    break;
+                }
+            }
+            if (!isRequiredChapterFinished)
+            {
+                isChapterAvailable = false;
+                break;
+            }
+        }
+        if (isChapterAvailable)
+        {
+            available.push(chapter);
+        }
+    }
+    return available;
+}
+
 // ! Pool
 
 function Pool(constructor)
