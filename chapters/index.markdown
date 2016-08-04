@@ -1,4 +1,6 @@
-# Many Tiny Things
+---
+title: Many Tiny Things
+---
 
 We live in a _huge_ world made up of _tiny_ parts.
 
@@ -19,21 +21,20 @@ If that sounded nonsensical, don't worry, we'll just jump right in! (The whole p
 Here's a typical picture:
 
 <script>
-    createSimulation({
-        controls: [],
-        parameters: {
-            particleCount: 1,
-            radiusScaling: 0.08,
-            bondEnergy: 0,
-            maxInitialSpeed: 0,
+    createSimulationHere({
+        initialize: function(simulation) {
+			var p = simulation.parameters;
+			p.friction = 0.2;
+
+			addParticle(simulation, new Particle());
         },
     });
 </script>
 
 ## What do you want to learn more about?
 
-* [Energy and heat](heat.html)
-* [Friction](friction.html)
-* [Pressure](pressure.html)
-* [Entropy](entropy.html)
-* [Interactions](states.html)
+* [Energy](../energy)
+* [Friction](../friction)
+* [Pressure](../pressure)
+* [Entropy](../entropy)
+* [Interactions](../states)

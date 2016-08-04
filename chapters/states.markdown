@@ -1,4 +1,6 @@
-# Interactions / States of matter
+---
+title: Interactions / States of matter
+---
 
 ## Micro &rarr;
 
@@ -270,12 +272,15 @@ The potential for the attractive interaction is more interesting. There is still
 
 Note that the ball will roll back and forth in the valley before settling at the bottom. This is why the particles vibrate a bit when they snap together. Without friction, they will keep vibrating forever.
 
+Friction: No <script> createSliderHere(value => interactionSim.parameters.thermostatTemperature = lerp(0, value, 0.1)); </script>\ High
+
 Also: the potential only depends on distance, that is, it's the same in all directions. To check, try making the moving particle spin around the other one in an orbit! (This is actually very similar to how the moon spins around the earth and the earth around the sun!)
 
 
 # TODO
 
 * Potential energy
+    * Show field in 2D
     * Rolling ball instead of line
 	* Two different kinds of particles
         * attractive adn

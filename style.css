@@ -66,6 +66,13 @@ canvas:active {
     vertical-align: top;
 }
 
+.sideNoteRight {
+    position: absolute;
+    right: 0;
+    width: 400px;
+    margin-left: 410px;
+}
+
 .stepLog {
     position: relative;
 }
