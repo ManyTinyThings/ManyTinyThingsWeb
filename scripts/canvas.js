@@ -134,6 +134,21 @@ function drawArrow(renderer, start, end)
     v2.free(arrowVector);
 }
 
+function drawDiscMarker(renderer, position, pixelRadius, color)
+{
+    var canvasPosition = v2.alloc();
+    transformToRectFromRect(canvasPosition, renderer.canvasBounds, position, renderer.bounds);
+
+    var c = renderer.context;
+    c.fillStyle = color.css;
+    c.save();
+    c.beginPath();
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.arc(canvasPosition[0], canvasPosition[1], pixelRadius, 0, tau);
+    c.fill();
+    c.restore();
+}
+
 function drawTrajectoryUnzipped(renderer, xs, ys, color)
 {
     var c = renderer.context;

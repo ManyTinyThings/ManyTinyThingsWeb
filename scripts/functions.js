@@ -1853,10 +1853,9 @@ function setWallsAlongBorder(simulation)
     }
 }
 
+// TODO: maybe make this a setter instead, but seems nontrivial
 function updateBounds(simulation)
 {
-	// ! boxes
-
     var aspectRatio = simulation.canvas.width / simulation.canvas.height;
     var boxWidth = simulation.parameters.boxWidth;
     var boxHeight = boxWidth / aspectRatio;
@@ -1875,10 +1874,6 @@ function updateBounds(simulation)
     );
 
     updateRendererBounds(simulation.renderer);
-
-    simulation.boxBounds = new Rectangle();
-    simulation.leftRect = new Rectangle();
-    simulation.rightRect = new Rectangle();
 
     var b = simulation.boxBounds;
     setCenterWidthHeight(b,
@@ -2215,6 +2210,10 @@ function resetSimulation(simulation)
     simulation.particles = [];
     simulation.interactions = [];
     simulation.trajectory = [];
+
+    simulation.boxBounds = new Rectangle();
+    simulation.leftRect = new Rectangle();
+    simulation.rightRect = new Rectangle();
 
     // TODO: just set the defaults instead of this copy business
     copyObject(simulation, newSimulation);
