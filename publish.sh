@@ -13,6 +13,7 @@ website_folder="../ManyTinyThings.github.io"
 
 cp -r scripts/ $website_folder/scripts/
 cp style.css $website_folder/style.css
+cp -r assets/ $website_folder/assets/
 
 for file in chapters/*.markdown; do
 	chapter_file=${file##*/}
