@@ -2,23 +2,128 @@
 title: Many Tiny Things
 ---
 
-We live in a _huge_ world made up of _tiny_ parts.
+Every big thing in the world is made up of **many tiny things**.
 
-Galaxies, stars, planets, continents, cities, people, cells, molecules, atoms, protons, quarks.
 
-Most of the time, we don't think about this, and live our lives in the middle of the large and small. We care about the things we can see and touch, and rightly so: that's what is most important at the scale where we live. Let's call things we can see with our naked eyes _macroscopic_.
+<div class="threeColumn">
+**Air** is _many tiny things_ bouncing around everywhere
 
-The _microscopic_, things we _can't_ see unless we use a _microscope_, is not as common in everyday life. It does come up, for instance, when talking about nutrition: we can't see the fat, carbohydrates and vitamins in food. 
+<script>
+	createSimulationHere({
+		pixelWidth: 250,
+		pixelHeight: 250,
+		initialize: function(simulation)
+		{
+			var p = simulation.parameters;
+			p.boxWidth = 200;
+			p.isOnlyHardSpheres = true;
+			p.gravityAcceleration = 1;
 
-This book/essay/series of explanations is about how the _microscopic_ connects to the _macroscopic_. We will use our intuition from everyday, macroscopic life to understand what's happening at the level of atoms, and then see how looking at _many tiny things_ can help us understand things that happen in everyday life.
+			updateBounds(simulation);
 
-## So, what kinda book is this?
+			var particleCount = 200;
+			var initialSpeed = 10;
+			for (var i = 0; i < particleCount; i++) {
+				var particle = new Particle();
+				particle.position = randomPointInRect(simulation.boxBounds);
+				v2.set(particle.velocity, randomGaussian(), randomGaussian());
+				v2.scale(particle.velocity, particle.velocity, 10);
+				addParticle(simulation, particle);
+			}
+		}
+	})
+</script>
+</div>
 
-It's sort of like a textbook, but with more pictures than usual. And the pictures are moving. And you can interact with the pictures and they will respond! So basically, it's a Harry Potter physics comic book.
+<div class="threeColumn">
+**Water** is _many tiny things_ sloshing around
 
-If that sounded nonsensical, don't worry, we'll just jump right in! (The whole point of being interactive is that instead of just me telling you, you can explore yourself!)
+<script>
+	createSimulationHere({
+		pixelWidth: 250,
+		pixelHeight: 250,
+		initialize: function(simulation)
+		{
+			var p = simulation.parameters;
+			p.boxWidth = 40;
+			p.gravityAcceleration = 1;
+			p.thermostatSpeed = 0.1;
+			p.thermostatTemperature = 1.5;
 
-Here's a typical picture:
+			updateBounds(simulation);
+
+			var particleCount = 100;
+			var particles = [];
+			for (var i = 0; i < particleCount; i++) {
+				var particle = new Particle();
+				particle.position = randomPointInRect(simulation.boxBounds);
+				particles.push(particle);
+			}
+			addParticlesRandomly(simulation, particles);
+
+			var ljInteraction = new LennardJonesInteraction();
+
+			setInteraction(simulation, 0, 0, ljInteraction);
+		}
+	})
+</script>
+</div>
+
+<div class="threeColumn">
+
+**Normal-sized things** are _many tiny things_ stuck together
+
+<script>
+	createSimulationHere({
+		pixelWidth: 250,
+		pixelHeight: 250,
+		initialize: function(simulation)
+		{
+			var p = simulation.parameters;
+			p.boxWidth = 40;
+			p.gravityAcceleration = 1;
+			p.dragStrength = 10;
+			p.friction = 0.1;
+
+			updateBounds(simulation);
+
+			var particleCount = 2 * 37;
+			var latticeSpacing = 2;
+			var redBallMiddle = v2(0, 10);
+			var blackBallMiddle = v2(-5, -10);
+			for (var i = 0; i < particleCount; i++) {
+				var halfIndex = Math.floor(i / 2);
+				var particle = new Particle();
+				particle.type = i % 2;
+				if (particle.type == 0)
+				{
+					hexagonalLatticePosition(particle.position, halfIndex, latticeSpacing);
+					v2.add(particle.position, particle.position, blackBallMiddle);
+				}
+				else
+				{
+					particle.color = Color.red;
+					hexagonalLatticePosition(particle.position, halfIndex, latticeSpacing);
+					v2.add(particle.position, particle.position, redBallMiddle);
+				}
+				
+				addParticle(simulation, particle);
+			}
+
+			var ljInteraction = new LennardJonesInteraction();
+			ljInteraction.strength = 200;
+			setInteraction(simulation, 0, 0, ljInteraction);
+			setInteraction(simulation, 1, 1, ljInteraction);
+		}
+	})
+</script>
+	
+</div>
+
+But we can't see the tiny things without a microscope. They are too small, _microscopic_. We can only see the _macroscopic_ objects the tiny things make up. (And in the case of air, we can't see it at all!)
+
+This website is a series of explanations on how the tiny, microscopic things are connected to the big, macroscopic things that we can see, hear and feel. We will explore the consequences of everything in this world being made up of tiny things. 
+
 
 <script>
     createSimulationHere({
