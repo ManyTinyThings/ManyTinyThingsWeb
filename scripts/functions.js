@@ -1981,8 +1981,10 @@ function updateGrid(simulation)
 function addParticle(simulation, particle)
 {
     // TODO: better checks here
-    var inside = doesRectContainPoint(simulation.boxBounds, particle.position);
-    var isSuccessful = inside && (simulation.particles.length < simulation.parameters.maxParticleCount);
+    var isInside = doesRectContainPoint(simulation.boxBounds, particle.position);
+    var maxParticleCount = simulation.parameters.maxParticleCount;
+    var notTooMany = (0 == maxParticleCount) || (simulation.particles.length < maxParticleCount)
+    var isSuccessful = isInside && notTooMany;
     if (isSuccessful)
     {
         simulation.particles.push(particle);
@@ -2211,7 +2213,7 @@ function resetSimulation(simulation)
             maxInitialSpeed: 0.1,
             soundEnabled: false,
             isPeriodic: false,
-            maxParticleCount: 100,
+            maxParticleCount: 0 ,
 
             // box
 
