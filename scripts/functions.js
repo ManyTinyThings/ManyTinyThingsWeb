@@ -2175,8 +2175,13 @@ function createSimulation(opts)
     addTool(simulation.toolbar,
     {
         name: "select",
-        key: "s"
+        key: "s",
     });
+    addTool(simulation.toolbar,
+    {
+        name: "repel",
+        key: "r",
+    })
     addTool(simulation.toolbar,
     {
         name: "create",
@@ -2189,6 +2194,8 @@ function createSimulation(opts)
     });
 
     selectTool(simulation.toolbar, "select");
+
+    hideElement(simulation.toolbar.div);
 
     simulation.renderer = createRenderer(simulation.canvas);
 
@@ -2221,6 +2228,7 @@ function resetSimulation(simulation)
             boxHeight: null,
 
             // collision-related
+            isOnlyHardSpheres: false,
             isSlowCollisionEnabled: false,
             isSlowParticleParticleCollisionEnabled: false,
             coefficientOfRestitution: 1,
@@ -2250,6 +2258,7 @@ function resetSimulation(simulation)
             cutoffFactor: 2.5,
             onlyHardSpheres: false,
             dragStrength: 1,
+            repelStrength: 1,
             wallStrength: 1,
 
             // thermostat
@@ -2284,7 +2293,7 @@ function resetSimulation(simulation)
 
     simulation.initialize(simulation);
 
-    if (simulation.parameters.onlyHardSpheres)
+    if (simulation.parameters.isOnlyHardSpheres)
     {
         simulation.parameters.dt = simulation.parameters.simulationTimePerSecond / 60;
         simulation.parameters.isSlowCollisionEnabled = true;
@@ -2447,14 +2456,18 @@ function resetSimulation(simulation)
     return simulation;
 }
 
-var MouseMode = Object.freeze(
+function createEnum(names, isBitfield)
 {
-    none: 0,
-    drag: 1,
-    select: 2,
-    create: 3,
-    delete: 4,
-});
+    var enumerable = {};
+    for (var nameIndex = 0; nameIndex < names.length; ++nameIndex)
+    {
+        var name = names[nameIndex];
+        enumerable[name] = isBitfield ? (1 << nameIndex) : nameIndex;
+    }
+    return Object.freeze(enumerable);
+}
+
+var MouseMode = createEnum(["none", "drag", "select", "repel", "create", "delete"]);
 
 // ! Simulation
 
@@ -2841,187 +2854,187 @@ var updateSimulation = function()
                     // TODO: remove particles that move outside box if we are not periodic?
                 }
 
-                // reset wall forces
-                for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++) {
-                    var wall = simulation.walls[wallIndex];
-                    v2.set(wall.force, 0, 0);
-                }
-
-                // ! put particles in grid
-
-                for (var i = 0; i < simulation.particleGrid.cells.length; i++)
+                if (!params.isSlowCollisionEnabled)
                 {
-                    simulation.particleGrid.cells[i].length = 0;
-                }
+                    // reset wall forces
+                    for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++) {
+                        var wall = simulation.walls[wallIndex];
+                        v2.set(wall.force, 0, 0);
+                    }
 
-                for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++)
-                {
-                    var particle = simulation.particles[particleIndex];
-                    var col = Math.floor((particle.position[0] - simulation.boxBounds.left) / simulation.particleGrid.dx);
-                    var row = Math.floor((particle.position[1] - simulation.boxBounds.bottom) / simulation.particleGrid.dy);
-                    col = mod(col, simulation.particleGrid.colCount);
-                    row = mod(row, simulation.particleGrid.rowCount);
-                    var cellIndex = row * simulation.particleGrid.colCount + col;
-                    simulation.particleGrid.cells[cellIndex].push(particleIndex);
-                    particle.gridCol = col;
-                    particle.gridRow = row;
-                }
+                    // ! put particles in grid
 
-
-                // TODO: handle overlap, because it sometimes happens
-                // might be because walls do not use prior collision code
-
-
-                // ! Calculate force and energy
-
-                var squareCutoffFactor = square(params.cutoffFactor);
-
-
-                for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
-                {
-                    var particle = particles[particleIndex];
-
-                    var gridRadius = 1;
-                    for (var dy = -gridRadius; dy <= gridRadius; dy++)
+                    for (var i = 0; i < simulation.particleGrid.cells.length; i++)
                     {
-                        var row = mod(particle.gridRow + dy, simulation.particleGrid.rowCount);
-                        var rowIndex = simulation.particleGrid.colCount * row;
-                        for (var dx = -gridRadius; dx <= gridRadius; dx++)
+                        simulation.particleGrid.cells[i].length = 0;
+                    }
+
+                    for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++)
+                    {
+                        var particle = simulation.particles[particleIndex];
+                        var col = Math.floor((particle.position[0] - simulation.boxBounds.left) / simulation.particleGrid.dx);
+                        var row = Math.floor((particle.position[1] - simulation.boxBounds.bottom) / simulation.particleGrid.dy);
+                        col = mod(col, simulation.particleGrid.colCount);
+                        row = mod(row, simulation.particleGrid.rowCount);
+                        var cellIndex = row * simulation.particleGrid.colCount + col;
+                        simulation.particleGrid.cells[cellIndex].push(particleIndex);
+                        particle.gridCol = col;
+                        particle.gridRow = row;
+                    }
+
+
+                    // TODO: handle overlap, because it sometimes happens
+                    // might be because walls do not use prior collision code
+
+
+                    // ! Calculate force and energy
+
+                    var squareCutoffFactor = square(params.cutoffFactor);
+
+
+                    for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
+                    {
+                        var particle = particles[particleIndex];
+
+                        var gridRadius = 1;
+                        for (var dy = -gridRadius; dy <= gridRadius; dy++)
                         {
-                            var col = mod(particle.gridCol + dx, simulation.particleGrid.colCount);
-                            var cellIndex = rowIndex + col;
-
-                            var cell = simulation.particleGrid.cells[cellIndex];
-                            for (var cellIndex = 0; cellIndex < cell.length; cellIndex++)
+                            var row = mod(particle.gridRow + dy, simulation.particleGrid.rowCount);
+                            var rowIndex = simulation.particleGrid.colCount * row;
+                            for (var dx = -gridRadius; dx <= gridRadius; dx++)
                             {
-                                var otherParticleIndex = cell[cellIndex];
-                                if (particleIndex >= otherParticleIndex)
+                                var col = mod(particle.gridCol + dx, simulation.particleGrid.colCount);
+                                var cellIndex = rowIndex + col;
+
+                                var cell = simulation.particleGrid.cells[cellIndex];
+                                for (var cellIndex = 0; cellIndex < cell.length; cellIndex++)
                                 {
-                                    continue;
-                                }
-                                var otherParticle = particles[otherParticleIndex];
-
-                                var interaction = getInteraction(simulation, particle.type, otherParticle.type);
-                                if (interaction === null)
-                                {
-                                    continue;
-                                }
-
-                                v2.subtract(relativePosition, otherParticle.position, particle.position);
-
-                                if (params.isPeriodic)
-                                {
-                                    v2.periodicize(relativePosition, relativePosition, simulation.boxBounds);
-                                }
-
-                                // NOTE: no forces across walls
-
-                                var wallVector = v2.alloc();
-                                var wallToParticle = v2.alloc();
-                                var isAcrossWall = false;
-                                for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
-                                {
-                                    var wall = simulation.walls[wallIndex];
-                                    v2.subtract(wallVector, wall.vertices[1], wall.vertices[0]);
-                                    v2.subtract(wallToParticle, particle.position, wall.vertices[0]);
-                                    var intersection = intersectionOriginLineLine(wallVector, wallToParticle, relativePosition);
-                                    isAcrossWall = ((0 < intersection.tLine) && (intersection.tLine < 1) && (0 < intersection.tOriginLine) && (intersection.tOriginLine < 1));
-                                    if (isAcrossWall)
-                                    {
-                                        break;
-                                    }
-                                }
-                                v2.free(wallToParticle);
-                                v2.free(wallVector);
-                                if (isAcrossWall)
-                                {
-                                    continue;
-                                }
-
-                                // ! Lennard Jones
-
-                                var quadrance = v2.square(relativePosition);
-                                var invQuadrance = 1 / quadrance;
-                                var squareSeparation = square(interaction.separation);
-
-                                var potentialEnergy = 0;
-                                var virial = 0;
-
-                                var isRepulsive = interaction instanceof RepulsiveInteraction;
-
-                                if (isRepulsive)
-                                {
-                                    if (quadrance > squareSeparation)
+                                    var otherParticleIndex = cell[cellIndex];
+                                    if (particleIndex >= otherParticleIndex)
                                     {
                                         continue;
                                     }
-                                    potentialEnergy += interaction.strength;
+                                    var otherParticle = particles[otherParticleIndex];
+
+                                    var interaction = getInteraction(simulation, particle.type, otherParticle.type);
+                                    if (interaction === null)
+                                    {
+                                        continue;
+                                    }
+
+                                    v2.subtract(relativePosition, otherParticle.position, particle.position);
+
+                                    if (params.isPeriodic)
+                                    {
+                                        v2.periodicize(relativePosition, relativePosition, simulation.boxBounds);
+                                    }
+
+                                    // NOTE: no forces across walls
+
+                                    var wallVector = v2.alloc();
+                                    var wallToParticle = v2.alloc();
+                                    var isAcrossWall = false;
+                                    for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
+                                    {
+                                        var wall = simulation.walls[wallIndex];
+                                        v2.subtract(wallVector, wall.vertices[1], wall.vertices[0]);
+                                        v2.subtract(wallToParticle, particle.position, wall.vertices[0]);
+                                        var intersection = intersectionOriginLineLine(wallVector, wallToParticle, relativePosition);
+                                        isAcrossWall = ((0 < intersection.tLine) && (intersection.tLine < 1) && (0 < intersection.tOriginLine) && (intersection.tOriginLine < 1));
+                                        if (isAcrossWall)
+                                        {
+                                            break;
+                                        }
+                                    }
+                                    v2.free(wallToParticle);
+                                    v2.free(wallVector);
+                                    if (isAcrossWall)
+                                    {
+                                        continue;
+                                    }
+
+                                    // ! Lennard Jones
+
+                                    var quadrance = v2.square(relativePosition);
+                                    var invQuadrance = 1 / quadrance;
+                                    var squareSeparation = square(interaction.separation);
+
+                                    var potentialEnergy = 0;
+                                    var virial = 0;
+
+                                    var isRepulsive = interaction instanceof RepulsiveInteraction;
+
+                                    if (isRepulsive)
+                                    {
+                                        if (quadrance > squareSeparation)
+                                        {
+                                            continue;
+                                        }
+                                        potentialEnergy += interaction.strength;
+                                    }
+
+                                    // truncation
+                                    if (quadrance > (squareCutoffFactor * squareSeparation))
+                                    {
+                                        continue;
+                                    }
+
+                                    // TODO: unsure about this one
+                                    if (!isRepulsive)
+                                    {
+                                        // compensate truncation
+                                        // NOTE: not really necessary
+                                        // TODO: move this out of loop
+                                        var b2 = 1 / squareCutoffFactor;
+                                        var b6 = b2 * b2 * b2;
+                                        potentialEnergy -= interaction.strength * (b6 - 2) * b6;
+                                    }
+
+                                    // ! Lennard-jones
+                                    var a2 = squareSeparation * invQuadrance;
+                                    var a6 = a2 * a2 * a2;
+                                    potentialEnergy += interaction.strength * (a6 - 2) * a6;
+                                    virial += interaction.strength * 12 * (a6 - 1) * a6;
+
+                                    // TODO: reimplement coulomb
+                                    if (false && isCoulombInteraction)
+                                    {
+                                        // TODO: energy is positive in ground state, is that correct?
+                                        var chargeProduct = (interaction == Interaction.coulombSame) ? 1 : -1;
+
+                                        // NOTE: fake coulomb
+                                        var coulombFactor = params.coulombStrength * chargeProduct;
+                                        var coulombEnergy = coulombFactor * invQuadrance;
+                                        virial += 2 * coulombEnergy;
+                                        potentialEnergy += coulombEnergy;
+
+                                    }
+
+                                    // TODO: one loop for each interaction intead of one loop with a lot of ifs
+
+                                    var forceFactor = -virial * invQuadrance;
+
+                                    v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                                        relativePosition, forceFactor / particle.mass);
+                                    v2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration,
+                                        relativePosition, -forceFactor / otherParticle.mass);
+
+                                    // Measurements
+
+                                    particle.potentialEnergy += potentialEnergy / 2;
+                                    otherParticle.potentialEnergy += potentialEnergy / 2;
+
+                                    var halfVirial = virial / 2;
+                                    particle.virial += halfVirial;
+                                    otherParticle.virial += halfVirial;
                                 }
-
-                                // truncation
-                                if (quadrance > (squareCutoffFactor * squareSeparation))
-                                {
-                                    continue;
-                                }
-
-                                // TODO: unsure about this one
-                                if (!isRepulsive)
-                                {
-                                    // compensate truncation
-                                    // NOTE: not really necessary
-                                    // TODO: move this out of loop
-                                    var b2 = 1 / squareCutoffFactor;
-                                    var b6 = b2 * b2 * b2;
-                                    potentialEnergy -= interaction.strength * (b6 - 2) * b6;
-                                }
-
-                                // ! Lennard-jones
-                                var a2 = squareSeparation * invQuadrance;
-                                var a6 = a2 * a2 * a2;
-                                potentialEnergy += interaction.strength * (a6 - 2) * a6;
-                                virial += interaction.strength * 12 * (a6 - 1) * a6;
-
-                                // TODO: reimplement coulomb
-                                if (false && isCoulombInteraction)
-                                {
-                                    // TODO: energy is positive in ground state, is that correct?
-                                    var chargeProduct = (interaction == Interaction.coulombSame) ? 1 : -1;
-
-                                    // NOTE: fake coulomb
-                                    var coulombFactor = params.coulombStrength * chargeProduct;
-                                    var coulombEnergy = coulombFactor * invQuadrance;
-                                    virial += 2 * coulombEnergy;
-                                    potentialEnergy += coulombEnergy;
-
-                                }
-
-                                // TODO: one loop for each interaction intead of one loop with a lot of ifs
-
-                                var forceFactor = -virial * invQuadrance;
-
-                                v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                                    relativePosition, forceFactor / particle.mass);
-                                v2.scaleAndAdd(otherParticle.acceleration, otherParticle.acceleration,
-                                    relativePosition, -forceFactor / otherParticle.mass);
-
-                                // Measurements
-
-                                particle.potentialEnergy += potentialEnergy / 2;
-                                otherParticle.potentialEnergy += potentialEnergy / 2;
-
-                                var halfVirial = virial / 2;
-                                particle.virial += halfVirial;
-                                otherParticle.virial += halfVirial;
                             }
                         }
-                    }
 
-                    // ! Friction
-                    v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                        particle.velocity, -params.friction / particle.mass);
+                        // ! Friction
+                        v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                            particle.velocity, -params.friction / particle.mass);
 
-                    if (!params.isSlowCollisionEnabled)
-                    {
                         // ! Wall forces
                         var wallVector = v2.alloc();
                         var relativeWallStart = v2.alloc();
@@ -3076,11 +3089,27 @@ var updateSimulation = function()
                     }
                 }
 
+                
+                // ! Repel tool
 
+                if (simulation.mouse.mode === MouseMode.repel)
+                {
+                    for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++) {
+                        var particle = simulation.particles[particleIndex];
 
-                // ! User interaction
+                            var mouseToParticle = v2.alloc();
+                            v2.subtract(mouseToParticle, particle.position, simulation.mouse.worldPosition);
 
-                if (simulation.mouse.mode == MouseMode.drag)
+                            var repelFactor = params.boxWidth / v2.square(mouseToParticle);
+
+                            v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                                mouseToParticle, repelFactor * params.repelStrength / particle.mass);
+                    }
+                }
+
+                // ! Drag tool
+
+                if (simulation.mouse.mode === MouseMode.drag)
                 {
                     var draggedParticle = particles[simulation.mouse.draggedParticleIndex];
                     v2.subtract(relativePosition, simulation.mouse.worldPosition, draggedParticle.position);
