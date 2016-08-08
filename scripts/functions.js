@@ -2839,14 +2839,14 @@ var updateSimulation = function()
                     var particle = particles[particleIndex];
                     v2.scaleAndAdd(particle.position, particle.position, particle.velocity, remainingTime);
 
-                    // filter NaNs and infinities
-                    if (!v2.isFinite(particle.position))
+                    // filter NaNs, infinities, and particles that escape the box
+                    var isFinite = v2.isFinite(particle.position);
+                    var isOutside = (!params.isPeriodic) && (!doesRectContainPoint(simulation.boxBounds, particle.position));
+                    if ((!isFinite) || isOutside)
                     {
                         particles.splice(particleIndex, 1);
                         particleIndex -= 1;
                     }
-
-                    // TODO: remove particles that move outside box if we are not periodic?
                 }
 
                 if (!params.isSlowCollisionEnabled)
