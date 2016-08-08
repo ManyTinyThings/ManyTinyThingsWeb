@@ -1,64 +1,93 @@
 ---
-title: Energy and Heat
+title: Heat
 ---
 
-# Energy and Heat
+To a person like you and me, heat is very important. We heat our food, get hot in the sun, feel the body heat when hugging someone, avoid touching things that are too hot and with too little heat we start freezing.
 
-Here is a billiard ball. Try throwing it around.
+But what _is_ heat?
+
+<div class="page">
+
 
 <script>
-    createSimulation({
-        visualizations: ["energy"],
-        controls: [],
-        parameters: {
-            particleCount: 1,
-            friction: 0.1,
-            bondEnergy: 0,
-            coefficientOfRestitution: 0.7,
-        },
+    var heatSim = createSimulation({
+        initialize: function(simulation) {
+            var p = simulation.parameters;
+            p.friction = 0.1;
+            p.dt = 0.005;
+            p.boxWidth = 30;
+
+            updateBounds(simulation);
+
+            var particleCount = 1 + 21;
+            for (var i = 0; i < particleCount; i++) {
+                var particle = new Particle();
+                particle.radius = 1;
+                billiardsPosition(particle.position, i, 2*particle.radius);
+                addParticle(simulation, particle);
+            }
+        }
     });
 </script>
 
-As you pick up and throw the ball, you give it speed, and in turn, energy. This kind o energy is called
-_kinetic energy_, or _movement energy_.
-When you release the ball it starts to lose energy because of the friction in the air and in the collisions with the table.
+<div class="stepLog twoColumn">
 
-I added some more balls. Play around with them!
+Turn off the friction.
 
 <script>
-    createSimulation({
-        visualizations: ["energy"],
-        particleGenerator: billiardsParticleGenerator,
-        parameters: {
-            particleCount: 11,
-            friction: 0.1,
-            bondEnergy: 0,
-        },
+    cue(function() {
+            return (heatSim.parameters.friction == 0);
     });
+    insertHere(createSlider({
+        object: heatSim.parameters,
+        name: "friction",
+        min: 0, max: 0.1,
+        minLabel: "No friction", maxLabel: "Some",
+    }));
 </script>
 
-Here I show the total energy, which is what you get by adding up the energy of each particle.
-
-Balls knocking each other around is actually a pretty good model of how the world work at the atomic level.
-One big difference: _there is no friction_. Lower the friction of the system below an see what happens.
+Give the particles a shove.
 
 <script>
-    createSimulation({
-        visualizations: ["energy"],
-        controls: ["friction"],
-        particleGenerator: billiardsParticleGenerator,
-        parameters: {
-            particleCount: 11,
-            friction: 0,
-            bondEnergy: 0,
-        },
+    cue(function() {
+        var isFrictionless = heatSim.parameters.friction == 0;
+        var hasEnoughEnergy = getTotalEnergy(heatSim) > 0.1;
+        return (isFrictionless && hasEnoughEnergy);
     });
+    endStep();
 </script>
 
-The atoms are bouncing all over the place, and they never stop. We have created  perpetual motion machine!
+**This is heat.** 
 
-Also, notice that the energy stays the same. Put another way: _energy is never created o destroyed_. This is how the world works at the microscopic level.
+Particles moving around randomly, endlessly.
 
+</div>
+
+<div class="twoColumn">
+<script>
+    insertHere(heatSim.div);
+</script>
+</div>
+</div>
+
+
+
+* Balls bouncing around
+    * _This is heat_
+    * Random motion of the tiny stuff that makes up everything
+    * Heat is kinetic energy, but chaotic
+* Try decreasing energy
+    * a few particles -> kinetic energy is easily controllable
+    * a lot of particles -> heat is completely random
+* Show a solid too
+* Links to heat energy
+
+* Balloon model
+    * A rope with two ends stuck
+    * As the air inside gets colder, the baloon shrinks because of the outside pressure
+
+
+<!--
 Another big difference: the world isn't made of 11 atoms, there are a lot more!
 
 <script>
@@ -217,3 +246,10 @@ _Heat is a kind of energy: the movement energy of many small things moving aroun
     * ask to decrease the energy
 * then to billiards frictionless
     * ask to decrease energy
+
+-->
+
+
+<script>
+    initChapter();
+</script>

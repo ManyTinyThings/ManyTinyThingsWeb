@@ -1,8 +1,10 @@
+@charset "UTF-8";
+
 body {
     width: 820px;
     margin: 10px auto;
     font-family: sans-serif;
-    font-size: 20px;
+    font-size: 18px;
     line-height: 130%;
 }
 
@@ -31,9 +33,9 @@ input[type=range]:focus {
     outline: none;
 }
 
-/*canvas {
-    border: 1px solid black;
-}*/
+canvas {
+    display: block;
+}
 
 canvas:active {
     cursor: default;
@@ -41,7 +43,6 @@ canvas:active {
 
 .simulation {
     width: 820px;
-    display: flex;
 }
 
 .simulation div {
@@ -58,8 +59,78 @@ canvas:active {
     float: left;
 }
 
-.two_column {
+.twoColumn {
     width: 400px;
-    display: inline-block;
-    margin-right: 5px;
+}
+
+.threeColumn {
+    width: 250px;
+}
+
+.sideNoteRight {
+    position: absolute;
+    right: 0;
+    width: 400px;
+    margin-left: 410px;
+}
+
+.stepLog {
+    position: relative;
+}
+
+.stepLog p {
+    margin-top: 0;
+    margin-bottom: 1em;
+}
+
+.stepLog > *, .page {
+    opacity: 0;
+    transition: opacity 1s;
+}
+
+.incomplete:before {
+    content: "☐";
+    position: absolute;
+    left: -1.5em;
+    font-size: 1.5em;
+}
+
+.complete:before {
+    content: "☑";
+    position: absolute;
+    left: -1.5em;
+    font-size: 1.5em;
+}
+
+.toolbar {
+    display: flex;
+    flex-direction: row;
+}
+
+.toolbar .tool {
+}
+
+.toolbar .tool.selected {
+    font-weight: bold;
+}
+
+.toolbar .tool.disabled {
+    opacity: 0.5;
+}
+
+.page {
+    border-top: 1px solid black;
+    padding-top: 20px;
+
+    display: flex;
+    justify-content: space-between;
+}
+
+.page:first-of-type {
+    border-top: none;
+}
+
+.flex {
+    display: flex;
+    justify-content: space-between;
 }

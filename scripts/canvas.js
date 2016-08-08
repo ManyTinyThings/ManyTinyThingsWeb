@@ -2,19 +2,21 @@ function createRenderer(canvas)
 {
     var renderer = {
         canvas: canvas,
-        cssWidth: canvas.width,
-        cssHeight: canvas.height,
         context: canvas.getContext("2d"),
+        canvasBounds: new Rectangle(),
         bounds: new Rectangle(),
+        devicePixelRatio: window.devicePixelRatio || 1,
     };
 
-    // Retina stuff
-    canvas.style.width = renderer.cssWidth + "px";
-    canvas.style.height = renderer.cssHeight + "px";
 
-    var devicePixelRatio = window.devicePixelRatio || 1;
-    canvas.width = renderer.cssWidth * devicePixelRatio;
-    canvas.height = renderer.cssHeight * devicePixelRatio;
+    // Retina stuff
+    canvas.style.width = canvas.width + "px";
+    canvas.style.height = canvas.height + "px";
+
+    canvas.width = canvas.width * renderer.devicePixelRatio;
+    canvas.height = canvas.height * renderer.devicePixelRatio;
+
+    setLeftTopWidthHeight(renderer.canvasBounds, 0, 0, canvas.width, -canvas.height);
 
     return renderer;
 }
@@ -23,9 +25,10 @@ function worldFromCanvas(renderer, canvasPosition)
 {
     var p = canvasPosition;
     var b = renderer.bounds;
-    var c = renderer.canvas;
-    var worldX = b.width / renderer.cssWidth * p[0] + b.left;
-    var worldY = -b.height / renderer.cssHeight * p[1] + b.top;
+    var canvasWidth = renderer.canvasBounds.width / renderer.devicePixelRatio;
+    var canvasHeight = renderer.canvasBounds.height / renderer.devicePixelRatio;
+    var worldX = b.width / canvasWidth * p[0] + b.left;
+    var worldY = b.height / canvasHeight * p[1] + b.top;
     return v2(worldX, worldY);
 }
 
@@ -33,10 +36,12 @@ function updateRendererBounds(renderer)
 {
     var context = renderer.context;
     var bounds = renderer.bounds;
+    setLeftTopWidthHeight(renderer.canvasBounds, 0, 0, renderer.canvas.width, -renderer.canvas.height);
+    var w = renderer.canvasBounds.width;
+    var h = renderer.canvasBounds.height;
+
     context.setTransform(1, 0, 0, 1, 0, 0);
-    var w = renderer.canvas.width;
-    var h = renderer.canvas.height;
-    context.scale(w / bounds.width, -h / bounds.height);
+    context.scale(w / bounds.width, h / bounds.height);
     context.translate(-bounds.left, -bounds.top);
 }
 
@@ -48,21 +53,11 @@ function drawParticles(renderer, particles, isPeriodic)
         var particle = particles[i];
         var position = particle.position;
 
-        context.fillStyle = cssFromRGBA(particle.color.rgba);
-        var minScreen, maxScreen;
-        if (isPeriodic)
+        context.fillStyle = particle.color.css;
+        var screenRadius = isPeriodic;
+        for (var dx = -screenRadius; dx <= screenRadius; dx++)
         {
-            minScreen = -1;
-            maxScreen = 1;
-        }
-        else
-        {
-            minScreen = 0;
-            maxScreen = 0;
-        }
-        for (var dx = minScreen; dx <= maxScreen; dx++)
-        {
-            for (var dy = minScreen; dy <= maxScreen; dy++)
+            for (var dy = -screenRadius; dy <= screenRadius; dy++)
             {
                 context.beginPath();
                 var x = position[0] + renderer.bounds.width * dx;
@@ -91,30 +86,36 @@ function rotateToVector(context, v)
 
 function drawArrow(renderer, start, end)
 {
-    // TODO: make this relative to pixels, not world coordinates
-    var maxArrowheadLength = 0.1;
+    var maxArrowheadLength = 20; // pixels
+
+    var arrowStart = v2.alloc();
+    var arrowEnd = v2.alloc();
 
     var arrowVector = v2.alloc();
     var shaftEnd = v2.alloc();
 
-    v2.subtract(arrowVector, end, start);
+    transformToRectFromRect(arrowStart, renderer.canvasBounds, start, renderer.bounds);
+    transformToRectFromRect(arrowEnd, renderer.canvasBounds, end, renderer.bounds);
+
+
+    v2.subtract(arrowVector, arrowEnd, arrowStart);
     var arrowLength = v2.magnitude(arrowVector);
 
     var arrowheadLength = atMost(maxArrowheadLength, arrowLength / 2);
     var shaftLength = arrowLength - arrowheadLength;
     v2.normalize(arrowVector, arrowVector);
-    v2.scaleAndAdd(shaftEnd, start, arrowVector, shaftLength);
+    v2.scaleAndAdd(shaftEnd, arrowStart, arrowVector, shaftLength);
 
     var c = renderer.context;
-    c.beginPath();
-    c.moveTo(start[0], start[1]);
-    c.lineTo(shaftEnd[0], shaftEnd[1]);
-    screenRelativeStroke(c);
-
-
     c.save();
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.beginPath();
+    c.moveTo(arrowStart[0], arrowStart[1]);
+    c.lineTo(shaftEnd[0], shaftEnd[1]);
+    c.stroke();
+
     // rotate and move to arrow shaft
-    c.translate(end[0], end[1]);
+    c.translate(arrowEnd[0], arrowEnd[1]);
     rotateToVector(c, arrowVector);
 
     // draw arrowhead
@@ -123,20 +124,35 @@ function drawArrow(renderer, start, end)
     c.lineTo(-arrowheadLength, -arrowheadLength / 3);
     c.lineTo(-arrowheadLength, arrowheadLength / 3);
     c.closePath();
-    c.restore();
-
-    c.fillStyle = cssFromRGBA(colors.black.rgba);
+    c.fillStyle = Color.black.css;
     c.fill();
     c.restore();
 
+    v2.free(arrowStart);
+    v2.free(arrowEnd);
     v2.free(shaftEnd);
     v2.free(arrowVector);
+}
+
+function drawDiscMarker(renderer, position, pixelRadius, color)
+{
+    var canvasPosition = v2.alloc();
+    transformToRectFromRect(canvasPosition, renderer.canvasBounds, position, renderer.bounds);
+
+    var c = renderer.context;
+    c.fillStyle = color.css;
+    c.save();
+    c.beginPath();
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.arc(canvasPosition[0], canvasPosition[1], pixelRadius, 0, tau);
+    c.fill();
+    c.restore();
 }
 
 function drawTrajectoryUnzipped(renderer, xs, ys, color)
 {
     var c = renderer.context;
-    c.strokeStyle = cssFromRGBA(color.rgba);
+    c.strokeStyle = color.css;
 
     c.beginPath();
     c.moveTo(xs[0], ys[0]);
@@ -150,7 +166,7 @@ function drawTrajectoryUnzipped(renderer, xs, ys, color)
 function drawTrajectory(renderer, trajectory, color)
 {
     var c = renderer.context;
-    c.strokeStyle = cssFromRGBA(color.rgba);
+    c.strokeStyle = color.css;
     var startPoint = trajectory[0];
 
     c.beginPath();
@@ -166,7 +182,7 @@ function drawTrajectory(renderer, trajectory, color)
 function drawRectangle(renderer, rectangle, color)
 {
     var c = renderer.context;
-    c.fillStyle = cssFromRGBA(color.rgba);
+    c.fillStyle = color.css;
     var topLeft = v2(rectangle.left, rectangle.top);
     var bottomRight = v2(rectangle.right, rectangle.bottom);
     var width = bottomRight[0] - topLeft[0];
@@ -174,18 +190,22 @@ function drawRectangle(renderer, rectangle, color)
     c.fillRect(topLeft[0], topLeft[1], width, height);
 }
 
+function drawPolygonFunctions(renderer, x, y, count, color)
+{
+    var c = renderer.context;
+    c.beginPath();
+    c.moveTo(x(0), y(0));
+    for (var i = 1; i < count; i++)
+    {
+        c.lineTo(x(i), y(i));
+    }
+    c.closePath();
+    c.fillStyle = color.css;
+    c.fill()
+}
+
 function clearRenderer(renderer)
 {
     var b = renderer.bounds;
     renderer.context.clearRect(b.left, b.bottom, b.width, b.height);
-}
-
-function cssFromRGBA(rgba)
-{
-    return ["rgba(",
-        Math.round(rgba[0] * 255), ",",
-        Math.round(rgba[1] * 255), ",",
-        Math.round(rgba[2] * 255), ",",
-        rgba[3], ")"
-    ].join("");
 }
