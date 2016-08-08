@@ -2729,23 +2729,27 @@ var updateSimulation = function()
                         var firstCollisionTime = collisions[firstIndex].time;
                         remainingTime -= firstCollisionTime;
 
-                        firstCollisions.length = 0;
-                        for (var collisionIndex = 0; collisionIndex < collisions.length; collisionIndex++)
-                        {
-                            // TODO: should probably be epsilon here
-                            var collision = collisions[collisionIndex];
-                            if (collision.time === firstCollisionTime)
-                            {
-                                firstCollisions.push(collision);
-                            }
-                        }
-
                         // advance time for everyone
                         for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
                         {
                             var particle = particles[particleIndex];
                             v2.scaleAndAdd(particle.position, particle.position, particle.velocity, firstCollisionTime);
                         }
+
+                        firstCollisions.length = 0;
+                        for (var collisionIndex = 0; collisionIndex < collisions.length; collisionIndex++)
+                        {
+                            var collision = collisions[collisionIndex];
+                            // TODO: epsilon here?
+                            if (collision.time === firstCollisionTime)
+                            {
+                                firstCollisions.push(collision);
+                            }
+
+                            // NOTE: do subtraction after comparison to avoid floating arithmetic weirdness
+                            collision.time -= firstCollisionTime;
+                        }
+
 
                         for (var firstCollisionIndex = 0; firstCollisionIndex < firstCollisions.length; firstCollisionIndex++)
                         {
@@ -2781,7 +2785,6 @@ var updateSimulation = function()
                                 if ((c.first === firstCollision.first) || (c.first === firstCollision.second) || (c.second === firstCollision.first) || (c.second === firstCollision.second))
                                 {
                                     collisions.splice(collisionIndex--, 1);
-                                    continue;
                                 }
                             }
 
@@ -2802,6 +2805,13 @@ var updateSimulation = function()
                                             collisionPool, collisions,
                                             particle, firstCollision.first,
                                             remainingTime, simulation.boxBounds, params.isPeriodic);
+                                    }
+                                    else
+                                    {
+                                        recordWallParticleCollision(
+                                            collisionPool, collisions,
+                                            firstCollision.first, particle,
+                                            remainingTime);
                                     }
                                     recordParticleParticleCollision(
                                         collisionPool, collisions,
@@ -2830,7 +2840,6 @@ var updateSimulation = function()
                             poolFree(collisionPool, firstCollision);
                         }
                     }
-
                 }
 
                 for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
