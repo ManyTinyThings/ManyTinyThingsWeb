@@ -3026,10 +3026,6 @@ var updateSimulation = function()
                             }
                         }
 
-                        // ! Friction
-                        v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                            particle.velocity, -params.friction / particle.mass);
-
                         // ! Wall forces
                         var wallVector = v2.alloc();
                         var relativeWallStart = v2.alloc();
@@ -3084,14 +3080,17 @@ var updateSimulation = function()
                     }
                 }
 
-                
-                // ! Repel tool
-
-                if (simulation.mouse.mode === MouseMode.repel)
-                {
                     for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++) {
                         var particle = simulation.particles[particleIndex];
 
+                        // ! Friction
+                        v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                            particle.velocity, -params.friction / particle.mass);
+                        
+                        // ! Repel tool
+
+                        if (simulation.mouse.mode === MouseMode.repel)
+                        {
                             var mouseToParticle = v2.alloc();
                             v2.subtract(mouseToParticle, particle.position, simulation.mouse.worldPosition);
 
@@ -3099,8 +3098,8 @@ var updateSimulation = function()
 
                             v2.scaleAndAdd(particle.acceleration, particle.acceleration,
                                 mouseToParticle, repelFactor * params.repelStrength / particle.mass);
+                        }
                     }
-                }
 
                 // ! Drag tool
 
