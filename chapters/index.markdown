@@ -5,11 +5,13 @@ title: Many Tiny Things
 Every big thing in the world is made up of **many tiny things**.
 
 
+<div class="flex">
+
 <div class="threeColumn">
 **Air** is _many tiny things_ bouncing around everywhere
 
 <script>
-	createSimulationHere({
+	var airSim = createSimulationHere({
 		pixelWidth: 250,
 		pixelHeight: 250,
 		initialize: function(simulation)
@@ -31,7 +33,9 @@ Every big thing in the world is made up of **many tiny things**.
 				addParticle(simulation, particle);
 			}
 		}
-	})
+	});
+
+	enableOnlyTools(airSim.toolbar, ["repel"]);
 </script>
 </div>
 
@@ -39,7 +43,7 @@ Every big thing in the world is made up of **many tiny things**.
 **Water** is _many tiny things_ sloshing around
 
 <script>
-	createSimulationHere({
+	var waterSim = createSimulationHere({
 		pixelWidth: 250,
 		pixelHeight: 250,
 		initialize: function(simulation)
@@ -48,7 +52,8 @@ Every big thing in the world is made up of **many tiny things**.
 			p.boxWidth = 40;
 			p.gravityAcceleration = 1;
 			p.thermostatSpeed = 0.1;
-			p.thermostatTemperature = 1.5;
+			p.thermostatTemperature = 1;
+			p.repelStrength = 0.2;
 
 			updateBounds(simulation);
 
@@ -65,7 +70,9 @@ Every big thing in the world is made up of **many tiny things**.
 
 			setInteraction(simulation, 0, 0, ljInteraction);
 		}
-	})
+	});
+
+	enableOnlyTools(waterSim.toolbar, ["repel"]);
 </script>
 </div>
 
@@ -74,7 +81,7 @@ Every big thing in the world is made up of **many tiny things**.
 **Normal-sized things** are _many tiny things_ stuck together
 
 <script>
-	createSimulationHere({
+	var solidSim = createSimulationHere({
 		pixelWidth: 250,
 		pixelHeight: 250,
 		initialize: function(simulation)
@@ -115,26 +122,72 @@ Every big thing in the world is made up of **many tiny things**.
 			setInteraction(simulation, 0, 0, ljInteraction);
 			setInteraction(simulation, 1, 1, ljInteraction);
 		}
-	})
+	});
+
+	enableOnlyTools(solidSim.toolbar, ["select"]);
 </script>
 	
 </div>
 
+</div>
+
 But we can't see the tiny things without a microscope. They are too small, _microscopic_. We can only see the _macroscopic_ objects the tiny things make up. (And in the case of air, we can't see it at all!)
 
-This website is a series of explanations on how the tiny, microscopic things are connected to the big, macroscopic things that we can see, hear and feel. We will explore the consequences of everything in this world being made up of tiny things. 
+This website is a _series of explanations_ on how the tiny, microscopic things are connected to the big, macroscopic things that we _can_ see, hear and feel. We will ask the question: What are the _macroscopic_ consequences of being made up of many _microscopic_ things?
 
+To start off, let me show you what a typical page looks like:
+
+<div class="page flex">
 
 <script>
-    createSimulationHere({
+    var introSim = createSimulation({
         initialize: function(simulation) {
 			var p = simulation.parameters;
-			p.friction = 0.2;
+			p.friction = 0.1;
+			p.gravityAcceleration = 1;
+			p.dragStrength = 2;
 
-			addParticle(simulation, new Particle());
+			var particle = new Particle();
+			v2.set(particle.position, 0, particle.radius - simulation.boxBounds.height / 2);
+			addParticle(simulation, particle);
         },
     });
 </script>
+
+<div class="stepLog twoColumn">
+To the right is a ball.
+
+Pick up the ball and throw it!
+
+<script>
+	cue(function() {
+		var energy = getTotalEnergy(introSim);
+		return (energy > 1);
+	});
+	endStep();
+</script>
+
+Well done!
+
+You see, this is an _interactive_ website, where the pictures move and you can poke at them.
+
+It even works in the illustrative pictures above. Try it!
+</div>
+
+<div class="twoColumn">
+<script>
+	insertHere(introSim.div);
+</script>
+</div>
+</div>
+
+<script>
+	initChapter();
+</script>
+
+
+
+
 
 ## What do you want to learn more about?
 

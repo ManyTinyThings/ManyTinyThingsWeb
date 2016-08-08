@@ -17,50 +17,19 @@
             height: 400,
             initialize: function(simulation) {
 
-                var parameters = {
-                    radiusScaling: 0.2,
-                    gravityAcceleration: 0.01, //0.001,
-                    isSlowCollisionEnabled: false,
-                    measurementEnabled: true,
-                    thermostatSpeed: 0.00,
-                    thermostatTemperature: 0.01,
-                    isPeriodic: false,
-                    dt: 0.001,
-                    coulombStrength: 0.1,
-                    lennardJonesStrength: 0.1,
-                    separationFactor: 1.0,
-                    cutoffFactor: 2.5,
-                };
-                copyObject(simulation.parameters, parameters);
+                var p = simulation.parameters;
+                p.isOnlyHardSpheres = true;
 
-                var spacing = 0.08;
-                var particleCount = 100;
+                var particleCount = 10;
                 var newParticles = [];
                 for (var particleIndex = 0; particleIndex < particleCount; particleIndex++) {
                     var particle = new Particle();
-                    particle.position = rectangularLatticePosition(particleIndex, 2*spacing);
                     particle.type = particleIndex % 2;
-                    particle.color = [Color.blue, Color.red][particle.type];
-                    particle.radius = spacing;
                     newParticles.push(particle);
                 }
 
                 addParticlesRandomly(simulation, newParticles);
 
-                // setInteraction(simulation, 0, 0, Interaction.lennardJones);
-                // setInteraction(simulation, 0, 1, Interaction.repulsive);
-                // setInteraction(simulation, 1, 1, Interaction.lennardJones);
-
-                // setInteraction(simulation, 0, 0, Interaction.coulombSame);
-                // setInteraction(simulation, 0, 1, Interaction.coulombDifferent);
-                // setInteraction(simulation, 1, 1, Interaction.coulombSame);
-
-                //simulation.walls.length = 0;
-
-                // simulation.walls.push(
-                //     new Wall(v2(0, 1), v2(0, 0.2)),
-                //     new Wall(v2(0, -1), v2(0, -0.2))
-                // );
             }
         });
         insertHere(createButton({

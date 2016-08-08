@@ -233,12 +233,12 @@ Play with the particles and look at how their energy changes over time in the gr
     endStep();
 </script>
 
-We can now see how the total energy is made up of the individual energy of each particle. And while the total energy always has the same shape, the energy of the individual particles vary a lot.
+We can now see how the total energy is made up of the individual energy of each particle. And while the total energy always has the same shape, the energy of the individual particles vary wildly.
 
 Balls knocking each other around is actually a pretty good model of how the world works at the atomic level.
 One big difference: _there is no friction_.
 
-Remove the friction of the system using the slider below.
+Lower the friction using the slider below.
 
 <script>
     cue(function() {
@@ -263,7 +263,7 @@ Then give the particles a little bit of energy.
     endStep();
 </script>
 
-Without friction, the particles never stop bouncing! The total energy is the same, even though each individual particle changes its speed often. Because the energy keeps steady, the particles will on the whole neither speed up nor slow down.
+Without friction, the particles never stop bouncing! The total energy stays the same, even though each individual particle changes its speed often. Because the energy keeps steady, the particles will on the whole neither speed up nor slow down.
 
 </div>
 <div class="twoColumn">
@@ -271,201 +271,19 @@ Without friction, the particles never stop bouncing! The total energy is the sam
 	insertHere(energyAdditionSim.div);
 </script>
 </div>
+
+This is how the world really works microscopically. **The energy always stays the same. It's just divided up differently.**
+
+It seems kind of weird that the balls would keep bouncing around forever. We don't expect normal-sized billiard balls to keep bouncing around forever. There are differences between tiny atoms and big billiard balls. Big things are made up of many tiny things, and by understanding how the many tiny things work, we can understand how the big things work.
+
+* [Heat](/heat)
+* [Friction](/friction)
+* [Pressure](/pressure)
+
+
 </div>
 
 
 <script>
 	initChapter();
 </script>
-
-
-
-
-
-
-
-
-
-
-
-
-<!-- 
-## The rest
-
-<cript>
-    createSimulation({
-        visualizations: ["energy"],
-        controls: ["friction"],
-        particleGenerator: billiardsParticleGenerator,
-        parameters: {
-            particleCount: 11,
-            friction: 0,
-            bondEnergy: 0,
-        },
-    });
-</cript>
-
-The atoms are bouncing all over the place, and they never stop. We have created  perpetual motion machine!
-
-Also, notice that the energy stays the same. Put another way: _energy is never created o destroyed_. This is how the world works at the microscopic level.
-
-Another big difference: the world isn't made of 11 atoms, there are a lot more!
-
-<cript>
-    createSimulation({
-        particleGenerator: uniformParticleGenerator,
-        parameters: {
-            particleCount: 250,
-            radiusScaling: 0.003,
-            bondEnergy: 0,
-        },
-    });
-</cript>
-
-Try following a single particle with your eyes. It's hard! 
-And this is only 250 particles. That's about 100 000 000 000 000 000 000 times less than the amount of air particles in a single breath!
-
-So if we can't keep track of each particle, is there any way we can still make sense of the bouncy, jittery mess?
-
-Take a look at these two boxes of particles. Which one has more energy?
-
-<cript>
-    function hotColdGenerator(simulation, particleIndex)
-    {
-        var particle = new Particle();
-        var maxSpeed = simulation.parameters.maxInitialSpeed;
-        if (particleIndex % 2)
-        {
-            particle.position = randomPointInRect(simulation.leftRect);
-            particle.velocity = randomVelocity(maxSpeed / 10);
-        }
-        else
-        {
-            particle.position = randomPointInRect(simulation.rightRect);
-            particle.velocity = randomVelocity(maxSpeed);
-        }
-        return particle;
-    }
-
-    var hotColdSim = createSimulation({
-        particleGenerator: hotColdGenerator,
-        visualizations: ["energy"],
-        parameters: {
-            particleCount: 300,
-            radiusScaling: 0.01,
-            bondEnergy: 0,
-            maxInitialSpeed: 0.02,
-        },
-    });
-    hotColdSim.walls.push(
-        new Wall(v2(0, -1), v2(0, 1))
-    );
-    setColdHotRegions(hotColdSim);
-
-</cript>
-
-Yep, the right one definitely has more energy. Now compare with this:
-
-<cript>
-    function slowFastGenerator(simulation, particleIndex)
-    {
-        var particle = new Particle();
-        var maxSpeed = simulation.parameters.maxInitialSpeed;
-        if (particleIndex % 2)
-        {
-            particle.position = randomPointInRect(simulation.leftRect);
-            particle.velocity = randomUnitVector();
-            v2.scale(particle.velocity, particle.velocity, maxSpeed / 5);
-        }
-        else
-        {
-            particle.position = randomPointInRect(simulation.rightRect);
-            particle.velocity = randomUnitVector();
-            v2.scale(particle.velocity, particle.velocity, maxSpeed);
-        }
-        return particle;
-    }
-
-    var slowFastBall = createSimulation({
-        visualizations: ["energy"],
-        particleGenerator: slowFastGenerator,
-        parameters: {
-            particleCount: 2,
-            radiusScaling: 0.1,
-            bondEnergy: 0,
-            maxInitialSpeed: 0.1,
-        },
-    });
-
-    slowFastBall.walls.push(
-        new Wall(v2(0, -1), v2(0, 1))
-    );
-    setColdHotRegions(slowFastBall);
-</cript>
-
-Here it's even more obvious that the right side has more energy.
-
-But with a single ball, there is a clear direction, and you can easily change the direction. With a lot of tiny particles, direction doesn't make sense, and it's hard to control what happens.
-
-To demonstrate: try _decreasing_ the energy of both systems below.
-
-<cript>
-    function oneMany(simulation, particleIndex)
-    {
-        var particle = new Particle();
-        var maxSpeed = simulation.parameters.maxInitialSpeed;
-        if (particleIndex == 0)
-        {
-            particle.position = randomPointInRect(simulation.leftRect);
-            particle.velocity = randomUnitVector();
-            v2.scale(particle.velocity, particle.velocity, 1.9*maxSpeed);
-            particle.radius = 5;
-            particle.mass = squared(5);
-        }
-        else
-        {
-            particle.position = randomPointInRect(simulation.rightRect);
-            particle.velocity = randomUnitVector();
-            v2.scale(particle.velocity, particle.velocity, maxSpeed);
-        }
-        return particle;
-    }
-
-    var oneManySim = createSimulation({
-        visualizations: ["energy"],
-        particleGenerator: oneMany,
-        parameters: {
-            particleCount: 101,
-            radiusScaling: 0.02,
-            bondEnergy: 0,
-            maxInitialSpeed: 0.01,
-        },
-    });
-
-    oneManySim.walls.push(
-        new Wall(v2(0, -1), v2(0, 1))
-    );
-    setColdHotRegions(oneManySim);
-</cript>
-
-Both cases are really the same kinetic energy, but the random, bouncy, jiggling energy is of a different character than the moving-in-a-straight-line energy of the single ball.
-
-This "new" kind of energy is what we call _heat_. A system with more random bouncing around has more heat, and is _hotter_. A more chill system is _cooler_.
-
-It might not yet be clear how this connects to our everyday notions of hot and cold, but I hope we can get there eventually!
-
-To be continued...
-
-
-## Important sentences
-
-_Heat is a kind of energy: the movement energy of many small things moving around randomly._
-
-
-## Todo
-
-* maybe remove friction for just one particle
-    * ask to decrease the energy
-* then to billiards frictionless
-    * ask to decrease energy
- -->
