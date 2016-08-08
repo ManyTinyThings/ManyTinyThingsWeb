@@ -891,6 +891,11 @@ function enableOnlyTools(toolbar, toolnames)
             tool.div.classList.add("disabled");
         }
     }
+
+    if (toolnames.length > 0)
+    {
+        selectTool(toolbar, toolnames[0]);
+    }
 }
 
 // ! Graphs/Plots
@@ -2686,18 +2691,14 @@ var updateSimulation = function()
                     {
                         var particle = particles[particleIndex];
 
-                        if (params.isSlowParticleParticleCollisionEnabled)
+                        for (var otherParticleIndex = 0; otherParticleIndex < particleIndex; ++otherParticleIndex)
                         {
-                            for (var otherParticleIndex = 0; otherParticleIndex < particleIndex; ++otherParticleIndex)
-                            {
-                                var otherParticle = particles[otherParticleIndex];
-                                recordParticleParticleCollision(
-                                    collisionPool, collisions,
-                                    particle, otherParticle,
-                                    remainingTime, simulation.boxBounds, params.isPeriodic);
-                            }
+                            var otherParticle = particles[otherParticleIndex];
+                            recordParticleParticleCollision(
+                                collisionPool, collisions,
+                                particle, otherParticle,
+                                remainingTime, simulation.boxBounds, params.isPeriodic);
                         }
-
                         for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
                         {
                             var wall = simulation.walls[wallIndex];
@@ -2771,8 +2772,6 @@ var updateSimulation = function()
                             v2.scaleAndAdd(firstCollision.second.velocity, firstCollision.second.velocity,
                                 deltaVelocity, restitutionFactor * velocityScalingSecond);
 
-                            // TODO: if infinite or NaN, set velocity, acceleration to zero?
-
                             // remove collisions for involved particles
 
                             for (var collisionIndex = 0; collisionIndex < collisions.length; collisionIndex++)
@@ -2790,28 +2789,24 @@ var updateSimulation = function()
 
                             var isParticleParticleCollision = (firstCollision.type == CollisionType.particleParticle);
 
-                            if (params.isSlowParticleParticleCollisionEnabled)
+                            for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
                             {
+                                // TODO: make firstCollision.first and second be indices
+                                var particle = particles[particleIndex];
 
-                                for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
+                                if ((particle !== firstCollision.first) && (particle !== firstCollision.second))
                                 {
-                                    // TODO: make firstCollision.first and second be indices
-                                    var particle = particles[particleIndex];
-
-                                    if ((particle !== firstCollision.first) && (particle !== firstCollision.second))
+                                    if (isParticleParticleCollision)
                                     {
-                                        if (isParticleParticleCollision)
-                                        {
-                                            recordParticleParticleCollision(
-                                                collisionPool, collisions,
-                                                particle, firstCollision.first,
-                                                remainingTime, simulation.boxBounds, params.isPeriodic);
-                                        }
                                         recordParticleParticleCollision(
                                             collisionPool, collisions,
-                                            particle, firstCollision.second,
+                                            particle, firstCollision.first,
                                             remainingTime, simulation.boxBounds, params.isPeriodic);
                                     }
+                                    recordParticleParticleCollision(
+                                        collisionPool, collisions,
+                                        particle, firstCollision.second,
+                                        remainingTime, simulation.boxBounds, params.isPeriodic);
                                 }
                             }
 
