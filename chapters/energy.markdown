@@ -14,6 +14,8 @@ title: Kinetic energy
 
 In this chapter, we learn about the important concept of _energy_, starting with _kinetic energy_ (a fancy term for _movement energy_).
 
+<div id="chapter">
+
 <div class="page">
 <script>
     var singleEnergySim = createSimulation({
@@ -69,12 +71,12 @@ Throw the ball around some more and see what happens in the plot.
 			}
 			state.hadHighSpeed = hasHighSpeedNow;
 
-			return (state.throwCount >= 3);
+			return (state.throwCount >= 1);
 	});
     endStep();
 </script>
 
-When you release the ball it starts to lose energy because of the friction in the table and air, which looks like a little hill in the plot. 
+When you release the ball it starts to lose energy because of the friction in the table and air, which looks like a slope in the plot. 
 </div>
 <div class="twoColumn">
 <script>
@@ -119,7 +121,7 @@ I added some more balls in a conspicuous pattern. You know what to do!
 
 As the balls collide, they bounce off each other, transferring energy from one to the other.
 
-Below is a graph of the total energy, which is the energy for all particles combined. Note how, even when the particles are bumping into each other, the curve looks the same as it did with just one particle.
+Below is a graph of the total energy, which is the energy for all particles combined.
 
 <script>
 	createTimeSeriesHere({
@@ -132,17 +134,7 @@ Below is a graph of the total energy, which is the energy for all particles comb
 	});
 </script>
 
-Throw the particles into each other some more and compare the energy curve with the one of the single particle above.
-
-<script>
-	cue(function () {
-			var energy = getTotalEnergy(totalEnergySim);
-			return (energy > 0.2);
-	});
-    endStep();
-</script>
-
-Don't they look awfully similar?
+Note how, even when the particles are bumping into each other, the curve looks the same as it did with just one particle.
 
 </div>
 <div class="twoColumn">
@@ -272,14 +264,7 @@ Without friction, the particles never stop bouncing! The total energy stays the 
 </script>
 </div>
 
-This is how the world really works microscopically. **The energy always stays the same. It's just divided up differently.**
-
-It seems kind of weird that the balls would keep bouncing around forever. We don't expect normal-sized billiard balls to keep bouncing around forever. There are differences between tiny atoms and big billiard balls. Big things are made up of many tiny things, and by understanding how the many tiny things work, we can understand how the big things work.
-
-* [Heat](/heat)
-* [Friction](/friction)
-* [Pressure](/pressure)
-
+</div>
 
 </div>
 

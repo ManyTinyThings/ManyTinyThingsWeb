@@ -358,6 +358,13 @@ function createAndAppend(elementType, parent)
     return element;
 }
 
+function createAndPrepend(elementType, parent)
+{
+    var element = document.createElement(elementType);
+    parent.insertBefore(element, parent.firstChild);
+    return element;
+}
+
 function createElement(type)
 {
     return document.createElement(type);
@@ -377,12 +384,12 @@ function insertHere(element)
 
 function hideElement(element)
 {
-    element.style.display = "none";
+    element.classList.add("hidden");
 }
 
 function showElement(element)
 {
-    element.style.display = "block";
+    element.classList.remove("hidden");
 }
 
 // ! Controls
@@ -472,7 +479,7 @@ function createCheckbox(opts)
 }
 
 function createButton(opts)
-{
+{   
     var button = createElement("input");
     button.setAttribute("type", "button");
     button.setAttribute("value", opts.label);
@@ -676,6 +683,7 @@ function changeStep(stepLog, stepIndex)
         var nextStep = stepLog.steps[stepLog.currentStepIndex];
         for (var element of nextStep.elements)
         {
+            showElement(element)
             element.style.opacity = 1;
         }
     }
@@ -686,6 +694,7 @@ function changeStep(stepLog, stepIndex)
         for (var element of currentStep.elements)
         {
             element.style.opacity = 0;
+            hideElement(element);
         }
         for (var cue of currentStep.cues)
         {
@@ -700,13 +709,61 @@ function changeStep(stepLog, stepIndex)
     var currentStep = stepLog.steps[stepLog.currentStepIndex];
     for (var element of currentStep.elements)
     {
+        showElement(element);
         element.style.opacity = 1;
     }
 
     stepLog.isCompleted = stepIndex == (stepLog.steps.length - 1);
 }
 
-function changePage(chapter, pageIndex)
+function css(number, unit)
+{
+    unit = unit || "px";
+    return String(number) + unit;
+}
+
+var PageStatus = createEnum(["past", "present", "future"]);
+
+function setPageStatus(page, status)
+{
+    if (status === PageStatus.past)
+    {
+        // page.div.style.left = css(-1000);
+        // page.div.style.opacity = 0;
+        hideElement(page.div);
+    }
+    else if (status === PageStatus.present)
+    {
+        showElement(page.div);
+        // page.div.style.left = css(0);
+        // page.div.style.opacity = 1;
+    }
+    else if (status === PageStatus.future)
+    {
+        // page.div.style.left = css(1000);
+        // page.div.styel.opacity = 0;
+        hideElement(page.div);
+    }
+}
+
+function setElementClass(element, className, isEnabled)
+{
+    if (isEnabled)
+    {
+        element.classList.add(className);
+    }
+    else
+    {
+        element.classList.remove(className);
+    }
+}
+
+function setElementEnabled(element, isEnabled) {
+    setElementClass(element, "disabled", !isEnabled);
+    element.disabled = !isEnabled;
+}
+
+function changePage(chapter, pageIndex, doesChangeStepLogs)
 {
     var isValidIndex = (0 <= pageIndex) && (pageIndex < chapter.pages.length);
     if (!isValidIndex)
@@ -717,8 +774,11 @@ function changePage(chapter, pageIndex)
     while (chapter.currentPageIndex < pageIndex)
     {
         var currentPage = chapter.pages[chapter.currentPageIndex];
-        changeStep(currentPage.stepLog, currentPage.stepLog.steps.length - 1);
-        currentPage.div.style.opacity = 1;
+        if (doesChangeStepLogs)
+        {
+            changeStep(currentPage.stepLog, currentPage.stepLog.steps.length - 1);
+        }
+        setPageStatus(currentPage, PageStatus.past);
 
         chapter.currentPageIndex += 1;
     }
@@ -726,34 +786,70 @@ function changePage(chapter, pageIndex)
     while (chapter.currentPageIndex > pageIndex)
     {
         var currentPage = chapter.pages[chapter.currentPageIndex];
-        changeStep(currentPage.stepLog, 0);
-        currentPage.div.style.opacity = 0;
+        if (doesChangeStepLogs)
+        {
+            changeStep(currentPage.stepLog, 0);        
+        }
+        
+        setPageStatus(currentPage, PageStatus.future);
 
         chapter.currentPageIndex -= 1;
     }
 
     var currentPage = chapter.pages[chapter.currentPageIndex];
-    currentPage.div.style.opacity = 1;
+    setPageStatus(currentPage, PageStatus.present);
+    var isLastPage = (chapter.currentPageIndex === (chapter.pages.count - 1));
+    setElementEnabled(chapter.nextButton, currentPage.stepLog.isCompleted && (!isLastPage));
+
+    setElementEnabled(chapter.previousButton, chapter.currentPageIndex > 0);
 }
 
 function initChapter()
 {
     var chapter = {
+        div: null,
         pages: [],
         currentPageIndex: 0,
     }
 
-    var pageElements = document.getElementsByClassName("page");
-    for (var pageIndex = 0; pageIndex < pageElements.length; pageIndex++)
-    {
-        var pageElement = pageElements[pageIndex];
-        var page = {
-            div: pageElement,
+    chapter.div = document.getElementById("chapter");
+    var navigationDiv = createAndPrepend("div", chapter.div);
+    navigationDiv.classList.add("navigationBar");
+
+    chapter.previousButton = createButton({
+        label: "← Previous",
+        action: function() {
+           changePage(chapter, chapter.currentPageIndex - 1);
         }
-        chapter.pages.push(page);
-        for (var childIndex = 0; childIndex < pageElement.children.length; childIndex++)
+    });
+    chapter.previousButton.classList.add("navigationButton");
+    navigationDiv.appendChild(chapter.previousButton);
+
+    chapter.nextButton = createButton({
+        label: "Next →",
+        action: function() {
+            changePage(chapter, chapter.currentPageIndex + 1);
+        },
+    });
+    chapter.nextButton.classList.add("navigationButton");
+    navigationDiv.appendChild(chapter.nextButton);
+
+    for (var chapterChildIndex = 0; chapterChildIndex < chapter.div.children.length; chapterChildIndex++)
+    {
+        var childElement = chapter.div.children[chapterChildIndex];
+        if (!childElement.classList.contains("page"))
         {
-            var child = pageElement.children[childIndex];
+            continue;
+        }
+        var page = {
+            div: childElement,
+        }
+        hideElement(page.div);
+
+        chapter.pages.push(page);
+        for (var pageChildIndex = 0; pageChildIndex < page.div.children.length; pageChildIndex++)
+        {
+            var child = page.div.children[pageChildIndex];
             if (child.classList.contains("stepLog"))
             {
                 page.stepLog = initStepLog(child);
@@ -796,9 +892,9 @@ function initChapter()
 
         var currentPage = chapter.pages[chapter.currentPageIndex];
         currentPage.stepLog.update(dtInSeconds);
-        if (currentPage.stepLog.isCompleted)
-        {
-            changePage(chapter, chapter.currentPageIndex + 1);
+        var isLastPage = (chapter.currentPageIndex >= (chapter.pages.length - 1))
+        if (!isLastPage) {
+            setElementEnabled(chapter.nextButton, currentPage.stepLog.isCompleted);
         }
         window.requestAnimationFrame(chapter.updater);
     }
@@ -1986,13 +2082,14 @@ function updateGrid(simulation)
 function addParticle(simulation, particle)
 {
     // TODO: better checks here
-    var isInside = doesRectContainPoint(simulation.boxBounds, particle.position);
+    var isInside = simulation.parameters.isPeriodic || doesRectContainPoint(simulation.boxBounds, particle.position);
     var maxParticleCount = simulation.parameters.maxParticleCount;
     var notTooMany = (0 == maxParticleCount) || (simulation.particles.length < maxParticleCount)
     var isSuccessful = isInside && notTooMany;
     if (isSuccessful)
     {
         simulation.particles.push(particle);
+        moveOutOfCollision(simulation, particle);
     }
     return isSuccessful;
 }
@@ -2006,74 +2103,62 @@ function moveOutOfCollision(simulation, particle)
     while (hasCollisions)
     {
         hasCollisions = false;
-        for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
+        if (simulation.walls)
         {
-            var wall = simulation.walls[wallIndex];
-
-            v2.subtract(wallVector, wall.vertices[1], wall.vertices[0]);
-            v2.subtract(relativePosition, wall.vertices[0], particle.position);
-            var t = v2.inner(relativePosition, wallVector) / v2.square(wallVector);
-
-            if ((0 <= t) && (t <= 1))
+            for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
             {
-                // intersects line segment
-                v2.scaleAndAdd(relativePosition,
-                    relativePosition, wallVector, t);
-            }
-            else if (t > 1)
-            {
-                // intersects wallEnd
-                v2.subtract(relativePosition, wall.vertices[1], particle.position);
-            }
-            // else wallStart, but relativePosition already points there
+                var wall = simulation.walls[wallIndex];
 
-            var quadrance = v2.square(relativePosition);
-            if (quadrance < square(particle.radius))
-            {
-                var distance = Math.sqrt(quadrance);
-                var overlapRatio = (particle.radius - distance) / distance;
-                v2.scaleAndAdd(particle.position,
-                    particle.position, relativePosition, -overlapRatio);
-                hasCollisions = true;
-                break;
-            }
-        }
-        if (hasCollisions)
-        {
-            continue;
-        }
+                shortestVectorFromLine(relativePosition, particle.position, wall.vertices[1], wall.vertices[0]);
 
-        for (var otherParticleIndex = 0; otherParticleIndex < simulation.particles.length; otherParticleIndex++)
-        {
-            if (otherParticle === particle)
+                var quadrance = v2.square(relativePosition);
+                if (quadrance < square(particle.radius))
+                {
+                    var distance = Math.sqrt(quadrance);
+                    var overlapRatio = (particle.radius - distance) / distance;
+                    v2.scaleAndAdd(particle.position,
+                        particle.position, relativePosition, overlapRatio);
+                    hasCollisions = true;
+                    break;
+                }
+            }
+            if (hasCollisions)
             {
                 continue;
             }
-            var otherParticle = simulation.particles[otherParticleIndex];
-
-            var distanceLimit = particle.radius + otherParticle.radius;
-            v2.subtract(relativePosition, otherParticle.position, particle.position);
-            var quadrance = v2.square(relativePosition);
-
-            if (quadrance < square(distanceLimit))
-            {
-                var distance = Math.sqrt(quadrance);
-                var overlapRatio = (distanceLimit - distance) / distance;
-
-                // NOTE: move particles according to their relative size, 
-                // otherwise very big particles might have problems
-                // v2.scaleAndAdd(particle.position,
-                //     particle.position, relativePosition, -overlapRatio * otherParticle.radius / distanceLimit);
-                // v2.scaleAndAdd(otherParticle.position,
-                //     otherParticle.position, relativePosition, overlapRatio * particle.radius / distanceLimit);
-
-                v2.scaleAndAdd(particle.position,
-                    particle.position, relativePosition, -overlapRatio);
-
-                hasCollisions = true;
-                break;
-            }
         }
+
+        // for (var otherParticleIndex = 0; otherParticleIndex < simulation.particles.length; otherParticleIndex++)
+        // {
+        //     var otherParticle = simulation.particles[otherParticleIndex];
+        //     if (otherParticle === particle)
+        //     {
+        //         continue;
+        //     }
+
+        //     var distanceLimit = particle.radius + otherParticle.radius;
+        //     v2.subtract(relativePosition, otherParticle.position, particle.position);
+        //     var quadrance = v2.square(relativePosition);
+
+        //     if (quadrance < square(distanceLimit))
+        //     {
+        //         var distance = Math.sqrt(quadrance);
+        //         var overlapRatio = (distanceLimit - distance) / distance;
+
+        //         // NOTE: move particles according to their relative size, 
+        //         // otherwise very big particles might have problems
+        //         // v2.scaleAndAdd(particle.position,
+        //         //     particle.position, relativePosition, -overlapRatio * otherParticle.radius / distanceLimit);
+        //         // v2.scaleAndAdd(otherParticle.position,
+        //         //     otherParticle.position, relativePosition, overlapRatio * particle.radius / distanceLimit);
+
+        //         v2.scaleAndAdd(particle.position,
+        //             particle.position, relativePosition, -overlapRatio);
+
+        //         hasCollisions = true;
+        //         break;
+        //     }
+        // }
     }
 
     v2.free(relativePosition);
@@ -3036,31 +3121,16 @@ var updateSimulation = function()
                         }
 
                         // ! Wall forces
-                        var wallVector = v2.alloc();
-                        var relativeWallStart = v2.alloc();
+
+                        var particleFromWall = v2.alloc();
 
                         for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
                         {
                             var wall = simulation.walls[wallIndex];
-                            var wallStart = wall.vertices[0];
-                            var wallEnd = wall.vertices[1];
-                            v2.subtract(relativeWallStart, wallStart, particle.position);
-                            v2.subtract(wallVector, wallEnd, wallStart);
-                            var t = -v2.inner(relativeWallStart, wallVector) / v2.square(wallVector);
-                            if (t <= 0)
-                            {
-                                v2.copy(relativePosition, relativeWallStart);
-                            }
-                            else if (t >= 1)
-                            {
-                                v2.subtract(relativePosition, wallEnd, particle.position);
-                            }
-                            else
-                            {
-                                v2.scaleAndAdd(relativePosition, relativeWallStart, wallVector, t);
-                            }
+                            
+                            shortestVectorFromLine(particleFromWall, particle.position, wall.vertices[0], wall.vertices[1]);
 
-                            var quadranceToWall = v2.square(relativePosition);
+                            var quadranceToWall = v2.square(particleFromWall);
                             var squareSeparation = square(particle.radius);
 
                             if (quadranceToWall < squareSeparation)
@@ -3077,15 +3147,14 @@ var updateSimulation = function()
                                 var forceFactor = -virial * invQuadrance;
 
                                 v2.scaleAndAdd(wall.force, wall.force, 
-                                    relativePosition, -forceFactor);
+                                    particleFromWall, forceFactor);
 
                                 v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                                    relativePosition, forceFactor / particle.mass);
+                                    particleFromWall, -forceFactor / particle.mass);
                             }
                         }
 
-                        v2.free(relativeWallStart);
-                        v2.free(wallVector);
+                        v2.free(particleFromWall);
                     }
                 }
 
@@ -3732,3 +3801,32 @@ function recordWallParticleCollision(collisionPool, collisions, wall, particle, 
     v2.free(relativeWallStart);
     v2.free(particleRelativeEndpoint);
 }
+
+function shortestVectorFromLine(result, point, lineStart, lineEnd)
+{
+    var lineVector = v2.alloc();
+    var pointFromLineStart = v2.alloc();
+
+    v2.subtract(lineVector, lineEnd, lineStart);
+    v2.subtract(pointFromLineStart, point, lineStart);
+
+    var t = v2.inner(pointFromLineStart, lineVector) / v2.square(lineVector);
+    if (t <= 0)
+    {
+        v2.copy(result, pointFromLineStart);
+    }
+    else if (t >= 1)
+    {
+        v2.subtract(result, pointFromLineStart - lineVector);
+    }
+    else
+    {
+        v2.scaleAndAdd(result, pointFromLineStart, lineVector, -t);
+    }
+
+    v2.free(lineVector)
+    v2.free(pointFromLineStart);
+}
+
+
+
