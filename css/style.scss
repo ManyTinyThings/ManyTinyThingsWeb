@@ -1,3 +1,7 @@
+---
+# Only the main Sass file needs front matter (the dashes are enough)
+---
+
 @charset "UTF-8";
 
 body {
@@ -40,6 +44,22 @@ canvas {
 
 canvas:active {
     cursor: default;
+}
+
+header {
+    border-bottom: solid black 1px;
+    margin-bottom: 50px;
+}
+
+.siteTitle {
+    line-height: 60px;
+    font-size: 40px;
+    text-decoration: none;
+    
+    &,
+    &:visited {
+        color: black;
+    };
 }
 
 .simulation {

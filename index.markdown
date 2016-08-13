@@ -1,5 +1,5 @@
 ---
-title: Many Tiny Things
+
 ---
 
 Every big thing in the world is made up of **many tiny things**.
@@ -314,8 +314,8 @@ The height of the ball over time.
 
 ## What do you want to learn more about?
 
-* [Energy](../energy)
-* [Friction](../friction)
-* [Pressure](../pressure)
-* [Entropy](../entropy)
-* [Interactions](../states)
+{% for page in site.pages %}
+    {% if page.isStartPage %}
+* [{{ page.title | escape }}]({{ page.url | prepend: site.baseurl }})
+    {% endif %}
+{% endfor %}

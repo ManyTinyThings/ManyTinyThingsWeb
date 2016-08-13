@@ -1,3 +1,4 @@
-_darcs
-output/
-assets/
+# jekyll
+_site
+.sass-cache
+.jekyll-metadata

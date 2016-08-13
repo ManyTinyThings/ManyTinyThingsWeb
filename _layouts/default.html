@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ 	<meta charset="utf-8">
+	<title>
+		{% if page.title %}
+			{{ page.title | escape }} –
+		{% endif %}
+		{{ site.title | escape }}
+	</title>
+	<link rel="stylesheet" href="/css/style.css" type="text/css" media="screen">
+	<script src="/scripts/functions.js" type="text/javascript"></script>
+	<script src="/scripts/canvas.js" type="text/javascript"></script>
+</head>
+<body>
+<header>
+    <a class="siteTitle" href="{{ site.baseurl }}">{{ site.title | escape }}</a>
+</header>
+{{ content }}
+</body>
+</html>
