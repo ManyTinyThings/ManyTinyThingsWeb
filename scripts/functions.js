@@ -3702,7 +3702,8 @@ function createCollision()
     };
 }
 
-var collisionEpsilon = 0.01;
+// TODO: is this even needed?
+var collisionEpsilon = 0.0001;
 
 function recordParticleParticleCollision(collisionPool, collisions, particle, otherParticle, remainingTime, boxBounds, isPeriodic)
 {
