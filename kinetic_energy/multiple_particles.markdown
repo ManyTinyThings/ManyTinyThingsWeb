@@ -65,6 +65,3 @@ Note how, even when the particles are bumping into each other, the curve looks t
 </div>
 
 
-<script>
-	initChapter();
-</script>

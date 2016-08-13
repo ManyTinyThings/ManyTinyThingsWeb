@@ -49,7 +49,6 @@ Play with the particles and look at how their energy changes over time in the gr
             return (energyAdditionState.throwCount >= 3);
     });
 
-	// TODO: one color for each particle
 	var timeLog = createTimeLog({range: pageGlobal.timeRange});
 	createGraphHere({
 		update: function(graph) {
@@ -131,6 +130,3 @@ Without friction, the particles never stop bouncing! The total energy stays the 
 </div>
 
 
-<script>
-	initChapter();
-</script>

@@ -813,6 +813,10 @@ function initChapter()
     }
 
     chapter.div = document.getElementById("chapter");
+    if (chapter.div === null)
+    {
+        return null;
+    }
     var navigationDiv = createAndPrepend("div", chapter.div);
     navigationDiv.classList.add("navigationBar");
 
@@ -904,6 +908,9 @@ function initChapter()
 
     return chapter;
 }
+
+// NOTE: initChapter is always run on every document!
+document.addEventListener("DOMContentLoaded", initChapter);
 
 
 // ! Toolbar

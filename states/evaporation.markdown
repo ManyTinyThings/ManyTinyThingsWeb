@@ -98,7 +98,3 @@ This also means that the rest of the particles will lose energy and get a little
 </script>
 </div>
 </div>
-
-<script>
-	initChapter();
-</script>

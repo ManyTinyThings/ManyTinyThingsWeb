@@ -80,6 +80,3 @@ When you release the ball it starts to lose energy because of the friction in th
 </div>
 
 
-<script>
-	initChapter();
-</script>
