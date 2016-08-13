@@ -1603,8 +1603,8 @@ function withAlpha(color, alpha)
 
 var tau = 2 * Math.PI;
 
-var bonkSound = new Audio("/assets/bonk.wav");
-var solvedSound = new Audio("/assets/solved.wav");
+var bonkSound = new Audio("/assets/sounds/bonk.wav");
+var solvedSound = new Audio("/assets/sounds/solved.wav");
 
 solvedSound.volume = 0.5;
 
