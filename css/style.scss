@@ -4,13 +4,21 @@
 
 @charset "UTF-8";
 
+$backgroundColor: #eee;
+$linkColor: #000;
+
 body {
-    width: 840px;
-    margin: 0 auto;
+    margin: 0;
+    padding: 0;
     font-family: sans-serif;
     font-size: 18px;
     line-height: 130%;
     position: relative;
+}
+
+.wrapper {
+    width: 840px;
+    margin: 0 auto;
 }
 
 input[type="range"] {
@@ -47,20 +55,23 @@ canvas:active {
 }
 
 header {
-    border-bottom: solid black 1px;
+    background-color: $backgroundColor;
     margin-bottom: 50px;
+    min-height: 100px;
+    
+    .siteTitle {
+        line-height: 60px;
+        font-size: 40px;
+        text-decoration: none;
+    
+        &,
+        &:visited {
+            color: black;
+        };
+    }
 }
 
-.siteTitle {
-    line-height: 60px;
-    font-size: 40px;
-    text-decoration: none;
-    
-    &,
-    &:visited {
-        color: black;
-    };
-}
+
 
 .simulation {
     width: 820px;
