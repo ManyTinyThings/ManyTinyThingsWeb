@@ -2,6 +2,32 @@
 title: Phenomena
 ---
 
+Many familiar physical phenomena can be explained by looking through the _many-tiny-things_ lens. Here are the ones we'll be focusing on here, with some related questions to give you a feel for what each concept is about.
+
+* **Solid, liquid, gas**
+    * why does heating up water make it become gas?
+    * why does freezing water make it solid ice?
+    * why does water left in a glass disappear over time?
+
+* **Heat**
+    * why is it easier to wash dishes in hot water?
+    * why does metal feel colder than wood?
+    * why does a metal frying pan handle get hot much quicker than a plastic one?
+    
+* **Pressure**
+    * how does a vacuum cleaner work?
+    * why does balloons shrink when cold?
+    * why is it harder to breathe when you're on a mountain?
+    
+* **Friction**
+    * why does a bouncy ball eventually stop bouncing?
+    * when you rub your hands together, why do they get warm?
+    * (how does a tiny particle move around?)
+* **Entropy**
+    * how come the temperature is usually the same in an entire room?
+    * why can we mix paint but not unmix it?
+
+
 <div class="flex">
 
 <div class="threeColumn">
