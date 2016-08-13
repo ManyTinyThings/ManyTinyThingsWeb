@@ -16,10 +16,127 @@ body {
     position: relative;
 }
 
+header {
+    background-color: $backgroundColor;
+    margin-bottom: 50px;
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    
+    .siteTitle {
+        font-size: 40px;
+        text-decoration: none;
+    
+        &,
+        &:visited {
+            color: black;
+        };
+    }
+}
+
+/* layout */
+
 .wrapper {
     width: 840px;
     margin: 0 auto;
 }
+
+.twoColumn {
+    width: 400px;
+}
+
+.threeColumn {
+    width: 250px;
+}
+
+.sideNoteRight {
+    position: absolute;
+    right: 0;
+    width: 400px;
+    margin-left: 410px;
+}
+
+/* toolbar */
+
+.toolbar {
+    display: flex;
+    flex-direction: row;
+    
+    .tool.selected {
+        font-weight: bold;
+    }
+    
+    .tool.disabled {
+        opacity: 0.5;
+    }
+}
+
+/* pages */
+
+.page {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.navigationBar {
+    display: flex;
+    justify-content: flex-end;
+    
+
+    .navigationButton {
+        border: 1px solid black;
+        border-radius: 5px;
+        padding: 10px;
+        background-color: white;
+        font-size: 20px;
+    }
+    
+    .navigationButton:active {
+        color: black;
+        background-color: #ccc;
+    }
+
+    .navigationButton.disabled:active {
+        color: graytext;
+        background-color: white;
+    }
+}
+
+/* stepLog */
+
+.stepLog {
+    position: relative;
+    
+    p {
+        margin-top: 0;
+        margin-bottom: 1em;
+    }
+    
+    > * {
+        opacity: 0;
+        transition: opacity 1s;
+    }
+    
+
+    .incomplete:before {
+        content: "☐";
+        position: absolute;
+        left: -1.5em;
+        font-size: 1.5em;
+    }
+    
+    .complete:before {
+        content: "☑";
+        position: absolute;
+        left: -1.5em;
+        font-size: 1.5em;
+    }
+}
+
+
+
+/* general */
 
 input[type="range"] {
     -webkit-appearance: none;
@@ -54,147 +171,15 @@ canvas:active {
     cursor: default;
 }
 
-header {
-    background-color: $backgroundColor;
-    margin-bottom: 50px;
-    min-height: 100px;
-    
-    .siteTitle {
-        line-height: 60px;
-        font-size: 40px;
-        text-decoration: none;
-    
-        &,
-        &:visited {
-            color: black;
-        };
-    }
-}
-
-
-
-.simulation {
-    width: 820px;
-}
-
-.simulation div {
-    margin-right: 10px;
-}
-
-.simulation div div {
-    margin-bottom: 10px;
-}
-
-.verticalText {
-    transform: rotate(-90deg);
-    transform-origin: left top 0;
-    float: left;
-}
-
-.twoColumn {
-    width: 400px;
-}
-
-.threeColumn {
-    width: 250px;
-}
-
-.sideNoteRight {
-    position: absolute;
-    right: 0;
-    width: 400px;
-    margin-left: 410px;
-}
-
-.stepLog {
-    position: relative;
-}
-
-.stepLog p {
-    margin-top: 0;
-    margin-bottom: 1em;
-}
-
-.stepLog > * {
-    opacity: 0;
-    transition: opacity 1s;
-}
-
-.disabled {
-    opacity: 0.5;
-}
-
-.page {
-    margin-top: 20px;
-    display: flex;
-    justify-content: space-between;
-}
-
-.navigationBar {
-    display: flex;
-    justify-content: flex-end;
-}
-
-.navigationButton {
-    border: 1px solid black;
-    border-radius: 5px;
-    padding: 10px;
-    background-color: white;
-    font-size: 20px;
-}
-
-.navigationButton:active {
-    color: black;
-    background-color: #ccc;
-}
-
-.navigationButton.disabled:active {
-    color: graytext;
-    background-color: white;
-}
-
-.incomplete:before {
-    content: "☐";
-    position: absolute;
-    left: -1.5em;
-    font-size: 1.5em;
-}
-
-.complete:before {
-    content: "☑";
-    position: absolute;
-    left: -1.5em;
-    font-size: 1.5em;
-}
-
-.toolbar {
-    display: flex;
-    flex-direction: row;
-}
-
-.toolbar .tool {
-}
-
-.toolbar .tool.selected {
-    font-weight: bold;
-}
-
-.toolbar .tool.disabled {
-    opacity: 0.5;
-}
-
-
-.page:first-of-type {
-    border-top: none;
-}
-
 .flex {
     display: flex;
     justify-content: space-between;
 }
 
-
-
 .hidden {
     display: none;
+}
+
+.disabled {
+    opacity: 0.5;
 }
