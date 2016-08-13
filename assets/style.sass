@@ -1,0 +1,150 @@
+--- 
+# Only the main Sass file needs front matter (the dashes are enough) 
+--- 
+
+@charset "UTF-8" 
+
+$backgroundColor: #eee 
+$linkColor: #000
+
+body
+    margin: 0
+    padding: 0
+    font-family: sans-serif
+    font-size: 18px
+    line-height: 130%
+    position: relative
+
+header
+    background-color: $backgroundColor
+    margin-bottom: 50px
+    min-height: 100px
+    display: flex
+    align-items: center
+
+    .siteTitle
+        font-size: 40px
+        text-decoration: none
+
+        &,
+        &:visited
+            color: black
+
+/* layout
+
+.wrapper
+    width: 840px
+    margin: 0 auto
+
+.twoColumn
+    width: 400px
+
+.threeColumn
+    width: 250px
+
+.sideNoteRight
+    position: absolute
+    right: 0
+    width: 400px
+    margin-left: 410px
+
+/* toolbar
+
+.toolbar
+    display: flex
+    flex-direction: row
+
+    .tool.selected
+        font-weight: bold
+
+    .tool.disabled
+        opacity: 0.5
+
+/* pages
+
+.page
+    margin-top: 20px
+    display: flex
+    justify-content: space-between
+
+.navigationBar
+    display: flex
+    justify-content: flex-end
+
+    .navigationButton
+        border: 1px solid black
+        border-radius: 5px
+        padding: 10px
+        background-color: white
+        font-size: 20px
+
+    .navigationButton:active
+        color: black
+        background-color: #ccc
+
+    .navigationButton.disabled:active
+        color: graytext
+        background-color: white
+
+/* stepLog
+
+.stepLog
+    position: relative
+
+    p
+        margin-top: 0
+        margin-bottom: 1em
+
+    > *
+        opacity: 0
+        transition: opacity 1s
+
+    .incomplete:before
+        content: "☐"
+        position: absolute
+        left: -1.5em
+        font-size: 1.5em
+
+    .complete:before
+        content: "☑"
+        position: absolute
+        left: -1.5em
+        font-size: 1.5em
+
+/* general
+
+input[type="range"]
+    -webkit-appearance: none
+    width: 250px
+    
+    ::-webkit-slider-runnable-track
+        height: 10px
+        background: #ddd
+        border: none
+        border-radius: 5px
+        
+    ::-webkit-slider-thumb
+        -webkit-appearance: none
+        width: 30px
+        height: 30px
+        border-radius: 50%
+        background: black
+        margin-top: -10px
+    :focus
+        outline: none
+
+canvas
+    display: block
+    
+    :active
+        cursor: default
+
+.flex
+    display: flex
+    justify-content: space-between
+
+.hidden
+    display: none
+
+.disabled
+    opacity: 0.5
