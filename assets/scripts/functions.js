@@ -866,17 +866,20 @@ function initChapter()
     var updateFromHash = function()
     {
         var hash = window.location.hash.slice(1);
-        var pageIndex, stepIndex;
+        var pageIndex = 0;
+        var stepIndex = 0;
         if (hash)
         {
             var indices = hash.split("-");
-            pageIndex = Number(indices[0]);
-            stepIndex = Number(indices[1]);
-        }
-        else
-        {
-            pageIndex = 0;
-            stepIndex = 0;
+            if (indices.length == 1)
+            {
+                stepIndex = Number(indices[0]);
+            }
+            else if (indices.length >= 2)
+            {
+                pageIndex = Number(indices[0]);
+                stepIndex = Number(indices[1]);
+            }
         }
 
         changePage(chapter, pageIndex);
