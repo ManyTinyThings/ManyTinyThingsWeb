@@ -116,22 +116,21 @@ header
 input[type="range"]
     -webkit-appearance: none
     width: 250px
+    focus-outline: none
     
-    ::-webkit-slider-runnable-track
-        height: 10px
-        background: #ddd
-        border: none
-        border-radius: 5px
+input[type="range"]::-webkit-slider-runnable-track
+    height: 10px
+    background: #ddd
+    border: none
+    border-radius: 5px
         
-    ::-webkit-slider-thumb
-        -webkit-appearance: none
-        width: 30px
-        height: 30px
-        border-radius: 50%
-        background: black
-        margin-top: -10px
-    :focus
-        outline: none
+input[type="range"]::-webkit-slider-thumb
+    -webkit-appearance: none
+    width: 30px
+    height: 30px
+    border-radius: 50%
+    background: black
+    margin-top: -10px
 
 canvas
     display: block

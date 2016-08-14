@@ -2,11 +2,13 @@
 title: Evaporation
 ---
 
-If you leave a glass of water somewhere and come back a few days later, some or all of the water will be gone.
+If you leave a glass of water somewhere and come back a few days later, some or all of the water will be gone. Here is a timelapse of the water slowly disappearing.
 
-<iframe width="800" height="450" src="https://www.youtube.com/embed/VQ0qky-MNP8?showinfo=0&rel=0" frameborder="0" allowfullscreen></iframe>
+<iframe width="840" height="472" src="https://www.youtube.com/embed/VQ0qky-MNP8?showinfo=0&rel=0" frameborder="0" allowfullscreen></iframe>
 
 The water is turning from liquid to gas form, which is called _evaporating_.
+
+<div id="chapter">
 
 <div class="page">
 <script>
@@ -97,4 +99,6 @@ This also means that the rest of the particles will lose energy and get a little
 	insertHere(evaporationSim.div);
 </script>
 </div>
+</div>
+
 </div>
