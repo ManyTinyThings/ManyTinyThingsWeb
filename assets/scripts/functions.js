@@ -817,26 +817,8 @@ function initChapter()
     {
         return null;
     }
-    var navigationDiv = createAndPrepend("div", chapter.div);
-    navigationDiv.classList.add("navigationBar");
 
-    chapter.previousButton = createButton({
-        label: "← Previous",
-        action: function() {
-           changePage(chapter, chapter.currentPageIndex - 1);
-        }
-    });
-    chapter.previousButton.classList.add("navigationButton");
-    navigationDiv.appendChild(chapter.previousButton);
-
-    chapter.nextButton = createButton({
-        label: "Next →",
-        action: function() {
-            changePage(chapter, chapter.currentPageIndex + 1);
-        },
-    });
-    chapter.nextButton.classList.add("navigationButton");
-    navigationDiv.appendChild(chapter.nextButton);
+    // Add and init pages and their stepLogs
 
     for (var chapterChildIndex = 0; chapterChildIndex < chapter.div.children.length; chapterChildIndex++)
     {
@@ -860,6 +842,35 @@ function initChapter()
                 break;
             }
         }
+    }
+
+    // Previous and next buttons
+
+
+    var navigationDiv = createAndPrepend("div", chapter.div);
+    navigationDiv.classList.add("navigationBar");
+
+    chapter.previousButton = createButton({
+        label: "← Previous",
+        action: function() {
+           changePage(chapter, chapter.currentPageIndex - 1);
+        }
+    });
+    chapter.previousButton.classList.add("navigationButton");
+    navigationDiv.appendChild(chapter.previousButton);
+
+    chapter.nextButton = createButton({
+        label: "Next →",
+        action: function() {
+            changePage(chapter, chapter.currentPageIndex + 1);
+        },
+    });
+    chapter.nextButton.classList.add("navigationButton");
+    navigationDiv.appendChild(chapter.nextButton);
+
+    if (chapter.pages.length < 2)
+    {
+        hideElement(navigationDiv);
     }
 
     // TODO: update the hash as we advance through the chapter

@@ -58,11 +58,11 @@ Here's an example:
 
 Try figuring out what this graph shows by throwing around the ball a bit. Does it show
 
-* the speed of the ball over time.
-* the shape of the ball at different heights.
-* the height of the ball over time.
+* the speed of the ball over time?
+* the shape of the ball at different heights?
+* the height of the ball over time?
 
-When you've figured it out, move on to the next page by clicking [in the right margin](2).
+When you've figured it out, move on to the next page.
 </div>
 
 <div class="twoColumn">
@@ -72,7 +72,3 @@ When you've figured it out, move on to the next page by clicking [in the right m
 </div>
 </div>
 </div>
-
-<script>
-	initChapter();
-</script>
