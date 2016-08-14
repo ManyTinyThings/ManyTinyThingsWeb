@@ -27,7 +27,7 @@ Every big thing in the world is made up of **many tiny things**.
 			var initialSpeed = 10;
 			for (var i = 0; i < particleCount; i++) {
 				var particle = new Particle();
-				particle.position = randomPointInRect(simulation.boxBounds);
+				particle.position = randomDiscInRect(simulation.boxBounds, particle.radius);
 				v2.set(particle.velocity, randomGaussian(), randomGaussian());
 				v2.scale(particle.velocity, particle.velocity, 10);
 				addParticle(simulation, particle);
@@ -57,6 +57,7 @@ Every big thing in the world is made up of **many tiny things**.
 			p.isOnlyHardSpheres = true;
 
 			updateBounds(simulation);
+			setWallsAlongBorder(simulation);
 
 			var particleCount = 300;
 			var particles = [];

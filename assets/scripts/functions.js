@@ -1680,6 +1680,8 @@ var Particle = function()
 
     this.gridCol = -1;
     this.gridRow = -1;
+
+    this.isRemoved = false;
 }
 
 // ! Initialization
@@ -2009,7 +2011,7 @@ function setWallsAlongBorder(simulation)
         v2(b.left, b.top),
     ];
 
-    simulation.walls.length = 0;
+    simulation.walls = [];
     for (var i = 0; i < corners.length; i++)
     {
         var wall = new Wall(corners[i], corners[(i + 1) % corners.length]);
@@ -2205,7 +2207,9 @@ function isColliding(simulation, particle)
 
 function removeParticle(simulation, particleIndex)
 {
+    var particle = simulation.particles[particleIndex];
     simulation.particles.splice(particleIndex, 1);
+    particle.isRemoved = true;
 }
 
 function worldFromPage(renderer, pagePosition)
@@ -2317,10 +2321,10 @@ function resetSimulation(simulation)
             maxInitialSpeed: 0.1,
             soundEnabled: false,
             isPeriodic: false,
-            maxParticleCount: 0 ,
+            maxParticleCount: 0,
+            shouldResetOnExplosion: true,
 
             // box
-
             boxWidth: 20,
             boxHeight: null,
 
@@ -2345,19 +2349,13 @@ function resetSimulation(simulation)
             velocityAmplification: 1,
             gravityAcceleration: 0,
             friction: 0,
-            coulombStrength: 0.001,
-            lennardJonesStrength: 1.0,
-            lennardJonesSeparation: 0.08,
-            ljSoftness: 0,
-            ljn: 6,
-            ljm: 1,
-            separationFactor: 1.0,
             cutoffFactor: 2.5,
-            onlyHardSpheres: false,
-            dragStrength: 1,
-            repelStrength: 1,
             wallStrength: 1,
 
+            // user forces
+            dragStrength: 1,
+            repelStrength: 1,
+            
             // thermostat
             thermostatSpeed: 0,
             thermostatTemperature: 0.01,
@@ -2451,7 +2449,7 @@ function resetSimulation(simulation)
         },
         mode: MouseMode.none,
         selectedParticleIndices: [],
-        draggedParticleIndex: -1,
+        draggedParticle: null,
         billiardCue:
         {
             visible: false,
@@ -2595,10 +2593,9 @@ function drawSimulation(simulation)
 
     if (simulation.mouse.mode == MouseMode.drag)
     {
-        var particle = simulation.particles[simulation.mouse.draggedParticleIndex];
-        if (particle)
+        if (simulation.mouse.draggedParticle)
         {
-            drawArrow(simulation.renderer, particle.position, simulation.mouse.worldPosition);
+            drawArrow(simulation.renderer, simulation.mouse.draggedParticle.position, simulation.mouse.worldPosition);
         }
 
     }
@@ -2661,7 +2658,7 @@ var updateSimulation = function()
                     if (hitParticleIndex >= 0)
                     {
                         simulation.mouse.mode = MouseMode.drag;
-                        simulation.mouse.draggedParticleIndex = hitParticleIndex;
+                        simulation.mouse.draggedParticle = simulation.particles[hitParticleIndex];
 
                         simulation.mouse.selectedParticleIndices.length = 0;
                         simulation.mouse.selectedParticleIndices.push(hitParticleIndex);
@@ -2943,9 +2940,15 @@ var updateSimulation = function()
                     // filter NaNs, infinities, and particles that escape the box
                     var isFinite = v2.isFinite(particle.position);
                     var isOutside = (!params.isPeriodic) && (!doesRectContainPoint(simulation.boxBounds, particle.position));
+
+                    if (params.shouldResetOnExplosion && (!isFinite))
+                    {
+                        resetSimulation(simulation);
+                        return;
+                    }
                     if ((!isFinite) || isOutside)
                     {
-                        particles.splice(particleIndex, 1);
+                        removeParticle(simulation, particleIndex);
                         particleIndex -= 1;
                     }
                 }
@@ -3165,42 +3168,46 @@ var updateSimulation = function()
                     }
                 }
 
-                    for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++) {
-                        var particle = simulation.particles[particleIndex];
+                for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++) {
+                    var particle = simulation.particles[particleIndex];
 
-                        // ! Friction
+                    // ! Friction
+                    v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                        particle.velocity, -params.friction / particle.mass);
+                    
+                    // ! Repel tool
+
+                    if (simulation.mouse.mode === MouseMode.repel)
+                    {
+                        var mouseToParticle = v2.alloc();
+                        v2.subtract(mouseToParticle, particle.position, simulation.mouse.worldPosition);
+
+                        var repelFactor = params.boxWidth / v2.square(mouseToParticle);
+
                         v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                            particle.velocity, -params.friction / particle.mass);
-                        
-                        // ! Repel tool
-
-                        if (simulation.mouse.mode === MouseMode.repel)
-                        {
-                            var mouseToParticle = v2.alloc();
-                            v2.subtract(mouseToParticle, particle.position, simulation.mouse.worldPosition);
-
-                            var repelFactor = params.boxWidth / v2.square(mouseToParticle);
-
-                            v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                                mouseToParticle, repelFactor * params.repelStrength / particle.mass);
-                        }
+                            mouseToParticle, repelFactor * params.repelStrength / particle.mass);
                     }
+                }
 
                 // ! Drag tool
 
                 if (simulation.mouse.mode === MouseMode.drag)
                 {
-                    var draggedParticle = particles[simulation.mouse.draggedParticleIndex];
-                    v2.subtract(relativePosition, simulation.mouse.worldPosition, draggedParticle.position);
-
-                    for (var i = 0; i < simulation.mouse.selectedParticleIndices.length; i++)
+                    var draggedParticle = simulation.mouse.draggedParticle;
+                    // TODO: not really happy with the .isRemoved and the handling of the selectedParticles
+                    if (!draggedParticle.isRemoved)
                     {
-                        var particle = particles[simulation.mouse.selectedParticleIndices[i]];
+                        v2.subtract(relativePosition, simulation.mouse.worldPosition, draggedParticle.position);
 
-                        v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                            relativePosition, params.dragStrength / particle.mass);
-                        v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                            particle.velocity, -1 / particle.mass);
+                        for (var i = 0; i < simulation.mouse.selectedParticleIndices.length; i++)
+                        {
+                            var particle = particles[simulation.mouse.selectedParticleIndices[i]];
+
+                            v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                                relativePosition, params.dragStrength / particle.mass);
+                            v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                                particle.velocity, -1 / particle.mass);
+                        }    
                     }
                 }
 
@@ -3592,7 +3599,14 @@ function doesRectContainPoint(rectangle, point)
 function randomPointInRect(rect)
 {
     return v2(randomInInterval(rect.left, rect.right),
-        randomInInterval(rect.top, rect.bottom));
+        randomInInterval(rect.bottom, rect.top));
+}
+
+function randomDiscInRect(rect, radius)
+{
+    var x = randomInInterval(rect.left + radius, rect.right - radius);
+    var y = randomInInterval(rect.bottom + radius, rect.top - radius);
+    return v2(x, y);
 }
 
 function randomInInterval(a, b)
@@ -3819,19 +3833,9 @@ function shortestVectorFromLine(result, point, lineStart, lineEnd)
     v2.subtract(pointFromLineStart, point, lineStart);
 
     var t = v2.inner(pointFromLineStart, lineVector) / v2.square(lineVector);
-    if (t <= 0)
-    {
-        v2.copy(result, pointFromLineStart);
-    }
-    else if (t >= 1)
-    {
-        v2.subtract(result, pointFromLineStart - lineVector);
-    }
-    else
-    {
-        v2.scaleAndAdd(result, pointFromLineStart, lineVector, -t);
-    }
-
+    t = clamp(0, t, 1);
+    v2.scaleAndAdd(result, pointFromLineStart, lineVector, -t);
+                                                            
     v2.free(lineVector)
     v2.free(pointFromLineStart);
 }
