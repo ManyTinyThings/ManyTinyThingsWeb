@@ -84,9 +84,9 @@ function rotateToVector(context, v)
     context.transform(v[0], v[1], -v[1], v[0], 0, 0);
 }
 
-function drawArrow(renderer, start, end)
+function drawArrow(renderer, start, end, color, maxArrowheadLength)
 {
-    var maxArrowheadLength = 20; // pixels
+    maxArrowheadLength = maxArrowheadLength | 15; // pixels
 
     var arrowStart = v2.alloc();
     var arrowEnd = v2.alloc();
@@ -112,6 +112,7 @@ function drawArrow(renderer, start, end)
     c.beginPath();
     c.moveTo(arrowStart[0], arrowStart[1]);
     c.lineTo(shaftEnd[0], shaftEnd[1]);
+    c.strokeStyle = color.css;
     c.stroke();
 
     // rotate and move to arrow shaft
@@ -124,7 +125,7 @@ function drawArrow(renderer, start, end)
     c.lineTo(-arrowheadLength, -arrowheadLength / 3);
     c.lineTo(-arrowheadLength, arrowheadLength / 3);
     c.closePath();
-    c.fillStyle = Color.black.css;
+    c.fillStyle = color.css;
     c.fill();
     c.restore();
 

@@ -1322,8 +1322,10 @@ function drawGraph(graph)
         //drawArrow(graph.renderer, v2(0, 0), v2(100, 1));
         if (graph.axesEnabled)
         {
-            drawArrow(graph.renderer, v2(limits.xMin, graph.xAxis), v2(limits.xMax, graph.xAxis));
-            drawArrow(graph.renderer, v2(graph.yAxis, limits.yMin), v2(graph.yAxis, limits.yMax));
+            var gray = Color.gray;
+            var maxArrowHeadLength = 10;
+            drawArrow(graph.renderer, v2(limits.xMin, graph.xAxis), v2(limits.xMax, graph.xAxis), gray, maxArrowHeadLength);
+            drawArrow(graph.renderer, v2(graph.yAxis, limits.yMin), v2(graph.yAxis, limits.yMax), gray, maxArrowHeadLength);
         }
 
         for (var areaIndex = 0; areaIndex < graph.areas.length; areaIndex++)
@@ -2595,7 +2597,7 @@ function drawSimulation(simulation)
     {
         if (simulation.mouse.draggedParticle)
         {
-            drawArrow(simulation.renderer, simulation.mouse.draggedParticle.position, simulation.mouse.worldPosition);
+            drawArrow(simulation.renderer, simulation.mouse.draggedParticle.position, simulation.mouse.worldPosition, Color.blue);
         }
 
     }
@@ -2613,7 +2615,7 @@ function drawSimulation(simulation)
             v2.scaleAndAdd(arrowEnd, arrowStart, 
                 wall.force, - 1 / length);
 
-            drawArrow(simulation.renderer, arrowStart, arrowEnd);
+            drawArrow(simulation.renderer, arrowStart, arrowEnd, Color.blue);
         }
         v2.free(arrowStart);
         v2.free(arrowEnd);

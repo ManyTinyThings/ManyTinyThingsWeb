@@ -20,6 +20,7 @@ Every big thing in the world is made up of **many tiny things**.
 			p.boxWidth = 200;
 			p.isOnlyHardSpheres = true;
 			p.gravityAcceleration = 1;
+			p.repelStrength = 1;
 
 			updateBounds(simulation);
 
@@ -59,7 +60,7 @@ Every big thing in the world is made up of **many tiny things**.
 			updateBounds(simulation);
 			setWallsAlongBorder(simulation);
 
-			var particleCount = 300;
+			var particleCount = 200;
 			var particles = [];
 			for (var i = 0; i < particleCount; i++) {
 				var particle = new Particle();
