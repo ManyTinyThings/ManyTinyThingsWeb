@@ -495,7 +495,16 @@ function createOutput(opts)
 
     var updater = function()
     {
-        output.value = opts.update();
+        var value = opts.update();
+        if (isNumber(value))
+        {
+            output.value = value.toFixed(2);
+        }
+        else
+        {
+            output.value = value;
+        }
+        
         window.requestAnimationFrame(updater);
     }
 
@@ -3424,6 +3433,11 @@ function applyLangevinNoise(particles, viscosity, temperature, dt)
 
 
 // ! Math
+
+function isNumber(x)
+{
+    return (typeof x === "number");
+}
 
 function atLeast(a, b)
 {
