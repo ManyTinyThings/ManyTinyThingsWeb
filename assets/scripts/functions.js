@@ -251,7 +251,7 @@ v2.periodicize = function(out, a, bounds)
     return out;
 };
 
-v2.quadrance = function(a, b)
+v2.squaredDistance = function(a, b)
 {
     var dx = a[0] - b[0];
     var dy = a[1] - b[1];
@@ -260,7 +260,7 @@ v2.quadrance = function(a, b)
 
 v2.distance = function(a, b)
 {
-    return Math.sqrt(v2.quadrance(a, b));
+    return Math.sqrt(v2.squaredDistance(a, b));
 }
 
 // ! Generally useful
@@ -2137,10 +2137,10 @@ function moveOutOfCollision(simulation, particle)
 
                 shortestVectorFromLine(relativePosition, particle.position, wall.vertices[1], wall.vertices[0]);
 
-                var quadrance = v2.square(relativePosition);
-                if (quadrance < square(particle.radius))
+                var squaredDistance = v2.square(relativePosition);
+                if (squaredDistance < square(particle.radius))
                 {
-                    var distance = Math.sqrt(quadrance);
+                    var distance = Math.sqrt(squaredDistance);
                     var overlapRatio = (particle.radius - distance) / distance;
                     v2.scaleAndAdd(particle.position,
                         particle.position, relativePosition, overlapRatio);
@@ -2164,11 +2164,11 @@ function moveOutOfCollision(simulation, particle)
 
         //     var distanceLimit = particle.radius + otherParticle.radius;
         //     v2.subtract(relativePosition, otherParticle.position, particle.position);
-        //     var quadrance = v2.square(relativePosition);
+        //     var squaredDistance = v2.square(relativePosition);
 
-        //     if (quadrance < square(distanceLimit))
+        //     if (squaredDistance < square(distanceLimit))
         //     {
-        //         var distance = Math.sqrt(quadrance);
+        //         var distance = Math.sqrt(squaredDistance);
         //         var overlapRatio = (distanceLimit - distance) / distance;
 
         //         // NOTE: move particles according to their relative size, 
@@ -3072,8 +3072,8 @@ var updateSimulation = function()
 
                                     // ! Lennard Jones
 
-                                    var quadrance = v2.square(relativePosition);
-                                    var invQuadrance = 1 / quadrance;
+                                    var squaredDistance = v2.square(relativePosition);
+                                    var invSquaredDistance = 1 / squaredDistance;
                                     var squareSeparation = square(interaction.separation);
 
                                     var potentialEnergy = 0;
@@ -3083,7 +3083,7 @@ var updateSimulation = function()
 
                                     if (isRepulsive)
                                     {
-                                        if (quadrance > squareSeparation)
+                                        if (squaredDistance > squareSeparation)
                                         {
                                             continue;
                                         }
@@ -3091,7 +3091,7 @@ var updateSimulation = function()
                                     }
 
                                     // truncation
-                                    if (quadrance > (squareCutoffFactor * squareSeparation))
+                                    if (squaredDistance > (squareCutoffFactor * squareSeparation))
                                     {
                                         continue;
                                     }
@@ -3108,7 +3108,7 @@ var updateSimulation = function()
                                     }
 
                                     // ! Lennard-jones
-                                    var a2 = squareSeparation * invQuadrance;
+                                    var a2 = squareSeparation * invSquaredDistance;
                                     var a6 = a2 * a2 * a2;
                                     potentialEnergy += interaction.strength * (a6 - 2) * a6;
                                     virial += interaction.strength * 12 * (a6 - 1) * a6;
@@ -3121,7 +3121,7 @@ var updateSimulation = function()
 
                                         // NOTE: fake coulomb
                                         var coulombFactor = params.coulombStrength * chargeProduct;
-                                        var coulombEnergy = coulombFactor * invQuadrance;
+                                        var coulombEnergy = coulombFactor * invSquaredDistance;
                                         virial += 2 * coulombEnergy;
                                         potentialEnergy += coulombEnergy;
 
@@ -3129,7 +3129,7 @@ var updateSimulation = function()
 
                                     // TODO: one loop for each interaction intead of one loop with a lot of ifs
 
-                                    var forceFactor = -virial * invQuadrance;
+                                    var forceFactor = -virial * invSquaredDistance;
 
                                     v2.scaleAndAdd(particle.acceleration, particle.acceleration,
                                         relativePosition, forceFactor / particle.mass);
@@ -3158,21 +3158,21 @@ var updateSimulation = function()
                             
                             shortestVectorFromLine(particleFromWall, particle.position, wall.vertices[0], wall.vertices[1]);
 
-                            var quadranceToWall = v2.square(particleFromWall);
+                            var squaredDistanceToWall = v2.square(particleFromWall);
                             var squareSeparation = square(particle.radius);
 
-                            if (quadranceToWall < squareSeparation)
+                            if (squaredDistanceToWall < squareSeparation)
                             {
-                                var invQuadrance = 1 / quadranceToWall;
+                                var invSquaredDistance = 1 / squaredDistanceToWall;
 
-                                var a2 = squareSeparation * invQuadrance;
+                                var a2 = squareSeparation * invSquaredDistance;
                                 var a6 = a2 * a2 * a2;
                                 particle.potentialEnergy += params.wallStrength * (a6 - 2) * a6;
                                 particle.potentialEnergy += params.wallStrength; // NOTE: for repulsive
                                 var virial = params.wallStrength * 12 * (a6 - 1) * a6;
                                 particle.virial = virial;
 
-                                var forceFactor = -virial * invQuadrance;
+                                var forceFactor = -virial * invSquaredDistance;
 
                                 v2.scaleAndAdd(wall.force, wall.force, 
                                     particleFromWall, forceFactor);
