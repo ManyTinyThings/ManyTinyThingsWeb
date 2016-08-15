@@ -143,4 +143,4 @@ The explanations will include simulations of many tiny things, as you can see ab
 If you are ready, [let's start]({{ site.baseurl }}/intro/tutorial)!
 
 
-
+{% include what_next.html %}

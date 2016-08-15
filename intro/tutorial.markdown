@@ -1,5 +1,6 @@
 ---
-title: Introduction
+chapterTitle: Introduction
+title: Tutorial
 previous: /
 next: /intro/phenomena
 ---

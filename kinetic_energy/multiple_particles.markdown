@@ -1,5 +1,5 @@
 ---
-title: Kinetic energy
+title: Multiple particles
 previous: /kinetic_energy/single_particle
 next: /kinetic_energy/adding_energy
 ---

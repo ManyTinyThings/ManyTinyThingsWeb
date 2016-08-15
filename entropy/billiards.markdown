@@ -1,4 +1,5 @@
 ---
+chapterTitle: Entropy – Things Spread Out
 title: Messiness
 previous: /
 next: /entropy/frictionless_billiards

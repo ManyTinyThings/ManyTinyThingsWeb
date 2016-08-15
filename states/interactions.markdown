@@ -1,6 +1,6 @@
 ---
-title: Interactions
-isStartPage: true
+chapterTitle: Interactions – Things Liking Other Things
+title: Two Things that Like Each Other
 previous: /
 next: /states/repulsive_potential
 ---
