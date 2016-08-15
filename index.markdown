@@ -55,7 +55,7 @@ Every big thing in the world is made up of **many tiny things**.
 			p.thermostatSpeed = 0.1;
 			p.thermostatTemperature = 1;
 			p.repelStrength = 0.2;
-			p.isOnlyHardSpheres = true;
+			//p.isOnlyHardSpheres = true;
 
 			updateBounds(simulation);
 			setWallsAlongBorder(simulation);
@@ -70,7 +70,7 @@ Every big thing in the world is made up of **many tiny things**.
 			addParticlesRandomly(simulation, particles);
 
 			var ljInteraction = new LennardJonesInteraction();
-
+			ljInteraction.separation *= 0.8;
 			setInteraction(simulation, 0, 0, ljInteraction);
 		}
 	});
