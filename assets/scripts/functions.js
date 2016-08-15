@@ -1034,6 +1034,7 @@ function createGraph(opts)
         graph.div.innerHTML = opts.label;
     }
     var canvas = createAndAppend("canvas", graph.div);
+    graph.div.classList.add("graph");
     canvas.width = 400;
     canvas.height = 200;
 
@@ -2957,6 +2958,7 @@ var updateSimulation = function()
                     var isFinite = v2.isFinite(particle.position);
                     var isOutside = (!params.isPeriodic) && (!doesRectContainPoint(simulation.boxBounds, particle.position));
 
+                    // TODO: reset on isOutside too? or maybe add shouldResetOnOutside
                     if (params.shouldResetOnExplosion && (!isFinite))
                     {
                         resetSimulation(simulation);
