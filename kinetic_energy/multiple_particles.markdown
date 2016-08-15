@@ -1,5 +1,7 @@
 ---
 title: Kinetic energy
+previous: /kinetic_energy/single_particle
+next: /kinetic_energy/adding_energy
 ---
 
 <script src="shared.js"></script>

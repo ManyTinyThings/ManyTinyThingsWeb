@@ -1,5 +1,7 @@
 ---
 title: Messiness
+previous: /
+next: /entropy/frictionless_billiards
 ---
 
 <script>
@@ -77,17 +79,15 @@ Now try putting the balls back the way they were.
 
 It's a bit tricky, but doable.
 
-[Continue](frictionless_billiards)
-
 
 </div>
 <div class="twoColumn">
 <script>
 	insertHere(billiardsSim.div);
-	insertHere(createOutput({
-	    label: "error^2: ",
-	    update: totalSquaredError,
-	}));
+	// insertHere(createOutput({
+	//     label: "error^2: ",
+	//     update: totalSquaredError,
+	// }));
 </script>
 </div>
 </div>

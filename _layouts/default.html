@@ -24,13 +24,25 @@
         <a class="siteTitle" href="{{ site.baseurl }}/">{{ site.title | escape }}</a>
     </div>
 </header>
-<div class="wrapper">
-<article>
-{% if page.title %}
-<h1>{{ page.title }}</h1>
-{% endif %}
-{{ content }}
-</article>
+<div id="body">
+	<div class="navigationArea">
+		{% if page.previous %}
+			<a href="{{ site.baseurl }}{{ page.previous }}">«</a>
+		{% endif %}
+	</div>
+	
+	<div id="content">
+		{% if page.title %}
+			<h1>{{ page.title }}</h1>
+		{% endif %}
+		{{ content }}
+	</div>
+
+	<div class="navigationArea">
+		{% if page.next %}
+			<a href="{{ site.baseurl }}{{ page.next }}">»</a>
+		{% endif %}
+	</div>
 </div>
 </body>
 </html>

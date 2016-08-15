@@ -1,5 +1,7 @@
 ---
 title: Many interacting particles
+previous: /states/attractive_potential
+next: /states/evaporation
 ---
 
 <script>

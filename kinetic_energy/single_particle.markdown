@@ -1,6 +1,8 @@
 ---
 title: Kinetic Energy
 isStartPage: true
+next: /kinetic_energy/multiple_particles
+previous: /
 ---
 
 

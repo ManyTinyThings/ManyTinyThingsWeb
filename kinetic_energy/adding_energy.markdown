@@ -1,5 +1,6 @@
 ---
 title: Kinetic energy
+previous: /kinetic_energy/multiple_particles
 ---
 
 <script src="shared.js"></script>

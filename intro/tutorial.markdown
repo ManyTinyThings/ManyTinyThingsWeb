@@ -1,5 +1,7 @@
 ---
 title: Introduction
+previous: /
+next: /intro/phenomena
 ---
 
 <div id="chapter">
@@ -62,7 +64,7 @@ Try figuring out what this graph shows by throwing around the ball a bit. Does i
 * the shape of the ball at different heights?
 * the height of the ball over time?
 
-When you've figured it out, move on to the [next page]({{ site.baseurl }}/intro/phenomena).
+When you have figured it out, continue to the next page by clicking in the right margin (that way &rarr;).
 </div>
 
 <div class="twoColumn">

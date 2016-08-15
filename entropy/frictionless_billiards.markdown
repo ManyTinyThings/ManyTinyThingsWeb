@@ -1,5 +1,6 @@
 ---
 title: Frictionless Messiness
+previous: /entropy/billiards
 ---
 
 <script>
@@ -54,8 +55,6 @@ Take the shot.
 </script>
 
 Try to put the balls back in a triangle now. It's practically impossible! They keep bouncing around, and just making them slow down is a lot of work.
-
-[Continue](put_particles_in_half)
 
 
 </div>

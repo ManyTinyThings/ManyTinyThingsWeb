@@ -1,5 +1,7 @@
 ---
 title: Attractive potential
+previous: /states/repulsive_potential
+next: /states/solid_liquid_gas
 ---
 
 <script src="potential.js"></script>
@@ -62,8 +64,6 @@ The back-and-forth rolling is why the particles vibrate a bit when they snap tog
         minLabel: "No friction", maxLabel: "Some",
     });
 </script>
-
-[Next page](solid_liquid_gas)
 </div>
 
 

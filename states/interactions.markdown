@@ -1,5 +1,8 @@
 ---
 title: Interactions
+isStartPage: true
+previous: /
+next: /states/repulsive_potential
 ---
 
 <script>
