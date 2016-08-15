@@ -62,7 +62,7 @@ Try figuring out what this graph shows by throwing around the ball a bit. Does i
 * the shape of the ball at different heights?
 * the height of the ball over time?
 
-When you've figured it out, move on to the next page.
+When you've figured it out, move on to the [next page]({{ site.baseurl }}/intro/phenomena).
 </div>
 
 <div class="twoColumn">

@@ -66,6 +66,7 @@ $$
 * With interactivity, animation becomes important. It draws the eye to important things, and helps the user not get lost. New content popping in from nowhere is quite disorienting.
 * Steps vs pages vs free scrolling. Balance between freedom of exploration (like reading a book), and making sure user is following with small challenges (like a game).
 * Without pages, tendency to scroll to the new thing and never stay and explore.
+* Maybe leave pages with an open question for the reader to figure out on their own?
 
 # Implementation
 

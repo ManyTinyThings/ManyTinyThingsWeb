@@ -65,7 +65,7 @@ Here is a model of a glass. Fill it with particles!
 				particleCount += 1;
 			};
 		}
-		return (particleCount >= 80);
+		return (particleCount >= 60);
 	});
 	endStep();
 </script>

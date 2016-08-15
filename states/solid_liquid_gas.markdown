@@ -1,5 +1,5 @@
 ---
-title: Interactions
+title: Many interacting particles
 ---
 
 <script>
@@ -39,46 +39,67 @@ title: Interactions
 
 <div id="chapter">
 
+We now have some more understanding of how two particles interact. Now let's see what happens when there are more than two!
+
 <div class="page">
+
 <div class="stepLog twoColumn">
-Try moving these particles closer to each other.
+
+
+Let's add some more particles! (select the _create_ tool and use the mouse)
 
 <script>
     cue(function () {
-        var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
-        return (distance < 3);   
+        return (interactionSim.particles.length > 20);  
     });
     endStep();
 </script>
 
-They seem to like each other! As they come closer, they attract and snap together.
+They group together and form a larger shape, a _solid_, if you will.
 
-Can you get them to let go?
+Try moving the solid around.
 
 <script>
     cue(function () {
-        var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
-        return (distance > 6);
+        return (ensembleSpeed(interactionSim.particles) > 1); 
     });
     endStep();
 </script>
 
-It takes some effort!
+The particles collectively behave like the macroscopic objects we are used to, moving and rotating as a unit.
 
-What happens if you collide them at high speed?
+So far, we've have had friction, but there is no friction in the microscopic world.
+
+Turn off the friction.
 
 <script>
     cue(function () {
-        var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
-        // TODO: speed along normal instead
-        var relativeSpeed = v2.distance(interactionSim.particles[0].velocity, interactionSim.particles[1].velocity);
-        return (distance < 3) && (relativeSpeed > 1.0);
+        return (interactionSim.parameters.friction == 0);
+    });
+    createSliderHere({
+        object: interactionSim.parameters,
+        name: "friction",
+        min: 0, max: 0.1,
+        minLabel: "No friction", maxLabel: "Some",
+    });
+</script>
+
+Give the particles some energy.
+
+<script>
+    cue(function() {
+        return (getTotalEnergy(interactionSim) > 0.1);
     });
     endStep();
 </script>
 
-The speed is too great for them to have time to stick together.
 
+
+Let's try amplifying the speed of each particle, in turn increasing the jiggling.
+
+The random jiggling kicks the particles out of their positions, and what was a neat shape becomes something less ordered and more random. We have melted the _solid_ into a _liquid_.
+
+If we increase the temperature (and thus the jiggling) even further, the speed is to great to keep the particles together, and they start bouncing around randomly. The heat of the system is too high for the attraction to matter much, and we've vaporized our _liquid_ into _gas_.
 </div>
 
 <div class="twoColumn">
