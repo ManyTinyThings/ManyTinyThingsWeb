@@ -86,7 +86,15 @@ $$
 	* Simple way to make interactive steps with conditions
 	* Made simple plotting library
 * Model
+	* 2D not 3D
+		* Easier to visualize
+		* Needs less particles to fill space
+		* Not physically correct, sligthly weird with 3D potentials
+		* Does not exhibit all richness of structure in solids (BCC, FCC)
+		* 3D is a natural extension
 	* Potentials
+		* Lennard Jones
+		* Coulomb?
 	* Collision
 	* Grid
 	* Periodicity
