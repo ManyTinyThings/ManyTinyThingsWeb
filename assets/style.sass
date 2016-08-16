@@ -7,6 +7,39 @@
 $backgroundColor: #eee 
 $linkColor: #000
 $contentWidth: 840px
+$contentPadding: 50px
+$titleFontSize: 40px
+
+
+// general elements
+
+a
+    color: $linkColor
+
+input[type="range"]
+    -webkit-appearance: none
+    width: 250px
+    focus-outline: none
+    
+    &::-webkit-slider-runnable-track
+        height: 10px
+        background: #ddd
+        border: none
+        border-radius: 5px
+        
+    &::-webkit-slider-thumb
+        -webkit-appearance: none
+        width: 30px
+        height: 30px
+        border-radius: 50%
+        background: black
+        margin-top: -10px
+
+canvas
+    display: block
+    
+    &:active
+        cursor: default
 
 html, body
     margin: 0
@@ -15,52 +48,76 @@ html, body
     font-size: 18px
     line-height: 130%
 
+    display: flex
+    flex-direction: column
+    min-height: 100vh
+
+
+// layout
 
 header
     background-color: $backgroundColor
     min-height: 100px
     display: flex
-    align-items: center
+    justify-content: center
 
     .siteTitle
-        font-size: 40px
+        width: $contentWidth
+        padding: $contentPadding
+        font-size: $titleFontSize
         text-decoration: none
 
         &,
         &:visited
             color: black
 
-// layout
+
 
 #body
+    flex: 1
     display: flex
     justify-content: center
     align-items: stretch
 
+footer
+    min-height: 100px
+    background-color: $backgroundColor
+    
+    display: flex
+
+    a 
+        flex: 1
+        @extend .centerContent
+        text-decoration: none
+        font-size: $titleFontSize
+
+        color: transparent
+
+        &:hover
+            color: $linkColor
+            cursor: pointer
+
 
 #content
     width: $contentWidth
-    padding: 20px
+    padding: $contentPadding
+    margin-top: -30px
 
 .navigationArea
-    flex: 1 1
+    flex: 1
 
     display: flex
-    align-items: stretch
 
     a
-        flex: 1 1
+        flex: 1
 
-        display: flex
-        align-items: center
-        justify-content: center
+        @extend .centerContent
 
         font-size: 100px
         font-family: serif
         text-decoration: none
 
         color: transparent
-        transition: color 0.1s, background-color 0.1s
 
         cursor: default
 
@@ -68,11 +125,6 @@ header
             color: $linkColor
             background-color: $backgroundColor
             cursor: pointer
-
-
-.wrapper
-    width: $contentWidth
-    margin: 0 auto
 
 .twoColumn
     width: 400px
@@ -94,8 +146,7 @@ header
 // toolbar
 
 .toolbar
-    display: flex
-    flex-direction: row
+    @extend .flex
 
     .tool.selected
         font-weight: bold
@@ -106,9 +157,7 @@ header
 // pages
 
 .page
-    margin-top: 20px
-    display: flex
-    justify-content: space-between
+    @extend .flex
 
 .navigationBar
     display: flex
@@ -155,36 +204,16 @@ header
         @extend .outsideMargin
         content: "☑"
 
-// general
-
-input[type="range"]
-    -webkit-appearance: none
-    width: 250px
-    focus-outline: none
-    
-    &::-webkit-slider-runnable-track
-        height: 10px
-        background: #ddd
-        border: none
-        border-radius: 5px
-        
-    &::-webkit-slider-thumb
-        -webkit-appearance: none
-        width: 30px
-        height: 30px
-        border-radius: 50%
-        background: black
-        margin-top: -10px
-
-canvas
-    display: block
-    
-    &:active
-        cursor: default
+// general classes
 
 .flex
     display: flex
     justify-content: space-between
+
+.centerContent
+    display: flex
+    align-items: center
+    justify-content: center
 
 .hidden
     display: none

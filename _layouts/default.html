@@ -20,9 +20,7 @@
 </head>
 <body>
 <header>
-    <div class="wrapper">
-        <a class="siteTitle" href="{{ site.baseurl }}/">{{ site.title | escape }}</a>
-    </div>
+    <a class="siteTitle" href="{{ site.baseurl }}/">{{ site.title | escape }}</a>
 </header>
 <div id="body">
 	<div class="navigationArea">
@@ -44,5 +42,10 @@
 		{% endif %}
 	</div>
 </div>
+<footer>
+	{% if page.next %}
+		<a href="{{ site.baseurl }}{{ page.next }}">Next »</a>
+	{% endif %}
+</footer>
 </body>
 </html>
