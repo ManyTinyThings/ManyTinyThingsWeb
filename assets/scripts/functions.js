@@ -1526,6 +1526,14 @@ function getTotalPressure(simulation)
     return pressure;
 }
 
+// ! Regions
+
+function Region()
+{
+    this.bounds = new Rectangle();
+    this.color = Color.transparent;
+}
+
 // ! Measurement regions
 
 function createMeasurementRegion()
@@ -2029,8 +2037,11 @@ function setWallsAlongBorder(simulation)
 }
 
 // TODO: maybe make this a setter instead, but seems nontrivial
+
 function updateBounds(simulation)
 {
+    // TODO: scale regions with the updated bounds?
+
     var aspectRatio = simulation.canvas.width / simulation.canvas.height;
     var boxWidth = simulation.parameters.boxWidth;
     var boxHeight = boxWidth / aspectRatio;
@@ -2044,25 +2055,14 @@ function updateBounds(simulation)
     var origin = v2(0, 0);
 
     setCenterWidthHeight(
-        simulation.renderer.bounds,
+        simulation.boxBounds,
         origin, boxWidth, boxHeight
     );
-
-    updateRendererBounds(simulation.renderer);
-
-    var b = simulation.boxBounds;
-    setCenterWidthHeight(b,
-        origin, boxWidth, boxHeight
-    );
-
-    setLeftTopRightBottom(simulation.rightRect,
-        b.center[0], b.top,
-        b.right, b.bottom);
-    setLeftTopRightBottom(simulation.leftRect,
-        b.left, b.top,
-        b.center[0], b.bottom);
 
     updateGrid(simulation);
+
+    copyRectangle(simulation.renderer.bounds, simulation.boxBounds);
+    updateRendererBounds(simulation.renderer);
 }
 
 function updateGrid(simulation)
@@ -2426,14 +2426,12 @@ function resetSimulation(simulation)
     simulation.trajectory = [];
 
     simulation.boxBounds = new Rectangle();
-    simulation.leftRect = new Rectangle();
-    simulation.rightRect = new Rectangle();
+    simulation.regions = [];
 
     // TODO: just set the defaults instead of this copy business
     copyObject(simulation, newSimulation);
 
-    // NOTE: this get sets up default interaction
-    getInteraction(simulation, 0, 0);
+    getInteraction(simulation, 0, 0); // NOTE: this get sets up default interaction
     updateBounds(simulation);
 
     // ! User initialization
@@ -2623,10 +2621,11 @@ function drawSimulation(simulation)
 {
     clearRenderer(simulation.renderer);
 
-    for (var regionIndex = 0; regionIndex < simulation.measurementRegions.length; regionIndex++)
+    for (var regionIndex = 0; regionIndex < simulation.regions.length; regionIndex++)
     {
-        var region = simulation.measurementRegions[regionIndex];
-        drawRectangle(simulation.renderer, region.bounds, region.overlayColor);
+        var region = simulation.regions[regionIndex];
+        var overlayColor = withAlpha(region.color, 0.2);
+        drawRectangle(simulation.renderer, region.bounds, overlayColor);
     }
 
     for (var i = 0; i < simulation.walls.length; i++)

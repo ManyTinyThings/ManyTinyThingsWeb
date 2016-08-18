@@ -1,6 +1,7 @@
 ---
 title: Frictionless Messiness
 previous: /entropy/billiards
+next: /entropy/half_box
 ---
 
 <script>

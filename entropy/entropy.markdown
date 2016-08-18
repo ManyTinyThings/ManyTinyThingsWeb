@@ -4,25 +4,6 @@ title: Entropy
 
 # Entropy
 
-How about something a little easier? Try putting all the particles in the left half of the box.
-
-<script>
-    var halfRegionSim = createSimulation({ 
-        particleGenerator: uniformParticleGenerator,
-        visualizations: ["countsHistogram"],
-        parameters: {
-            maxInitialSpeed: 0.01,
-            particleCount: 20,
-            bondEnergy: 0,
-        },
-    });
-
-    setColdHotRegions(halfRegionSim);
-
-</script>
-
-It's quite hard, and they keep wanting to escape! Notice how, if you don't touch anything, they tend to spread out so that about half is on the left side and half on the right.
-
 Don't agree? It's more obvious when there are more particles.
 
 <script>
