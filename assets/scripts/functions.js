@@ -1721,12 +1721,6 @@ function groupedPosition(simulation, particleIndex)
     return randomPointInRect(smallCenteredRect);
 }
 
-function uniformPosition(simulation, particleIndex)
-{
-    // TODO: use poisson disk sampling to avoid collisions?
-    return randomPointInRect(simulation.boxBounds);
-}
-
 function halvesPosition(simulation, particleIndex)
 {
     if (particleIndex % 2 == 0)
@@ -1858,17 +1852,6 @@ function generateParticles(simulation, count, generator)
         var particle = generator(simulation, particleIndex);
         simulation.particles.push(particle);
     }
-}
-
-function uniformParticleGenerator(simulation, particleIndex)
-{
-    var particle = new Particle();
-
-    particle.position = uniformPosition(simulation, particleIndex);
-    // moveOutOfCollision(simulation, particle);
-
-    particle.velocity = uniformVelocity(simulation, particleIndex);
-    return particle;
 }
 
 function groupedParticleGenerator(simulation, particleIndex)
@@ -2123,17 +2106,53 @@ function updateGrid(simulation)
 
 function addParticle(simulation, particle)
 {
-    // TODO: better checks here
     var isInside = simulation.parameters.isPeriodic || doesRectContainPoint(simulation.boxBounds, particle.position);
     var maxParticleCount = simulation.parameters.maxParticleCount;
     var notTooMany = (0 == maxParticleCount) || (simulation.particles.length < maxParticleCount)
-    var isSuccessful = isInside && notTooMany;
+    var isSuccessful = isInside && notTooMany && (!isColliding(simulation, particle));
     if (isSuccessful)
     {
         simulation.particles.push(particle);
-        moveOutOfCollision(simulation, particle);
     }
     return isSuccessful;
+}
+
+function isColliding(simulation, particle)
+{
+    // collision with other particles
+
+    for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++) {
+        var otherParticle = simulation.particles[particleIndex];
+        var radiusSum = particle.radius + otherParticle.radius;
+        var squaredDistance = v2.squaredDistance(particle.position, otherParticle.position);
+        if (squaredDistance < square(radiusSum))
+        {
+            return true;
+        }
+    }
+
+    // collision with walls
+
+    var isCollidingWithWall = false;
+
+    var particleFromWall = v2.alloc();
+
+    for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++) {
+        var wall = simulation.walls[wallIndex];
+
+        shortestVectorFromLine(particleFromWall, particle.position, wall.vertices[1], wall.vertices[0]);
+
+        var squaredDistance = v2.square(particleFromWall);
+        if (squaredDistance < square(particle.radius))
+        {
+            isCollidingWithWall = true
+            break;
+        }
+    }
+
+    v2.free(particleFromWall);
+
+    return isCollidingWithWall;
 }
 
 function moveOutOfCollision(simulation, particle)
