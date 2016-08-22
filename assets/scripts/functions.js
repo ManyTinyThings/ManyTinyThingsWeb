@@ -2345,10 +2345,15 @@ function createSimulation(opts)
         name: "delete",
         key: "d",
     });
+    addTool(simulation.toolbar,
+    {
+        name: "impulse",
+        key: "i",
+    });
 
     selectTool(simulation.toolbar, "select");
 
-    hideElement(simulation.toolbar.div);
+    //hideElement(simulation.toolbar.div);
 
     simulation.renderer = createRenderer(simulation.canvas);
 
@@ -2407,6 +2412,7 @@ function resetSimulation(simulation)
             // user forces
             dragStrength: 1,
             repelStrength: 1,
+            impulseStrength: 1,
             
             // thermostat
             thermostatSpeed: 0,
@@ -2612,7 +2618,7 @@ function createEnum(names, isBitfield)
     return Object.freeze(enumerable);
 }
 
-var MouseMode = createEnum(["none", "drag", "select", "repel", "create", "delete"]);
+var MouseMode = createEnum(["none", "drag", "select", "repel", "create", "delete", "impulse"]);
 
 // ! Simulation
 
@@ -2646,9 +2652,19 @@ function drawSimulation(simulation)
     {
         if (simulation.mouse.draggedParticle)
         {
-            drawArrow(simulation.renderer, simulation.mouse.draggedParticle.position, simulation.mouse.worldPosition, Color.blue);
+            drawTrajectory(simulation.renderer, 
+                [simulation.mouse.draggedParticle.position, simulation.mouse.worldPosition], 
+                Color.blue);
         }
 
+    }
+
+    if (simulation.mouse.mode == MouseMode.impulse)
+    {
+        if (simulation.mouse.draggedParticle)
+        {
+            drawArrow(simulation.renderer, simulation.mouse.draggedParticle.position, simulation.mouse.worldPosition, Color.blue);    
+        }
     }
 
     if (simulation.parameters.displayWallPressure)
@@ -2679,8 +2695,6 @@ var updateSimulation = function()
     var deltaVelocity = v2(0, 0);
     var deltaAcceleration = v2(0, 0);
 
-    var wallNormal = v2(0, 0);
-    var projection = v2(0, 0);
     var gravityAcceleration = v2(0, 0);
 
     return function(updateFunction, simulation, timestamp)
@@ -2692,6 +2706,18 @@ var updateSimulation = function()
 
         if (simulation.mouse.leftButton.transitionCount > 0)
         {
+            if (simulation.mouse.mode == MouseMode.impulse)
+            {
+                var particle = simulation.mouse.draggedParticle;
+                if (particle)
+                {
+                    var strength = simulation.parameters.impulseStrength;
+                    v2.subtract(relativePosition, simulation.mouse.worldPosition, particle.position);
+                    v2.scaleAndAdd(particle.velocity, 
+                        particle.velocity, relativePosition, strength);
+                }
+            }
+
             simulation.mouse.mode = MouseMode.none;
         }
 
@@ -2703,6 +2729,15 @@ var updateSimulation = function()
             if (leftButtonJustDown)
             {
                 simulation.mouse.mode = MouseMode[tool];
+                if (simulation.mouse.mode == MouseMode.impulse)
+                {
+                    var hitParticleIndex = pickParticle(simulation, simulation.mouse.worldPosition);
+                    if (hitParticleIndex >= 0)
+                    {
+                        simulation.mouse.draggedParticle = simulation.particles[hitParticleIndex];
+                    }
+                }
+
                 if (simulation.mouse.mode == MouseMode.select)
                 {
                     var hitParticleIndex = pickParticle(simulation, simulation.mouse.worldPosition);

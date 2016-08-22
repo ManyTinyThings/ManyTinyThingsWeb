@@ -23,8 +23,8 @@ previous: /
         }
     });
 
-    enableOnlyTools(singleEnergySim.toolbar, ["select"]);
-    selectTool(singleEnergySim.toolbar, "select");
+    enableOnlyTools(singleEnergySim.toolbar, ["impulse"]);
+    //selectTool(singleEnergySim.toolbar, "impulse");
 </script>
 
 <div class="stepLog twoColumn">
