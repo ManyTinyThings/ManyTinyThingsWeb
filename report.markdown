@@ -448,15 +448,20 @@ The circle is represented by a center point $\v{c}$ and a radius $R$, and is des
 $$
 	(\v{x} - \v{c})^2 = R^2
 $$
-Solving these equations for $t$ gives us a point on the line where they intersect, or a criterion for when they do not intersect. Using $\v{d} = \v{a} - \v{c}$:
-$$ R^2 = ((\v{a} + t \v{b}) - \v{c})^2 = (\v{d} + t \v{b})^2 = \v{d}^2 + 2t \v{d} \cdot \v{b} + t^2 \v{b}^2 $$
+Solving these equations for $t$ gives us a point on the line where they intersect, or a criterion for when they do not intersect. Using $\v{d} = \v{c} - \v{a}$:
+$$ 
+	R^2 
+	= ((\v{a} + t \v{b}) - \v{c})^2 
+	= (t \v{b} - \v{d})^2
+	= t^2 \v{b}^2 - 2t \v{d} \cdot \v{b} + \v{d}^2 
+$$
 Solving for $t$ we get
 $$
 	t_{+,-} = 
 	\frac{
-		- \v{d} \cdot \v{b} 
+		\v{d} \cdot \v{b} 
 		\pm
-		\sqrt{ (\v{d} \cdot \v{b})^2  - \v{b}^2 (R^2 - \v{d}^2)}
+		\sqrt{ (\v{d} \cdot \v{b})^2 + \v{b}^2 (R^2 - \v{d}^2)}
 	}
 	{
 		\v{b}^2
