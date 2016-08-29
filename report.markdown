@@ -23,24 +23,50 @@ The idea is to engage the reader by letting them interact with the model, and th
 
 # Introduction
 
+* Why?
+* previous explorables
+	* bret victor
+	* earth primer
+	* parable polygons
+* design constraints
+	* 2D
+		* legibility
+		* efficiency (need a lot less particles to fill $[0, 1]^2$ than $[0, 1]^3$)
+	* Be a web page
+		* low effort to use/find
+		* linking
+		* works everywhere
+		* standardized
+* Outline
+	* Model
+	* Implementation concerns
+	* Design/Pedagogy
+	* Discussion/Evaluation/Future work
 
 # Model
 
 The model consists of particles and walls. Particles will interact with other particles, and bounce off walls. Walls are stationary.
+
+## Particles
 
 A particle is described by
 
 * an index $k$, $0 \leq k < n$,
 * a position $\v{x}_k$,
 * a velocity $\v{v}_k$,
-* a radius $r$,
-* a mass $m$,
-* and a type $T$.
+* a radius $r_k$,
+* a mass $m_k$,
+* and a type $T_k$.
 
 There will be many identical particles, differing only in index and dynamic variables ($\v{x}_k$, $\v{v}_k$).
-The type $T$ is associated with all the properties shared between the identical particles.
+The type $T_k$ is associated with all the properties shared between the identical particles.
 Importantly, instead of having to specify the interaction between every pair of particles, we specify it between every pair of types.
 When two particles interact, we look up their types, and use the types to look up the interaction.
+
+Note that the particles are spherically symmetric, which let's us ignore the orientation of the particles.
+The model is thus only concerned with the linear momentum of the particles, and does not incorporate their angular momentum (spin).
+
+## Walls
 
 A wall is an infinitely thin (mathematical) line, described by
 
@@ -63,8 +89,9 @@ The model has two different modes:
 
 #### TODOS:
 
-* Note that there is no rotation involved. We get around that can of worms by using only round particles.
+* talk about 2D
 * radius, mass and color should be tied to type.
+* measurements tied to each particle
 
 ## Micro model
 
@@ -274,32 +301,10 @@ THINK ABOUT THIS!!!
 * more complicated because of i.e. gravity
 
 
-# Implementation
-
-# Design
 
 
 
 
-
-
-
-# Appendix
-
-## Collision
-
-
-
-
-# Interactivity
-
-* Without any gating or feedback, the user would easily miss interacting with the model and only read the text.
-* Too much gating becomes grating? Balance between checking if user is following and annoying the user?
-* Have to balance unguided exploration and guided explanation. The goal is to not have the user get lost, but also to have them trying things out because they want to. Can't have only "do this, do that", with no agency on the users part.
-* With interactivity, animation becomes important. It draws the eye to important things, and helps the user not get lost. New content popping in from nowhere is quite disorienting.
-* Steps vs pages vs free scrolling. Balance between freedom of exploration (like reading a book), and making sure user is following with small challenges (like a game).
-* Without pages, tendency to scroll to the new thing and never stay and explore.
-* Maybe leave pages with an open question for the reader to figure out on their own?
 
 # Implementation
 
@@ -337,6 +342,41 @@ THINK ABOUT THIS!!!
 	* Measurements
 		* Formulae
 		* Per particle, to measure different areas or groups
+
+
+
+
+
+
+
+
+
+
+
+# Design
+
+
+## Interactivity
+
+* Without any gating or feedback, the user would easily miss interacting with the model and only read the text.
+* Too much gating becomes grating? Balance between checking if user is following and annoying the user?
+* Have to balance unguided exploration and guided explanation. The goal is to not have the user get lost, but also to have them trying things out because they want to. Can't have only "do this, do that", with no agency on the users part.
+* With interactivity, animation becomes important. It draws the eye to important things, and helps the user not get lost. New content popping in from nowhere is quite disorienting.
+* Steps vs pages vs free scrolling. Balance between freedom of exploration (like reading a book), and making sure user is following with small challenges (like a game).
+* Without pages, tendency to scroll to the new thing and never stay and explore.
+* Maybe leave pages with an open question for the reader to figure out on their own?
+
+
+# Discussion
+
+
+
+## Future work
+
+* Improve
+
+
+
 
 # Appendix
 
@@ -386,8 +426,10 @@ and we can solve for $s$ and $t$
 $$ 
 	s = \frac{(\v{x} - \v{a}) \wedge \v{v}}{\v{b} \wedge \v{v}}
 	,\qquad
-	t = \frac{(\v{x} - \v{a}) \wedge \v{b}}{\v{b} \wedge \v{v}}.
+	t = \frac{(\v{x} - \v{a}) \wedge \v{b}}{\v{b} \wedge \v{v}},
 $$
+where we used $\v{v} \wedge \v{b} = - \v{b} \wedge \v{v}$.
+
 The $s$ and $t$ tells us where along the lines the intersection occurs. To find the intersection point, plug in $s$ or $t$ in their respective parametric equation.
 
 * If $s < 0$ the intersection occurs before the starting point $a$
@@ -423,6 +465,8 @@ $$
 When the argument of the square root is negative, there are no real solutions and no intersections.
 If there are solutions, they generally come in pairs, since a line usually intersects a circle two times.
 The only exception is when the square root vanishes, in which case the line is tangent to the circle.
+
+Here we have assumed that the vectors are two-dimensional, but the derivation works just as well with vectors of arbitrary dimension. In particular, it works just as well with a sphere as it does with a circle.
 
 ## Grid patterns
 
