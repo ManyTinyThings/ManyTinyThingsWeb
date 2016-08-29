@@ -2121,11 +2121,13 @@ function isColliding(simulation, particle)
 {
     // collision with other particles
 
+    var epsilon = 0.00001;
+
     for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++) {
         var otherParticle = simulation.particles[particleIndex];
         var radiusSum = particle.radius + otherParticle.radius;
         var squaredDistance = v2.squaredDistance(particle.position, otherParticle.position);
-        if (squaredDistance < square(radiusSum))
+        if (squaredDistance < square(radiusSum - epsilon))
         {
             return true;
         }
@@ -2135,23 +2137,26 @@ function isColliding(simulation, particle)
 
     var isCollidingWithWall = false;
 
-    var particleFromWall = v2.alloc();
+    if (simulation.walls)
+    {
 
-    for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++) {
-        var wall = simulation.walls[wallIndex];
+        var particleFromWall = v2.alloc();
 
-        shortestVectorFromLine(particleFromWall, particle.position, wall.vertices[1], wall.vertices[0]);
+        for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++) {
+            var wall = simulation.walls[wallIndex];
 
-        var squaredDistance = v2.square(particleFromWall);
-        if (squaredDistance < square(particle.radius))
-        {
-            isCollidingWithWall = true
-            break;
+            shortestVectorFromLine(particleFromWall, particle.position, wall.vertices[1], wall.vertices[0]);
+
+            var squaredDistance = v2.square(particleFromWall);
+            if (squaredDistance < square(particle.radius))
+            {
+                isCollidingWithWall = true
+                break;
+            }
         }
+
+        v2.free(particleFromWall);
     }
-
-    v2.free(particleFromWall);
-
     return isCollidingWithWall;
 }
 
@@ -2224,37 +2229,6 @@ function moveOutOfCollision(simulation, particle)
 
     v2.free(relativePosition);
     v2.free(wallVector);
-}
-
-function isColliding(simulation, particle)
-{
-    var hitParticleIndex = pickParticle(simulation, particle.position, particle.radius);
-    if (hitParticleIndex >= 0)
-    {
-        var hitParticle = simulation.particles[hitParticleIndex];
-        if (hitParticle !== particle)
-        {
-            return true;
-        }
-    }
-    if (simulation.walls !== null)
-    {
-        for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
-        {
-            var wall = simulation.walls[wallIndex];
-            var wallVector = v2.alloc();
-            var relativeWallStart = v2.alloc();
-            v2.subtract(wallVector, wall.vertices[1], wall.vertices[0]);
-            v2.subtract(relativeWallStart, wall.vertices[0], particle.position);
-            var intersection = intersectionOriginCircleLine(particle.radius, relativeWallStart, wallVector);
-            var isIntersecting = intersection.isIntersecting && (intersection.t1 < 1) && (intersection.t2 > 0);
-            if (isIntersecting)
-            {
-                return true;
-            }
-        }    
-    }
-    return false;
 }
 
 function removeParticle(simulation, particleIndex)
