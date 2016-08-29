@@ -93,6 +93,23 @@ The model has two different modes:
 * radius, mass and color should be tied to type.
 * measurements tied to each particle
 
+## Numerical integration
+
+I use _velocity verlet_ integration method with timestep $\Delta t$, which can be stated as follows:
+
+\begin{algorithm}
+	\For{every particle}{
+		$\v{v}_k \gets \v{v}_k + \v{a}_k \Delta t / 2$ \;
+		$\v{x}_k \gets \v{x}_k + \v{v}_k \Delta t$ \;
+	}
+	\For{every particle}{
+		$\v{a}_k \gets \v{F}(k) / m_k$ \;
+	}
+	\For{every particle}{
+		$\v{v}_k \gets \v{v}_k + \v{a}_k \Delta t$ / 2 \;
+	}
+\end{algorithm}
+
 ## Micro model
 
 ## Interactions
@@ -379,6 +396,73 @@ THINK ABOUT THIS!!!
 
 
 # Appendix
+
+## Symplectic Integration
+
+\renewcommand{\d}{\partial}
+\renewcommand{\H}{\mathcal{H}}
+
+Consider a dynamical system of a single particle with position $x$ and momentum $p$.
+The energy of the system is a function of $x$ and $p$ called a Hamiltonian $\H(x, p)$.
+From the Hamiltonian we can get the equations of motion through Hamilton's equations
+$$
+	\dot{x} = - \frac{\d \H}{\d p}
+	,\qquad
+	\dot{p} = \frac{\d \H}{\d x}.
+$$
+We can write this a single equation if we introduce $z = (x, p)$ and the operator $D_\H$, defined as
+$$
+	D_\H z = \p{- \frac{\d \H}{\d p}, \frac{\d \H}{\d x}}.
+$$
+Hamilton's equations then read simply
+$$
+	\dot{z} = D_\H z
+$$
+and the formal solution is an operator exponential
+$$
+	z(t) = \exp\p{t D_\H} z(0)
+$$
+defined as a Taylor expansion
+$$
+	\exp\p{t D_\H} = 1 + t D_\H + \frac{t^2 D_\H^2}{2!} + \frac{t^3 D_\H^3}{3!} + \dots
+$$
+The simplest numerical integration scheme is just truncating this expansion after two terms and using a small timestep $\Delta t$
+$$
+	\begin{aligned}
+		z(t + \Delta t) 
+		& = \exp\p{\Delta t D_\H} z(t) \\
+		& \approx \p{1 + \Delta t D_\H} z(t)
+		= \p{x(t), p(t)} + \Delta t \p{- \frac{\d \H}{\d p}(t), \frac{\d \H}{\d x}(t)}
+	\end{aligned}
+$$
+This is simple Euler integration.
+
+Let's consider the most common form of Hamiltonian
+$$
+	\H(x, p) = \frac{p^2}{2m} + V(x)
+$$
+where $m$ is the mass and $V(x)$ is a potential.
+Here
+$$
+	- \frac{\d \H}{\d p} = \frac{p}{m} = v
+	,\qquad
+	\frac{\d \H}{\d x} = \frac{\d V}{\d x} = F(x
+$$
+where $v$ is the velocity and $F$ is the force.
+The simple truncation now becomes
+$$
+	\begin{aligned}
+	x(t + \Delta t) & = x(t) + v(t) \Delta t \\
+	p(t + \Delta t) & = p(t) + F(x(t)) \Delta t 
+	\end{aligned}
+$$
+which we recognize as simple Euler integration.
+
+This common Hamiltonian was written on the form
+$$
+	\H(x, p) = T(p) + V(x)
+$$
+
 
 ## Intersections
 
