@@ -2710,6 +2710,10 @@ var updateSimulation = function()
                     {
                         simulation.mouse.draggedParticle = simulation.particles[hitParticleIndex];
                     }
+                    else
+                    {
+                        simulation.mouse.mode = MouseMode.none;
+                    }
                 }
 
                 if (simulation.mouse.mode == MouseMode.select)
