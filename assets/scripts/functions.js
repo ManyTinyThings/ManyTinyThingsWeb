@@ -942,11 +942,21 @@ function createToolbar()
 {
     var toolbar = {
         div: createElement("div"),
+        selectElement: null,
         tools:
         {},
         selectedToolName: "",
     };
     toolbar.div.classList.add("toolbar");
+    var label = createAndAppend("label", toolbar.div);
+    label.innerHTML = "Tool:"
+    toolbar.selectElement = createAndAppend("select", label);
+
+    toolbar.selectElement.addEventListener("input", function(event)
+    {
+        var newToolName = event.srcElement.value;
+        selectTool(toolbar, newToolName);
+    });
 
     document.addEventListener("keydown", function(event)
     {
@@ -969,23 +979,19 @@ function addTool(toolbar, opts)
     var tool = {
         name: opts.name,
         key: opts.key,
-        div: createAndAppend("div", toolbar.div),
-        enabled: true,
+        optionElement: createAndAppend("option", toolbar.selectElement),
+        isSelectable: true,
         // TODO: image
     }
     toolbar.tools[tool.name] = tool;
-    tool.div.classList.add("tool");
-    tool.div.innerHTML = opts.name;
-    tool.div.addEventListener("click", function()
-    {
-        selectTool(toolbar, tool.name);
-    });
+    tool.optionElement.value = tool.name;
+    tool.optionElement.innerHTML = opts.name;
 }
 
 function selectTool(toolbar, newToolName)
 {
-    var isUnrecognizedTool = !toolbar.tools.hasOwnProperty(newToolName);
-    if (isUnrecognizedTool || (!toolbar.tools[newToolName].enabled))
+    var isRecognizedTool = toolbar.tools.hasOwnProperty(newToolName);
+    if (!(isRecognizedTool && toolbar.tools[newToolName].isSelectable))
     {
         return;
     }
@@ -993,13 +999,11 @@ function selectTool(toolbar, newToolName)
     if (toolbar.selectedToolName != "")
     {
         var previousTool = toolbar.tools[toolbar.selectedToolName];
-        previousTool.div.classList.remove("selected");
+        previousTool.optionElement.selected = false;
     }
 
     toolbar.selectedToolName = newToolName;
-
-    var newTool = toolbar.tools[newToolName];
-    newTool.div.classList.add("selected");
+    toolbar.selectElement.value = newToolName;
 }
 
 function enableOnlyTools(toolbar, toolnames)
@@ -1007,14 +1011,14 @@ function enableOnlyTools(toolbar, toolnames)
     for (var key in toolbar.tools)
     {
         var tool = toolbar.tools[key];
-        tool.enabled = arrayContains(toolnames, tool.name);
-        if (tool.enabled)
+        tool.isSelectable = arrayContains(toolnames, tool.name);
+        if (tool.isSelectable)
         {
-            tool.div.classList.remove("disabled");
+            toolbar.selectElement.appendChild(tool.optionElement);
         }
         else
         {
-            tool.div.classList.add("disabled");
+            toolbar.selectElement.removeChild(tool.optionElement);
         }
     }
 
@@ -1022,6 +1026,12 @@ function enableOnlyTools(toolbar, toolnames)
     {
         selectTool(toolbar, toolnames[0]);
     }
+
+    if (toolnames.length <= 1)
+    {
+        hideElement(toolbar.div);
+    }
+
 }
 
 // ! Graphs/Plots

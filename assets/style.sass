@@ -9,6 +9,7 @@ $linkColor: #000
 $contentWidth: 840px
 $contentPadding: 50px
 $titleFontSize: 40px
+$bodyFontSize: 18px
 
 
 // general elements
@@ -45,7 +46,7 @@ html, body
     margin: 0
     padding: 0
     font-family: sans-serif
-    font-size: 18px
+    font-size: $bodyFontSize
     line-height: 130%
 
     display: flex
@@ -150,13 +151,12 @@ footer
 // toolbar
 
 .toolbar
-    @extend .flex
+    display: flex
+    justify-content: flex-end
 
-    .tool.selected
-        font-weight: bold
-
-    .tool.disabled
-        opacity: 0.5
+    select
+        margin-left: 5px
+        font-size: $bodyFontSize
 
 // pages
 
