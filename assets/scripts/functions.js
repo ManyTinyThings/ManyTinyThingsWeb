@@ -2724,6 +2724,7 @@ var updateSimulation = function()
             }
 
             simulation.mouse.mode = MouseMode.none;
+            simulation.mouse.activeParticle = null;
         }
 
         if (simulation.mouse.leftButton.down)
@@ -2759,7 +2760,7 @@ var updateSimulation = function()
                     }
                     else
                     {
-                        simulation.mouse.mode == MouseMode.none;
+                        simulation.mouse.mode = MouseMode.none;
                     }
                 }
 
