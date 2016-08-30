@@ -22,7 +22,7 @@ next: /entropy/frictionless_billiards
             }
         }
     });
-    enableOnlyTools(billiardsSim.toolbar, ["impulse", "select"]);
+    enableOnlyTools(billiardsSim.toolbar, ["impulse", "move"]);
 </script>
 
 

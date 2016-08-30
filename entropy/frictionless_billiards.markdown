@@ -19,7 +19,7 @@ next: /entropy/half_box
             }
         }
     });
-    enableOnlyTools(billiardsSim.toolbar, ["impulse"]);
+    enableOnlyTools(billiardsSim.toolbar, ["impulse", "move"]);
 </script>
 
 

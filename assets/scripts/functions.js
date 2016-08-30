@@ -993,6 +993,7 @@ function selectTool(toolbar, newToolName)
     var isRecognizedTool = toolbar.tools.hasOwnProperty(newToolName);
     if (!(isRecognizedTool && toolbar.tools[newToolName].isSelectable))
     {
+        console.error("Toolbar: No such tool!");
         return;
     }
 
@@ -1006,12 +1007,21 @@ function selectTool(toolbar, newToolName)
     toolbar.selectElement.value = newToolName;
 }
 
-function enableOnlyTools(toolbar, toolnames)
+function enableOnlyTools(toolbar, toolNames)
 {
+    for (var toolName of toolNames)
+    {
+        if (!toolbar.tools.hasOwnProperty(toolName))
+        {
+            throw ("Toolbar: no tool with name \"" + toolName + "\"");
+            return;
+        }
+    }
+
     for (var key in toolbar.tools)
     {
         var tool = toolbar.tools[key];
-        tool.isSelectable = arrayContains(toolnames, tool.name);
+        tool.isSelectable = arrayContains(toolNames, tool.name);
         if (tool.isSelectable)
         {
             toolbar.selectElement.appendChild(tool.optionElement);
@@ -1022,13 +1032,18 @@ function enableOnlyTools(toolbar, toolnames)
         }
     }
 
-    if (toolnames.length > 0)
+    if (toolNames.length > 0)
     {
-        selectTool(toolbar, toolnames[0]);
+        selectTool(toolbar, toolNames[0]);
+    }
+    else
+    {
+        hideElement(toolbar.div);
     }
 
-    if (toolnames.length <= 1)
+    if (toolNames.length <= 1)
     {
+        toolbar.selectElement.disabled = true;
         hideElement(toolbar.div);
     }
 
@@ -2311,8 +2326,13 @@ function createSimulation(opts)
     simulation.div.appendChild(simulation.toolbar.div);
     addTool(simulation.toolbar,
     {
-        name: "select",
-        key: "s",
+        name: "move",
+        key: "m",
+    });
+    addTool(simulation.toolbar,
+    {
+        name: "impulse",
+        key: "i",
     });
     addTool(simulation.toolbar,
     {
@@ -2329,13 +2349,8 @@ function createSimulation(opts)
         name: "delete",
         key: "d",
     });
-    addTool(simulation.toolbar,
-    {
-        name: "impulse",
-        key: "i",
-    });
 
-    selectTool(simulation.toolbar, "select");
+    selectTool(simulation.toolbar, "move");
 
     //hideElement(simulation.toolbar.div);
 
@@ -2602,7 +2617,7 @@ function createEnum(names, isBitfield)
     return Object.freeze(enumerable);
 }
 
-var MouseMode = createEnum(["none", "drag", "select", "repel", "create", "delete", "impulse"]);
+var MouseMode = createEnum(["none", "move", "select", "repel", "create", "delete", "impulse"]);
 
 // ! Simulation
 
@@ -2654,7 +2669,7 @@ function drawSimulation(simulation)
     // user interactions
     simulation.renderer.context.globalCompositeOperation = "xor";
 
-    if (simulation.mouse.mode == MouseMode.drag)
+    if (simulation.mouse.mode == MouseMode.move)
     {
         if (simulation.mouse.draggedParticle)
         {
@@ -2714,14 +2729,14 @@ var updateSimulation = function()
         if (simulation.mouse.leftButton.down)
         {
             var leftButtonJustDown = (simulation.mouse.leftButton.transitionCount > 0);
-
+            var hitParticleIndex = pickParticle(simulation, simulation.mouse.worldPosition);
             var tool = simulation.toolbar.selectedToolName;
+
             if (leftButtonJustDown)
             {
                 simulation.mouse.mode = MouseMode[tool];
                 if (simulation.mouse.mode == MouseMode.impulse)
                 {
-                    var hitParticleIndex = pickParticle(simulation, simulation.mouse.worldPosition);
                     if (hitParticleIndex >= 0)
                     {
                         simulation.mouse.draggedParticle = simulation.particles[hitParticleIndex];
@@ -2732,12 +2747,11 @@ var updateSimulation = function()
                     }
                 }
 
-                if (simulation.mouse.mode == MouseMode.select)
+                if (simulation.mouse.mode == MouseMode.move)
                 {
-                    var hitParticleIndex = pickParticle(simulation, simulation.mouse.worldPosition);
                     if (hitParticleIndex >= 0)
                     {
-                        simulation.mouse.mode = MouseMode.drag;
+                        simulation.mouse.mode = MouseMode.move;
                         simulation.mouse.draggedParticle = simulation.particles[hitParticleIndex];
 
                         simulation.mouse.selectedParticleIndices.length = 0;
@@ -2745,11 +2759,16 @@ var updateSimulation = function()
                     }
                     else
                     {
-                        simulation.mouse.mode = MouseMode.select;
-                        simulation.mouse.selectAnchorPoint = v2.clone(simulation.mouse.worldPosition);
-
-                        simulation.mouse.selectedParticleIndices.length = 0;
+                        simulation.mouse.mode == MouseMode.none;
                     }
+                }
+
+                if (simulation.mouse.mode == MouseMode.select)
+                {
+                    simulation.mouse.mode = MouseMode.select;
+                    simulation.mouse.selectAnchorPoint = v2.clone(simulation.mouse.worldPosition);
+
+                    simulation.mouse.selectedParticleIndices.length = 0;
                 }
             }
 
@@ -2770,7 +2789,6 @@ var updateSimulation = function()
             }
             else if (simulation.mouse.mode == MouseMode.delete)
             {
-                var hitParticleIndex = pickParticle(simulation, simulation.mouse.worldPosition);
                 if (hitParticleIndex >= 0)
                 {
                     removeParticle(simulation, hitParticleIndex);
@@ -3263,9 +3281,9 @@ var updateSimulation = function()
                     }
                 }
 
-                // ! Drag tool
+                // ! move tool
 
-                if (simulation.mouse.mode === MouseMode.drag)
+                if (simulation.mouse.mode === MouseMode.move)
                 {
                     var draggedParticle = simulation.mouse.draggedParticle;
                     // TODO: not really happy with the .isRemoved and the handling of the selectedParticles

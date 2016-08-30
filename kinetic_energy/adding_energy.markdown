@@ -24,11 +24,11 @@ previous: /kinetic_energy/multiple_particles
             	particle.color = swatch[i % swatch.length];
             	addParticle(simulation, particle);
             }
+            
+            enableOnlyTools(simulation.toolbar, ["impulse"]);
         }
     });
 
-    enableOnlyTools(energyAdditionSim.toolbar, ["select"]);
-    selectTool(energyAdditionSim.toolbar, "select");
 </script>
 <div class="stepLog twoColumn">
 

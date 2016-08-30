@@ -33,10 +33,10 @@ Every big thing in the world is made up of **many tiny things**.
 				v2.scale(particle.velocity, particle.velocity, 10);
 				addParticle(simulation, particle);
 			}
+
+			enableOnlyTools(simulation.toolbar, ["repel"]);
 		}
 	});
-
-	enableOnlyTools(airSim.toolbar, ["repel"]);
 </script>
 </div>
 
@@ -72,10 +72,11 @@ Every big thing in the world is made up of **many tiny things**.
 			var ljInteraction = new LennardJonesInteraction();
 			ljInteraction.separation *= 0.8;
 			setInteraction(simulation, 0, 0, ljInteraction);
+
+			enableOnlyTools(simulation.toolbar, ["repel"]);
 		}
 	});
 
-	enableOnlyTools(waterSim.toolbar, ["repel"]);
 </script>
 </div>
 
@@ -124,10 +125,10 @@ Every big thing in the world is made up of **many tiny things**.
 			ljInteraction.strength = 200;
 			setInteraction(simulation, 0, 0, ljInteraction);
 			setInteraction(simulation, 1, 1, ljInteraction);
+
+			enableOnlyTools(simulation.toolbar, ["move"]);
 		}
 	});
-
-	enableOnlyTools(solidSim.toolbar, ["select"]);
 </script>
 	
 </div>

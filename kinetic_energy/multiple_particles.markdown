@@ -25,8 +25,7 @@ next: /kinetic_energy/adding_energy
         }
     });
 
-    enableOnlyTools(totalEnergySim.toolbar, ["select"]);
-    selectTool(totalEnergySim.toolbar, "select");
+    enableOnlyTools(totalEnergySim.toolbar, ["impulse"]);
 </script>
 <div class="stepLog twoColumn">
 I added some more balls in a conspicuous pattern. You know what to do!
@@ -49,7 +48,7 @@ Below is a graph of the total energy, which is the energy for all particles comb
         yMax: pageGlobal.energyPlotMax,
 		update: function() {
 			var energy = getTotalEnergy(totalEnergySim);
-			return {time: singleEnergySim.time, data: [energy]};
+			return {time: totalEnergySim.time, data: [energy]};
 		},
 	});
 </script>

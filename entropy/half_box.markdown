@@ -30,6 +30,8 @@ next: /entropy/big_half_box
             	}
             	while(!addParticle(simulation, particle));
             }
+
+            enableOnlyTools(simulation.toolbar, ["move"]);
         }
     });
 </script>

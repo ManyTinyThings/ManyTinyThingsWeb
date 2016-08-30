@@ -5,6 +5,7 @@ previous: /
 next: /states/repulsive_potential
 ---
 
+<script src="potential.js"></script>
 <script>
 
     var interactionSim = createSimulation({
@@ -12,17 +13,13 @@ next: /states/repulsive_potential
             var p = simulation.parameters;
             p.friction = 0.1;
 
-            for (var i = 0; i < 2; i++) {
-                addParticle(simulation, simulation.particleGenerator());
-            }
-
-            var d = 5;
-            v2.set(simulation.particles[0].position, -d, -d);
-            v2.set(simulation.particles[1].position, d, d);
+            addOppositeParticles(simulation);
 
             var ljInteraction = new LennardJonesInteraction();
             ljInteraction.strength = 10;
             setInteraction(simulation, 0, 0, ljInteraction);
+
+            enableOnlyTools(simulation.toolbar, ["move", "impulse"]);
         }
     });
 

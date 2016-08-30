@@ -22,19 +22,8 @@ Then I glue the left particle to the wall so that only the right one can move. I
         initialize: function(simulation) {
             var p = simulation.parameters;
             p.friction = 0.1;
-            p.simulationTimePerSecond = 1;
-            p.boxHeight = 2;
-
-            updateBounds(simulation);
-
-            for (var i = 0; i < 2; i++) {
-                addParticle(simulation, simulation.particleGenerator());
-            }
-
-            var d = simulation.boxBounds.width/2 - 1;
-            v2.set(simulation.particles[0].position, -d, 0);
-            simulation.particles[0].mass = Infinity;
-            v2.set(simulation.particles[1].position, d, 0);
+            
+            initOneDimSim(simulation);
 
             var interaction = new RepulsiveInteraction();
             interaction.strength = 1;

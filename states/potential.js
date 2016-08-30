@@ -1,4 +1,33 @@
+var addOppositeParticles = function(simulation)
+{
+    var d = simulation.parameters.boxWidth / 4;
+    var particleSW = new Particle();
+    v2.set(particleSW.position, -d, -d);
+    addParticle(simulation, particleSW);
 
+    var particleNE = new Particle();
+    v2.set(particleNE.position, d, d);
+    addParticle(simulation, particleNE);
+}
+
+var initOneDimSim = function(simulation)
+{
+    var p = simulation.parameters;
+    p.simulationTimePerSecond = 1;
+    p.boxHeight = 2;
+
+    updateBounds(simulation);
+
+    var d = simulation.boxBounds.width/2 - 1;
+    var fixedParticle = new Particle();
+    v2.set(fixedParticle.position, -d, 0);
+    fixedParticle.mass = Infinity;
+    addParticle(simulation, fixedParticle);
+
+    var movingParticle = new Particle();
+    v2.set(movingParticle.position, d, 0);
+    addParticle(simulation, movingParticle);
+}
 
 var createPotentialPlotHere = function(potential, simulation)
 {

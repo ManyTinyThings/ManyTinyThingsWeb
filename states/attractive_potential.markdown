@@ -17,20 +17,9 @@ next: /states/solid_liquid_gas
         initialize: function(simulation) {
             var p = simulation.parameters;
             p.friction = 0.2;
-            p.simulationTimePerSecond = 1;
-            p.boxHeight = 2;
-
-            updateBounds(simulation);
-
-            for (var i = 0; i < 2; i++) {
-                addParticle(simulation, simulation.particleGenerator());
-            }
-
-            var d = simulation.boxBounds.width/2 - 1;
-            v2.set(simulation.particles[0].position, -d, 0);
-            simulation.particles[0].mass = Infinity;
-            v2.set(simulation.particles[1].position, d, 0);
-
+            
+            initOneDimSim(simulation);
+            
             var interaction = new LennardJonesInteraction();
             interaction.strength = 2;
             setInteraction(simulation, 0, 0, interaction);

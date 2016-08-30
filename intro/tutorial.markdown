@@ -18,8 +18,8 @@ This page is an introduction to get you used to how these explanations are going
 			p.friction = 0.1;
 			p.gravityAcceleration = 1;
 			p.dragStrength = 2;
-            p.isOnlyHardSpheres = true;
-            p.coefficientOfRestitution = 0.95;
+            //p.isOnlyHardSpheres = true;
+            //p.coefficientOfRestitution = 0.95;
 
 			var particle = new Particle();
 			v2.set(particle.position, 0, particle.radius - simulation.boxBounds.height / 2);
