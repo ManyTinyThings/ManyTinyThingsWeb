@@ -43,6 +43,7 @@ function updateRendererBounds(renderer)
     context.setTransform(1, 0, 0, 1, 0, 0);
     context.scale(w / bounds.width, h / bounds.height);
     context.translate(-bounds.left, -bounds.top);
+    context.lineJoin = "round";
 }
 
 function drawParticles(renderer, particles, isPeriodic)
