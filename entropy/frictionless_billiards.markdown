@@ -4,6 +4,7 @@ previous: /entropy/billiards
 next: /entropy/half_box
 ---
 
+<script src="billiards.js"></script>
 <script>
     var billiardsSim = createSimulation({
         initialize: function(simulation) {
@@ -18,6 +19,7 @@ next: /entropy/half_box
             }
         }
     });
+    enableOnlyTools(billiardsSim.toolbar, ["impulse"]);
 </script>
 
 
@@ -47,11 +49,7 @@ Turn off the friction.
 Take the shot.
 
 <script>
-	cue(function()
-	{
-		// TODO: make sure we actually split the triangle
-		return (getTotalEnergy(billiardsSim) > 1);
-	});
+	cue(isTriangleSplit(billiardsSim));
 	endStep();
 </script>
 

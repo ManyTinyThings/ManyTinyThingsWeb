@@ -5,6 +5,7 @@ previous: /
 next: /entropy/frictionless_billiards
 ---
 
+<script src="billiards.js"></script>
 <script>
 	var billiardsSpacing = 2;
 
@@ -21,6 +22,7 @@ next: /entropy/frictionless_billiards
             }
         }
     });
+    enableOnlyTools(billiardsSim.toolbar, ["impulse"]);
 </script>
 
 
@@ -34,11 +36,7 @@ When playing billiards, it's easy to make a mess.
 Take the shot.
 
 <script>
-	cue(function()
-	{
-		// TODO: make sure we actually split the triangle
-		return (getTotalEnergy(billiardsSim) > 1);
-	});
+	cue(isTriangleSplit(billiardsSim));
 	endStep();
 </script>
 
