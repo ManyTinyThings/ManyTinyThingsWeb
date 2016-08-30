@@ -2504,7 +2504,7 @@ function resetSimulation(simulation)
         },
         mode: MouseMode.none,
         selectedParticleIndices: [],
-        draggedParticle: null,
+        activeParticle: null,
         billiardCue:
         {
             visible: false,
@@ -2671,10 +2671,10 @@ function drawSimulation(simulation)
 
     if (simulation.mouse.mode == MouseMode.move)
     {
-        if (simulation.mouse.draggedParticle)
+        if (simulation.mouse.activeParticle)
         {
             drawTrajectory(simulation.renderer, 
-                [simulation.mouse.draggedParticle.position, simulation.mouse.worldPosition], 
+                [simulation.mouse.activeParticle.position, simulation.mouse.worldPosition], 
                 Color.black);
         }
 
@@ -2682,9 +2682,9 @@ function drawSimulation(simulation)
 
     if (simulation.mouse.mode == MouseMode.impulse)
     {
-        if (simulation.mouse.draggedParticle)
+        if (simulation.mouse.activeParticle)
         {
-            drawArrow(simulation.renderer, simulation.mouse.draggedParticle.position, simulation.mouse.worldPosition, Color.black);    
+            drawArrow(simulation.renderer, simulation.mouse.activeParticle.position, simulation.mouse.worldPosition, Color.black);    
         }
     }
 
@@ -2713,7 +2713,7 @@ var updateSimulation = function()
         {
             if (simulation.mouse.mode == MouseMode.impulse)
             {
-                var particle = simulation.mouse.draggedParticle;
+                var particle = simulation.mouse.activeParticle;
                 if (particle)
                 {
                     var strength = simulation.parameters.impulseStrength;
@@ -2739,7 +2739,7 @@ var updateSimulation = function()
                 {
                     if (hitParticleIndex >= 0)
                     {
-                        simulation.mouse.draggedParticle = simulation.particles[hitParticleIndex];
+                        simulation.mouse.activeParticle = simulation.particles[hitParticleIndex];
                     }
                     else
                     {
@@ -2752,7 +2752,7 @@ var updateSimulation = function()
                     if (hitParticleIndex >= 0)
                     {
                         simulation.mouse.mode = MouseMode.move;
-                        simulation.mouse.draggedParticle = simulation.particles[hitParticleIndex];
+                        simulation.mouse.activeParticle = simulation.particles[hitParticleIndex];
 
                         simulation.mouse.selectedParticleIndices.length = 0;
                         simulation.mouse.selectedParticleIndices.push(hitParticleIndex);
@@ -3285,11 +3285,11 @@ var updateSimulation = function()
 
                 if (simulation.mouse.mode === MouseMode.move)
                 {
-                    var draggedParticle = simulation.mouse.draggedParticle;
+                    var activeParticle = simulation.mouse.activeParticle;
                     // TODO: not really happy with the .isRemoved and the handling of the selectedParticles
-                    if (!draggedParticle.isRemoved)
+                    if (!activeParticle.isRemoved)
                     {
-                        v2.subtract(relativePosition, simulation.mouse.worldPosition, draggedParticle.position);
+                        v2.subtract(relativePosition, simulation.mouse.worldPosition, activeParticle.position);
 
                         for (var i = 0; i < simulation.mouse.selectedParticleIndices.length; i++)
                         {
