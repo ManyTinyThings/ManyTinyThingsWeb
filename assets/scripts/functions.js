@@ -2632,25 +2632,6 @@ function drawSimulation(simulation)
         drawTrajectory(simulation.renderer, simulation.trajectory, Color.blue);
     }
 
-    if (simulation.mouse.mode == MouseMode.drag)
-    {
-        if (simulation.mouse.draggedParticle)
-        {
-            drawTrajectory(simulation.renderer, 
-                [simulation.mouse.draggedParticle.position, simulation.mouse.worldPosition], 
-                Color.blue);
-        }
-
-    }
-
-    if (simulation.mouse.mode == MouseMode.impulse)
-    {
-        if (simulation.mouse.draggedParticle)
-        {
-            drawArrow(simulation.renderer, simulation.mouse.draggedParticle.position, simulation.mouse.worldPosition, Color.blue);    
-        }
-    }
-
     if (simulation.parameters.displayWallPressure)
     {
         var arrowStart = v2.alloc();
@@ -2664,11 +2645,36 @@ function drawSimulation(simulation)
             v2.scaleAndAdd(arrowEnd, arrowStart, 
                 wall.force, - 1 / length);
 
-            drawArrow(simulation.renderer, arrowStart, arrowEnd, Color.blue);
+            drawArrow(simulation.renderer, arrowStart, arrowEnd, Color.black);
         }
         v2.free(arrowStart);
         v2.free(arrowEnd);
     }
+
+    // user interactions
+    simulation.renderer.context.globalCompositeOperation = "xor";
+
+    if (simulation.mouse.mode == MouseMode.drag)
+    {
+        if (simulation.mouse.draggedParticle)
+        {
+            drawTrajectory(simulation.renderer, 
+                [simulation.mouse.draggedParticle.position, simulation.mouse.worldPosition], 
+                Color.black);
+        }
+
+    }
+
+    if (simulation.mouse.mode == MouseMode.impulse)
+    {
+        if (simulation.mouse.draggedParticle)
+        {
+            drawArrow(simulation.renderer, simulation.mouse.draggedParticle.position, simulation.mouse.worldPosition, Color.black);    
+        }
+    }
+
+    simulation.renderer.context.globalCompositeOperation = "source-over";
+
 }
 
 var updateSimulation = function()
