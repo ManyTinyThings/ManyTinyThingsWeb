@@ -195,6 +195,12 @@ footer
 .stepLog
     position: relative
 
+    &.isCompleted:after
+        content: "●"
+        font-size: 40px
+        position: absolute
+        left: 50%
+
     p
         margin-top: 0
         margin-bottom: 1em
@@ -210,6 +216,8 @@ footer
     .complete:before
         @extend .outsideMargin
         content: "☑"
+
+
 
 // general classes
 

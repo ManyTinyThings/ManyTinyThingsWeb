@@ -748,6 +748,10 @@ function changeStep(stepLog, stepIndex)
     }
 
     stepLog.isCompleted = stepIndex == (stepLog.steps.length - 1);
+    if (stepLog.isCompleted)
+    {
+        stepLog.div.classList.add("isCompleted");
+    }
 }
 
 var PageStatus = createEnum(["past", "present", "future"]);
