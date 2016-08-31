@@ -144,7 +144,7 @@ This website is a _series of explanations_ on how the tiny, microscopic things a
 
 The explanations will include simulations of many tiny things, as you can see above. Not only are these simulations running in real time, they are also _interactive_. Try clicking and dragging in the simulations above and see what happens.
 
-If you are ready, [let's start]({{ site.baseurl }}/intro/tutorial)!
+If you are ready, [let's start]({{ site.baseurl }}{{ page.next }})!
 
 
 {% include what_next.html %}
