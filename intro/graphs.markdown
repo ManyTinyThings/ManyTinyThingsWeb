@@ -1,14 +1,10 @@
 ---
-chapterTitle: Introduction
-title: Tutorial
-previous: /
+title: Graphs
+previous: /intro/tools
 next: /intro/phenomena
 ---
 
 <div id="chapter">
-
-This page is an introduction to get you used to how these explanations are going to work.
-
 <div class="page flex">
 
 <script>
@@ -31,21 +27,8 @@ This page is an introduction to get you used to how these explanations are going
 </script>
 
 <div class="stepLog twoColumn">
-To the right is a ball.
-
-Pick up the ball and throw it!
-
-<script>
-	cue(function() {
-		var energy = getTotalEnergy(introSim);
-		return (energy > 1);
-	});
-	endStep();
-</script>
-
-Well done!
-
 We will explore a number of rather abstract concepts, and to help understand them there will be visualisations accompanying the models.
+
 Here's an example:
 
 <script>
@@ -60,14 +43,13 @@ Here's an example:
 	})
 </script>
 
-
 Try figuring out what this graph shows by throwing around the ball a bit. Does it show
 
 * the speed of the ball over time?
 * the shape of the ball at different heights?
 * the height of the ball over time?
 
-When you have figured it out, continue to the next page by clicking in the right margin (that way &rarr;).
+Figure it out yourself, I won't give you the right answer!
 </div>
 
 <div class="twoColumn">

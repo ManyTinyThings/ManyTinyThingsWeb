@@ -339,6 +339,12 @@ function arrayMinIndex(array, f)
     return minimumIndex;
 }
 
+function arrayMin(array, f)
+{
+    var minIndex = arrayMinIndex(array, f);
+    return f(array[minIndex]);
+}
+
 function numericCompare(a, b)
 {
     return (a - b);
@@ -2334,11 +2340,18 @@ function createSimulation(opts)
         name: "impulse",
         key: "i",
     });
+
     addTool(simulation.toolbar,
     {
         name: "repel",
         key: "r",
-    })
+    });
+    addTool(simulation.toolbar,
+    {
+        name: "attract",
+        key: "a",
+    });
+
     addTool(simulation.toolbar,
     {
         name: "create",
@@ -2406,6 +2419,7 @@ function resetSimulation(simulation)
     // user forces
     p.dragStrength = 1;
     p.repelStrength = 1;
+    p.attractStrength = 1;
     p.impulseStrength = 1;
 
     // thermostat
@@ -2618,7 +2632,7 @@ function createEnum(names, isBitfield)
     return Object.freeze(enumerable);
 }
 
-var MouseMode = createEnum(["none", "move", "select", "repel", "create", "delete", "impulse"]);
+var MouseMode = createEnum(["none", "move", "select", "repel", "attract", "create", "delete", "impulse"]);
 
 // ! Simulation
 
@@ -3262,20 +3276,46 @@ var updateSimulation = function()
                     }
                 }
 
+
                 for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++) {
                     var particle = simulation.particles[particleIndex];
 
                     // ! Friction
                     v2.scaleAndAdd(particle.acceleration, particle.acceleration,
                         particle.velocity, -params.friction / particle.mass);
-                    
-                    // ! Repel tool
+                }
 
-                    if (simulation.mouse.mode === MouseMode.repel)
-                    {
-                        var mouseToParticle = v2.alloc();
+                // ! User forces
+
+                var mouseToParticle = v2.alloc();
+
+                // ! Attract tool
+
+                if (simulation.mouse.mode === MouseMode.attract)
+                {
+                    for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++) {
+                        var particle = simulation.particles[particleIndex];
+
                         v2.subtract(mouseToParticle, particle.position, simulation.mouse.worldPosition);
 
+                        // NOTE: constant force
+                        var repelFactor = - params.boxWidth / 10 / v2.magnitude(mouseToParticle);
+
+                        v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                            mouseToParticle, repelFactor * params.attractStrength / particle.mass);
+                    }
+                }
+
+                // ! Repel tool
+
+                if (simulation.mouse.mode === MouseMode.repel)
+                {
+                    for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++) {
+                        var particle = simulation.particles[particleIndex];
+
+                        v2.subtract(mouseToParticle, particle.position, simulation.mouse.worldPosition);
+
+                        // NOTE: 1/r force
                         var repelFactor = params.boxWidth / v2.square(mouseToParticle);
 
                         v2.scaleAndAdd(particle.acceleration, particle.acceleration,
@@ -3283,7 +3323,7 @@ var updateSimulation = function()
                     }
                 }
 
-                // ! move tool
+                // ! Move tool
 
                 if (simulation.mouse.mode === MouseMode.move)
                 {
@@ -3291,19 +3331,21 @@ var updateSimulation = function()
                     // TODO: not really happy with the .isRemoved and the handling of the selectedParticles
                     if (!activeParticle.isRemoved)
                     {
-                        v2.subtract(relativePosition, simulation.mouse.worldPosition, activeParticle.position);
+                        v2.subtract(mouseToParticle, activeParticle.position, simulation.mouse.worldPosition);
 
                         for (var i = 0; i < simulation.mouse.selectedParticleIndices.length; i++)
                         {
                             var particle = particles[simulation.mouse.selectedParticleIndices[i]];
 
                             v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                                relativePosition, params.dragStrength / particle.mass);
+                                mouseToParticle, -params.dragStrength / particle.mass);
                             v2.scaleAndAdd(particle.acceleration, particle.acceleration,
                                 particle.velocity, -1 / particle.mass);
                         }    
                     }
                 }
+
+                v2.free(mouseToParticle);
 
                 for (var particleIndex = 0; particleIndex < particles.length;
                     ++particleIndex)

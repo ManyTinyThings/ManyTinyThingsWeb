@@ -1,5 +1,6 @@
 ---
-next: /intro/tutorial
+title: ""
+next: /intro/interaction
 ---
 
 Every big thing in the world is made up of **many tiny things**.
@@ -20,7 +21,9 @@ Every big thing in the world is made up of **many tiny things**.
 			p.boxWidth = 200;
 			p.isOnlyHardSpheres = true;
 			p.gravityAcceleration = 1;
-			p.repelStrength = 1;
+			p.attractStrength = 1;
+			p.thermostatSpeed = 0.1;
+			p.thermostatTemperature = 100;
 
 			updateBounds(simulation);
 
@@ -34,7 +37,7 @@ Every big thing in the world is made up of **many tiny things**.
 				addParticle(simulation, particle);
 			}
 
-			setToolbarAvailableTools(simulation.toolbar, ["repel"]);
+			setToolbarAvailableTools(simulation.toolbar, ["attract"]);
 		}
 	});
 </script>
