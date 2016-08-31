@@ -18,7 +18,7 @@ next: /states/evaporation
             ljInteraction.strength = 10;
             setInteraction(simulation, 0, 0, ljInteraction);
 
-            enableOnlyTools(simulation.toolbar, ["create", "move"]);
+            setToolbarAvailableTools(simulation.toolbar, ["create", "move"]);
         }
     });
 

@@ -20,9 +20,10 @@ next: /entropy/frictionless_billiards
             	billiardsPosition(particle.position, i, billiardsSpacing);
             	addParticle(simulation, particle);
             }
+
+    		setToolbarAvailableTools(simulation.toolbar, ["impulse", "move"]);
         }
     });
-    enableOnlyTools(billiardsSim.toolbar, ["impulse", "move"]);
 </script>
 
 

@@ -20,11 +20,10 @@ previous: /
             var particle = new Particle();
             particle.radius = pageGlobal.radius;
             addParticle(simulation, particle);
+
+    		setToolbarAvailableTools(singleEnergySim.toolbar, ["impulse"]);
         }
     });
-
-    enableOnlyTools(singleEnergySim.toolbar, ["impulse"]);
-    //selectTool(singleEnergySim.toolbar, "impulse");
 </script>
 
 <div class="stepLog twoColumn">

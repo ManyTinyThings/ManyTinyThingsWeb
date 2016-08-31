@@ -966,11 +966,12 @@ function createToolbar()
 
 function addTool(toolbar, opts)
 {
+    // TODO: maybe tool names shouldn't be strings
     var tool = {
         name: opts.name,
         key: opts.key,
         optionElement: createAndAppend("option", toolbar.selectElement),
-        isSelectable: true,
+        isAvailable: true,
         // TODO: image
     }
     toolbar.tools[tool.name] = tool;
@@ -981,9 +982,9 @@ function addTool(toolbar, opts)
 function selectTool(toolbar, newToolName)
 {
     var isRecognizedTool = toolbar.tools.hasOwnProperty(newToolName);
-    if (!(isRecognizedTool && toolbar.tools[newToolName].isSelectable))
+    if (!(isRecognizedTool && toolbar.tools[newToolName].isAvailable))
     {
-        console.error("Toolbar: No such tool!");
+        throw "Toolbar: No such tool!";
         return;
     }
 
@@ -997,9 +998,9 @@ function selectTool(toolbar, newToolName)
     toolbar.selectElement.value = newToolName;
 }
 
-function enableOnlyTools(toolbar, toolNames)
+function setToolbarAvailableTools(toolbar, availableToolNames)
 {
-    for (var toolName of toolNames)
+    for (var toolName of availableToolNames)
     {
         if (!toolbar.tools.hasOwnProperty(toolName))
         {
@@ -1011,8 +1012,8 @@ function enableOnlyTools(toolbar, toolNames)
     for (var key in toolbar.tools)
     {
         var tool = toolbar.tools[key];
-        tool.isSelectable = arrayContains(toolNames, tool.name);
-        if (tool.isSelectable)
+        tool.isAvailable = arrayContains(availableToolNames, tool.name);
+        if (tool.isAvailable)
         {
             toolbar.selectElement.appendChild(tool.optionElement);
         }
@@ -1022,16 +1023,16 @@ function enableOnlyTools(toolbar, toolNames)
         }
     }
 
-    if (toolNames.length > 0)
+    if (availableToolNames.length > 0)
     {
-        selectTool(toolbar, toolNames[0]);
+        selectTool(toolbar, availableToolNames[0]);
     }
     else
     {
         setElementIsVisible(toolbar.div, false);
     }
 
-    if (toolNames.length <= 1)
+    if (availableToolNames.length <= 1)
     {
         toolbar.selectElement.disabled = true;
         setElementIsVisible(toolbar.div, false);

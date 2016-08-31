@@ -22,10 +22,10 @@ next: /kinetic_energy/adding_energy
             	billiardsPosition(particle.position, i, 2 * particle.radius);
             	addParticle(simulation, particle);
             }
+            setToolbarAvailableTools(simulation.toolbar, ["impulse"]);
         }
     });
 
-    enableOnlyTools(totalEnergySim.toolbar, ["impulse"]);
 </script>
 <div class="stepLog twoColumn">
 I added some more balls in a conspicuous pattern. You know what to do!

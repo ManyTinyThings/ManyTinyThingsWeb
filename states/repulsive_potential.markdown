@@ -28,6 +28,8 @@ Then I glue the left particle to the wall so that only the right one can move. I
             var interaction = new RepulsiveInteraction();
             interaction.strength = 1;
             setInteraction(simulation, 0, 0, interaction);
+
+            setToolbarAvailableTools(simulation.toolbar, ["move"]);
         }
     });
 </script>

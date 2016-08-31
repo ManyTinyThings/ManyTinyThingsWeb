@@ -17,9 +17,9 @@ next: /entropy/half_box
             	billiardsPosition(particle.position, i, 2 * particle.radius);
             	addParticle(simulation, particle);
             }
+            setToolbarAvailableTools(simulation.toolbar, ["impulse", "move"]);
         }
     });
-    enableOnlyTools(billiardsSim.toolbar, ["impulse", "move"]);
 </script>
 
 

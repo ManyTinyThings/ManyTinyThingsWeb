@@ -34,7 +34,7 @@ Every big thing in the world is made up of **many tiny things**.
 				addParticle(simulation, particle);
 			}
 
-			enableOnlyTools(simulation.toolbar, ["repel"]);
+			setToolbarAvailableTools(simulation.toolbar, ["repel"]);
 		}
 	});
 </script>
@@ -73,7 +73,7 @@ Every big thing in the world is made up of **many tiny things**.
 			ljInteraction.separation *= 0.8;
 			setInteraction(simulation, 0, 0, ljInteraction);
 
-			enableOnlyTools(simulation.toolbar, ["repel"]);
+			setToolbarAvailableTools(simulation.toolbar, ["repel"]);
 		}
 	});
 
@@ -126,7 +126,7 @@ Every big thing in the world is made up of **many tiny things**.
 			setInteraction(simulation, 0, 0, ljInteraction);
 			setInteraction(simulation, 1, 1, ljInteraction);
 
-			enableOnlyTools(simulation.toolbar, ["move"]);
+			setToolbarAvailableTools(simulation.toolbar, ["move"]);
 		}
 	});
 </script>

@@ -19,10 +19,12 @@ next: /states/solid_liquid_gas
             p.friction = 0.2;
             
             initOneDimSim(simulation);
-            
+
             var interaction = new LennardJonesInteraction();
             interaction.strength = 2;
             setInteraction(simulation, 0, 0, interaction);
+
+            setToolbarAvailableTools(simulation.toolbar, ["move"]);
         }
     });
 </script>

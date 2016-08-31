@@ -19,7 +19,7 @@ next: /states/repulsive_potential
             ljInteraction.strength = 10;
             setInteraction(simulation, 0, 0, ljInteraction);
 
-            enableOnlyTools(simulation.toolbar, ["move", "impulse"]);
+            setToolbarAvailableTools(simulation.toolbar, ["move", "impulse"]);
         }
     });
 

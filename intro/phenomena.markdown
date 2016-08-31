@@ -84,14 +84,8 @@ Many familiar physical phenomena can be explained by looking through the _many-t
             var interaction = new LennardJonesInteraction();
             interaction.strength = 5;
             setInteraction(simulation, 0, 0, interaction);
-
-
         }
     });
-    insertHere(createButton({
-        label: "Reset",
-        action: function() { resetSimulation(sim) },
-    }));
 </script>
 </div>
 

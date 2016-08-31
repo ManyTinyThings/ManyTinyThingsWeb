@@ -25,7 +25,7 @@ previous: /kinetic_energy/multiple_particles
             	addParticle(simulation, particle);
             }
             
-            enableOnlyTools(simulation.toolbar, ["impulse"]);
+            setToolbarAvailableTools(simulation.toolbar, ["impulse"]);
         }
     });
 

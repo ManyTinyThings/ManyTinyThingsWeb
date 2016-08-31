@@ -24,6 +24,8 @@ This page is an introduction to get you used to how these explanations are going
 			var particle = new Particle();
 			v2.set(particle.position, 0, particle.radius - simulation.boxBounds.height / 2);
 			addParticle(simulation, particle);
+
+			setToolbarAvailableTools(simulation.toolbar, ["move"]);
         },
     });
 </script>
