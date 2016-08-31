@@ -382,14 +382,33 @@ function insertHere(element)
     return element
 }
 
-function hideElement(element)
+function setElementIsVisible(element, isVisible)
 {
-    element.classList.add("hidden");
+    setElementClass(element, "hidden", !isVisible);
 }
 
-function showElement(element)
+function setElementClass(element, className, isEnabled)
 {
-    element.classList.remove("hidden");
+    if (isEnabled)
+    {
+        element.classList.add(className);
+    }
+    else
+    {
+        element.classList.remove(className);
+    }
+}
+
+function setElementEnabled(element, isEnabled) {
+    setElementClass(element, "disabled", !isEnabled);
+    element.disabled = !isEnabled;
+}
+
+
+function css(number, unit)
+{
+    unit = unit || "px";
+    return String(number) + unit;
 }
 
 // ! Controls
@@ -692,7 +711,7 @@ function changeStep(stepLog, stepIndex)
         var nextStep = stepLog.steps[stepLog.currentStepIndex];
         for (var element of nextStep.elements)
         {
-            showElement(element)
+            setElementIsVisible(element, true)
             element.style.opacity = 1;
         }
     }
@@ -703,7 +722,7 @@ function changeStep(stepLog, stepIndex)
         for (var element of currentStep.elements)
         {
             element.style.opacity = 0;
-            hideElement(element);
+            setElementIsVisible(element, false);
         }
         for (var cue of currentStep.cues)
         {
@@ -718,17 +737,11 @@ function changeStep(stepLog, stepIndex)
     var currentStep = stepLog.steps[stepLog.currentStepIndex];
     for (var element of currentStep.elements)
     {
-        showElement(element);
+        setElementIsVisible(element, true);
         element.style.opacity = 1;
     }
 
     stepLog.isCompleted = stepIndex == (stepLog.steps.length - 1);
-}
-
-function css(number, unit)
-{
-    unit = unit || "px";
-    return String(number) + unit;
 }
 
 var PageStatus = createEnum(["past", "present", "future"]);
@@ -737,39 +750,16 @@ function setPageStatus(page, status)
 {
     if (status === PageStatus.past)
     {
-        // page.div.style.left = css(-1000);
-        // page.div.style.opacity = 0;
-        hideElement(page.div);
+        setElementIsVisible(page.div, false);
     }
     else if (status === PageStatus.present)
     {
-        showElement(page.div);
-        // page.div.style.left = css(0);
-        // page.div.style.opacity = 1;
+        setElementIsVisible(page.div, true);
     }
     else if (status === PageStatus.future)
     {
-        // page.div.style.left = css(1000);
-        // page.div.styel.opacity = 0;
-        hideElement(page.div);
+        setElementIsVisible(page.div, false);
     }
-}
-
-function setElementClass(element, className, isEnabled)
-{
-    if (isEnabled)
-    {
-        element.classList.add(className);
-    }
-    else
-    {
-        element.classList.remove(className);
-    }
-}
-
-function setElementEnabled(element, isEnabled) {
-    setElementClass(element, "disabled", !isEnabled);
-    element.disabled = !isEnabled;
 }
 
 function changePage(chapter, pageIndex, doesChangeStepLogs)
@@ -839,7 +829,7 @@ function initChapter()
         var page = {
             div: childElement,
         }
-        hideElement(page.div);
+        setElementIsVisible(page.div, false);
 
         chapter.pages.push(page);
         for (var pageChildIndex = 0; pageChildIndex < page.div.children.length; pageChildIndex++)
@@ -879,7 +869,7 @@ function initChapter()
 
     if (chapter.pages.length < 2)
     {
-        hideElement(navigationDiv);
+        setElementIsVisible(navigationDiv, false);
     }
 
     // TODO: update the hash as we advance through the chapter
@@ -1038,13 +1028,13 @@ function enableOnlyTools(toolbar, toolNames)
     }
     else
     {
-        hideElement(toolbar.div);
+        setElementIsVisible(toolbar.div, false);
     }
 
     if (toolNames.length <= 1)
     {
         toolbar.selectElement.disabled = true;
-        hideElement(toolbar.div);
+        setElementIsVisible(toolbar.div, false);
     }
 
 }
@@ -1221,14 +1211,7 @@ function setGraphLimits(graph, limits)
 function setGraphVisible(graph, isVisible)
 {
     graph.isVisible = isVisible;
-    if (isVisible)
-    {
-        showElement(graph.div);
-    }
-    else
-    {
-        hideElement(graph.div);
-    }
+    setElementIsVisible(graph, isVisible);
 }
 
 function maximumBy(array, f)
@@ -2297,6 +2280,11 @@ function pickParticle(simulation, pickPosition, extraRadius)
     return -1;
 }
 
+function setResetButtonVisibility(simulation, isVisible)
+{
+    set
+}
+
 function createSimulationHere(opts)
 {
     var simulation = createSimulation(opts);
@@ -2322,8 +2310,18 @@ function createSimulation(opts)
     simulation.canvas.height = simulation.pixelHeight;
     simulation.canvas.classList.add("simulationCanvas");
 
+    simulation.controlsDiv = createAndAppend("div", simulation.div);
+    simulation.resetButton = createButton({
+        label: "Reset",
+        action: function() {
+            resetSimulation(simulation);
+        },
+    });
+    simulation.controlsDiv.appendChild(simulation.resetButton);
+    simulation.controlsDiv.classList.add("controls");
+
     simulation.toolbar = createToolbar();
-    simulation.div.appendChild(simulation.toolbar.div);
+    simulation.controlsDiv.appendChild(simulation.toolbar.div);
     addTool(simulation.toolbar,
     {
         name: "move",
@@ -2351,8 +2349,6 @@ function createSimulation(opts)
     });
 
     selectTool(simulation.toolbar, "move");
-
-    //hideElement(simulation.toolbar.div);
 
     simulation.renderer = createRenderer(simulation.canvas);
 
