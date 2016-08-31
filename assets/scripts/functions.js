@@ -985,7 +985,6 @@ function selectTool(toolbar, newToolName)
     if (!(isRecognizedTool && toolbar.tools[newToolName].isAvailable))
     {
         throw "Toolbar: No such tool!";
-        return;
     }
 
     if (toolbar.selectedToolName != "")
@@ -1000,29 +999,30 @@ function selectTool(toolbar, newToolName)
 
 function setToolbarAvailableTools(toolbar, availableToolNames)
 {
+    // remove all tools
+    for (var toolName in toolbar.tools)
+    {
+        var tool = toolbar.tools[toolName];
+        if (tool.isAvailable)
+        {
+            toolbar.selectElement.removeChild(tool.optionElement);    
+        }
+        tool.isAvailable = false;
+    }
+
+    // add available tools
     for (var toolName of availableToolNames)
     {
         if (!toolbar.tools.hasOwnProperty(toolName))
         {
             throw ("Toolbar: no tool with name \"" + toolName + "\"");
-            return;
         }
-    }
 
-    for (var key in toolbar.tools)
-    {
-        var tool = toolbar.tools[key];
-        tool.isAvailable = arrayContains(availableToolNames, tool.name);
-        if (tool.isAvailable)
-        {
-            toolbar.selectElement.appendChild(tool.optionElement);
-        }
-        else
-        {
-            toolbar.selectElement.removeChild(tool.optionElement);
-        }
+        var tool = toolbar.tools[toolName];
+        tool.isAvailable = true;
+        toolbar.selectElement.appendChild(tool.optionElement);
     }
-
+                                                                                                            
     if (availableToolNames.length > 0)
     {
         selectTool(toolbar, availableToolNames[0]);
@@ -2301,6 +2301,7 @@ function createSimulation(opts)
 		worldWidth: opts.worldWidth || 20,
 		worldHeight: opts.worldHeight,
         initialize: opts.initialize,
+        parameters: {},
     };
 
     simulation.div = createElement("div");
@@ -2360,68 +2361,74 @@ function createSimulation(opts)
 
 function resetSimulation(simulation)
 {
-    var newSimulation = {
-        controls: ["resetButton"],
-        visualizations: [],
-        measurementRegions: [],
-        walls: null,
-        particleGenerator: function()
-        {
-            return new Particle();
-        },
-        parameters:
-        {
-            maxInitialSpeed: 0.1,
-            soundEnabled: false,
-            isPeriodic: false,
-            maxParticleCount: 0,
-            shouldResetOnExplosion: true,
+    //
+    // default parameters
+    //
 
-            // box
-            boxWidth: 20,
-            boxHeight: null,
+    var p = simulation.parameters;
 
-            // collision-related
-            isOnlyHardSpheres: false,
-            isSlowCollisionEnabled: false,
-            isSlowParticleParticleCollisionEnabled: false,
-            coefficientOfRestitution: 1,
+    // general
+    p.maxInitialSpeed = 0.1;
+    p.soundEnabled = false;
+    p.maxParticleCount = 0;
+    p.shouldResetOnExplosion = true;
 
-            // time-related
-            simulationTimePerSecond: 5,
-            dt: 0.005,
-            simulationSpeed: 1,
+    // box
+    p.boxWidth = 20;
+    p.boxHeight = null;
+    p.isPeriodic = false;
 
-            // measurements
-            measurementWindowLength: 100,
-            measurementEnabled: true,
-            pressureWindowSize: 1000,
-            displayWallPressure: false,
+    // collisions
+    p.isOnlyHardSpheres = false;
+    p.isSlowCollisionEnabled = false;
+    p.isSlowParticleParticleCollisionEnabled = false;
+    p.coefficientOfRestitution = 1;
 
-            // forces
-            velocityAmplification: 1,
-            gravityAcceleration: 0,
-            friction: 0,
-            cutoffFactor: 2.5,
-            wallStrength: 1,
+    // time-related
+    p.simulationTimePerSecond = 5;
+    p.dt = 0.005;
+    p.simulationSpeed = 1;
 
-            // user forces
-            dragStrength: 1,
-            repelStrength: 1,
-            impulseStrength: 1,
-            
-            // thermostat
-            thermostatSpeed: 0,
-            thermostatTemperature: 0.01,
-        },
+    // TODO: begone!
+    // measurements
+    p.measurementWindowLength = 100;
+    p.measurementEnabled = true;
+    p.pressureWindowSize = 1000;
+    p.displayWallPressure = false;
 
-        time: 0,
-        times: [],
-        pausedByUser: false,
-        previousTimestamp: 0,
-        timeLeftToSimulate: 0,
-        isFirstFrameAfterPause: true,
+    // forces
+    p.velocityAmplification = 1;
+    p.gravityAcceleration = 0;
+    p.friction = 0;
+    p.cutoffFactor = 2.5;
+    p.wallStrength = 1;
+
+    // user forces
+    p.dragStrength = 1;
+    p.repelStrength = 1;
+    p.impulseStrength = 1;
+
+    // thermostat
+    p.thermostatSpeed = 0;
+    p.thermostatTemperature = 0.01;
+
+    // reset stuff
+    var s = simulation;
+    simulation.walls = null;
+    simulation.particleGenerator = function()
+    {
+        return new Particle();
     };
+    // NOTE: this is so graphs don't get confused when we reset
+    // TODO: don't make it rely on this hack please
+    simulation.time = simulation.time || 0;
+    simulation.times = [];
+    simulation.previousTimestamp = 0;
+    simulation.timeLeftToSimulate = 0;
+    simulation.isFirstFrameAfterPause = true;
+
+    // TODO: should this really be reset?
+    simulation.pausedByUser = false;
 
     simulation.particles = [];
     simulation.interactions = [];
@@ -2429,9 +2436,6 @@ function resetSimulation(simulation)
 
     simulation.boxBounds = new Rectangle();
     simulation.regions = [];
-
-    // TODO: just set the defaults instead of this copy business
-    copyObject(simulation, newSimulation);
 
     getInteraction(simulation, 0, 0); // NOTE: this get sets up default interaction
     updateBounds(simulation);
