@@ -2681,7 +2681,9 @@ function drawSimulation(simulation)
         drawTrajectory(simulation.renderer, wall.vertices, Color.black);
     }
 
+    simulation.renderer.context.globalCompositeOperation = "darken";
     drawParticles(simulation.renderer, simulation.particles, simulation.parameters.isPeriodic);
+    simulation.renderer.context.globalCompositeOperation = "source-over";
 
     if (simulation.parameters.trajectoryEnabled)
     {
