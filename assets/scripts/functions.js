@@ -3128,18 +3128,24 @@ var updateSimulation = function()
 
                     var squareCutoffFactor = square(params.cutoffFactor);
 
+                    var gridRadiusX = Math.ceil(simulation.particleGrid.cutoffInteractionRange / simulation.particleGrid.dx);
+                    var boxRadiusX = (simulation.particleGrid.colCount - 1) / 2;
+                    var dxMin = - atMost(Math.floor(boxRadiusX), gridRadiusX);
+                    var dxMax = atMost(Math.ceil(boxRadiusX), gridRadiusX);
+                    var gridRadiusY = Math.ceil(simulation.particleGrid.cutoffInteractionRange / simulation.particleGrid.dy);
+                    var boxRadiusY = (simulation.particleGrid.rowCount - 1) / 2;
+                    var dyMin = - atMost(Math.floor(boxRadiusY), gridRadiusY);
+                    var dyMax = atMost(Math.ceil(boxRadiusY), gridRadiusY);
 
                     for (var particleIndex = 0; particleIndex < particles.length; particleIndex++)
                     {
                         var particle = particles[particleIndex];
 
-                        var gridRadiusX = Math.ceil(simulation.particleGrid.cutoffInteractionRange / simulation.particleGrid.dx);
-                        var gridRadiusY = Math.ceil(simulation.particleGrid.cutoffInteractionRange / simulation.particleGrid.dy);
-                        for (var dy = -gridRadiusY; dy <= gridRadiusY; dy++)
+                        for (var dy = dyMin; dy <= dyMax; dy++)
                         {
                             var row = mod(particle.gridRow + dy, simulation.particleGrid.rowCount);
                             var rowIndex = simulation.particleGrid.colCount * row;
-                            for (var dx = -gridRadiusX; dx <= gridRadiusX; dx++)
+                            for (var dx = dxMin; dx <= dxMax; dx++)
                             {
                                 var col = mod(particle.gridCol + dx, simulation.particleGrid.colCount);
                                 var cellIndex = rowIndex + col;
