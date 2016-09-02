@@ -991,10 +991,14 @@ function addTool(toolbar, opts)
 
 function selectTool(toolbar, newToolName)
 {
-    var isRecognizedTool = toolbar.tools.hasOwnProperty(newToolName);
-    if (!(isRecognizedTool && toolbar.tools[newToolName].isAvailable))
+    if (!toolbar.tools.hasOwnProperty(newToolName))
     {
         throw "Toolbar: No such tool!";
+    }
+
+    if (!toolbar.tools[newToolName].isAvailable)
+    {
+        return;
     }
 
     if (toolbar.selectedToolName != "")
