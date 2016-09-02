@@ -1529,7 +1529,15 @@ function getTotalEnergy(simulation)
 {
     return simulation.particles.reduce(function(acc, p)
     {
-        return (acc + p.potentialEnergy + p.kineticEnergy);
+        if (isFinite(p.potentialEnergy))
+        {
+            acc += p.potentialEnergy;
+        }
+        if (isFinite(p.kineticEnergy))
+        {
+            acc += p.kineticEnergy;
+        }
+        return acc;
     }, 0);
 }
 
