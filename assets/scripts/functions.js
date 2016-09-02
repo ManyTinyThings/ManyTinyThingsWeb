@@ -1640,9 +1640,9 @@ function cssFromRGBA(rgba)
     ].join("");
 }
 
-addColor("red", [1, 0, 0, 1]);
+addColor("red", [0.7, 0.2, 0.2, 1]);
 addColor("green", [0, 1, 0, 1]);
-addColor("blue", [0, 0, 1, 1]);
+addColor("blue", [0.1, 0.2, 0.8, 1]);
 addColor("yellow", [1, 0.8, 0, 1]);
 addColor("orange", [1, 0.3, 0, 1]);
 addColor("purple", [1, 0, 1, 1]);
@@ -1650,6 +1650,16 @@ addColor("black", [0, 0, 0, 1]);
 addColor("white", [0, 0, 0, 1]);
 addColor("gray", [0.5, 0.5, 0.5, 1]);
 addColor("transparent", [0, 0, 0, 0]);
+
+
+// inject these colors as class css
+var styleSheet = document.styleSheets[0];
+for (var key in Color)
+{
+    var color = Color[key];
+    var rule = "." + color.name + "{color: " + color.css + ";}"
+    styleSheet.insertRule(rule, 0);
+}
 
 Color.niceSwatch = [
     Color.black,
