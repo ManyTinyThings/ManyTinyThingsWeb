@@ -2018,6 +2018,16 @@ function addParticlesRandomly(simulation, newParticles)
     }
 }
 
+// ! Billiards
+
+function initBilliards(simulation, particleCount)
+{
+    for (var i = 0; i < particleCount; i++) {
+        var particle = new Particle();
+        billiardsPosition(particle.position, i, 2);
+        addParticle(simulation, particle);
+    }
+}
 
 function billiardsPosition(out, particleIndex, latticeSpacing)
 {
@@ -2031,6 +2041,18 @@ function billiardsPosition(out, particleIndex, latticeSpacing)
         out[0] += 2 * latticeSpacing;
     }
     return out;
+}
+
+function isBilliardsTriangleSplit(simulation)
+{
+    var cueFunction = function(){
+        var totalEnergy = getTotalEnergy(simulation);
+        var firstBall = simulation.particles[0];
+        var triangleEnergy = totalEnergy - firstBall.kineticEnergy - firstBall.potentialEnergy;
+        return (triangleEnergy > 1);    
+    }
+    
+    return cueFunction;
 }
 
 // ! Particle types
