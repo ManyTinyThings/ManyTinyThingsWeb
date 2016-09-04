@@ -1,5 +1,4 @@
 ---
-chapterTitle: Introduction
 title: No Friction
 previous: /intro/billiards_friction
 next: /intro/billiards_no_friction_multiple
@@ -31,7 +30,7 @@ _They have **no friction**._
 
 What does that mean?
 
-Give the ball a push. 
+Give the ball a kick. 
 
 <script>
     cue(function() {

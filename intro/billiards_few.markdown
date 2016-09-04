@@ -1,5 +1,4 @@
 ---
-chapterTitle: Introduction
 title: Tiny Billiards
 previous: /intro/billiards
 next: /intro/billiards_friction

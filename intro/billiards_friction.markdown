@@ -1,5 +1,4 @@
 ---
-chapterTitle: Introduction
 title: Friction
 previous: /intro/billiards
 next: /intro/billiards_no_friction
