@@ -1,11 +1,10 @@
 ---
-chapterTitle: Interactions – Things Liking Other Things
-title: Two Things that Like Each Other
-previous: /
-next: /states/fast_collision
+title: High Speed Lovin'
+previous: /billiards/interaction/love
+next: /billiards/interaction/group_hug
 ---
 
-<script src="states.js"></script>
+<script src="shared.js"></script>
 <script>
 
     var interactionSim = createSimulation({
@@ -19,42 +18,32 @@ next: /states/fast_collision
             ljInteraction.strength = 10;
             setInteraction(simulation, 0, 0, ljInteraction);
 
-
-            setToolbarAvailableTools(simulation.toolbar, ["move"]);
+            setToolbarAvailableTools(simulation.toolbar, ["impulse"]);
         }
     });
-
 </script>
 
 <div id="chapter">
 
 <div class="page">
 <div class="stepLog twoColumn">
-Move these particles closer to each other.
+Let's try something else.
+
+What happens if the particles collide at high speed?
 
 <script>
     cue(function () {
         var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
-        return (distance < 3);   
+        // TODO: speed along normal instead
+        var relativeSpeed = v2.distance(interactionSim.particles[0].velocity, interactionSim.particles[1].velocity);
+        return (distance < 3) && (relativeSpeed > 1.0);
     });
     endStep();
 </script>
 
-They seem to like each other! As they come closer, they attract and snap together.
+They just bounce off each other!
 
-Can you get them to let go?
-
-<script>
-    cue(function () {
-        var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
-        return (distance > 6);
-    });
-    endStep();
-</script>
-
-It takes some effort!
-
-There's a _force_ binding the particles together. Think of this force as _love_: it's something that can't be explained, it's just there, binding things together.
+The _force_ between the particles wants to keep them together, but the speed is too high for the attraction to take hold.
 
 </div>
 
@@ -77,14 +66,6 @@ There's a _force_ binding the particles together. Think of this force as _love_:
         }
     }));
     */
-    // createTimeSeriesHere({
-    //     timeRange: 20,
-    //     update: function() {
-    //         var sim = interactionSim;
-    //         var energy = getTotalEnergy(sim);
-    //         return {time: sim.time, data: [energy]};
-    //     },
-    // });
 </script>
 </div>
 </div>

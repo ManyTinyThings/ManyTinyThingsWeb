@@ -1,7 +1,6 @@
 ---
-title: Tiny Billiards
-previous: /intro/billiards
-next: /intro/billiards_friction
+title: Differences
+previous: /billiards/break_shot
 ---
 
 <script>
@@ -22,18 +21,6 @@ next: /intro/billiards_friction
 
 <div class="page">
 <div class="stepLog twoColumn">
-I added some more balls!
-
-You know what to do.
-
-<script>
-	cue(isBilliardsTriangleSplit(sim));
-	endStep();
-</script>
-
-Nice split!
-
-_Wait, why are we playing billiards?_
 
 Remember the _many tiny things_ i was talking about earlier?
 The _tiny things_ are sort of like _tiny billiard balls_.
@@ -41,11 +28,11 @@ They move like billiard balls, and bounce like billiard balls.
 
 There are three big differences, though:
 
-1. They **never stop** moving.
-2. There are **a lot more than seven** of them.
-3. They can **like** or **dislike** each other.
+1. [They **never stop** moving](/billiards/friction/stopping).
+2. [There are **a lot more than seven** of them](/billiards/many/single_particle).
+3. [They can **like** or **dislike** each other](/billiards/interaction/love).
 
-Let's see what that's like!
+Click the items in the list above to explore them.
 
 </div>
 

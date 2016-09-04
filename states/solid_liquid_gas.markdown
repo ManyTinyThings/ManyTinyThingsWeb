@@ -1,10 +1,10 @@
 ---
-title: Many interacting particles
+title: Group Hug
 previous: /states/attractive_potential
 next: /states/evaporation
 ---
 
-<script src="states.js"></script>
+<script src="shared.js"></script>
 <script>
 
     var interactionSim = createSimulation({

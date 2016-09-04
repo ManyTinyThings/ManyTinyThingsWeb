@@ -2022,9 +2022,12 @@ function addParticlesRandomly(simulation, newParticles)
 
 function initBilliards(simulation, particleCount)
 {
+    simulation.parameters.isOnlyHardSpheres = true;
+    updateBounds(simulation);
+    setWallsAlongBorder(simulation);
     for (var i = 0; i < particleCount; i++) {
         var particle = new Particle();
-        billiardsPosition(particle.position, i, 2);
+        billiardsPosition(particle.position, i, 2.03);
         addParticle(simulation, particle);
     }
 }
@@ -3934,7 +3937,7 @@ function createCollision()
 }
 
 // TODO: is this even needed?
-var collisionEpsilon = 0.0001;
+var collisionEpsilon = 0;
 
 function recordParticleParticleCollision(collisionPool, collisions, particle, otherParticle, remainingTime, boxBounds, isPeriodic)
 {

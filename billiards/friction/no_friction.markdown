@@ -1,7 +1,7 @@
 ---
 title: No Friction
-previous: /intro/billiards_friction
-next: /intro/billiards_no_friction_multiple
+previous: /billiards/friction/friction
+next: /billiards/friction/frictionless_billiards
 ---
 
 <script>

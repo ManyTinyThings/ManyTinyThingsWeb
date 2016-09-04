@@ -1,14 +1,3 @@
-var addOppositeParticles = function(simulation)
-{
-    var d = simulation.parameters.boxWidth / 4;
-    var particleSW = new Particle();
-    v2.set(particleSW.position, -d, -d);
-    addParticle(simulation, particleSW);
-
-    var particleNE = new Particle();
-    v2.set(particleNE.position, d, d);
-    addParticle(simulation, particleNE);
-}
 
 var initOneDimSim = function(simulation)
 {

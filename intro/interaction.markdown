@@ -7,8 +7,6 @@ next: /intro/tools
 
 <div id="chapter">
 
-This page is an introduction to get you used to how these explanations are going to work.
-
 <div class="page flex">
 
 <script>
@@ -45,7 +43,9 @@ Pick up the ball and throw it!
 
 Well done!
 
-I will usually ask you to perform some simple task (like throwing the ball), just to get you started interacting with the simulations. You are of course free to keep playing with them for as long as you'd like!
+I will usually ask you to perform some simple task (like throwing the ball), just to get you started interacting with the simulations. 
+
+You are of course free to keep playing with them for as long as you'd like!
 
 When you are ready to move on, click at the bottom of the page &darr; or in the right margin &rarr;.
 

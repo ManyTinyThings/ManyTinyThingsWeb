@@ -1,7 +1,7 @@
 ---
 title: Graphs
 previous: /intro/tools
-next: /intro/billiards
+next: /billiards/impulse
 ---
 
 <div id="chapter">
@@ -43,7 +43,9 @@ Here's an example:
 	})
 </script>
 
-Try figuring out what this graph shows by throwing around the ball a bit. Does it show
+Try figuring out what this graph shows by throwing around the ball a bit.
+
+Does it show
 
 * the speed of the ball over time?
 * the shape of the ball at different heights?

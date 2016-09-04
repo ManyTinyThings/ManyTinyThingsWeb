@@ -1,8 +1,8 @@
 ---
 chapterTitle: Tiny Billiards
-title: Tiny Billiards
+title: Impulse
 previous: /intro/graphs
-next: /intro/billiards_few
+next: /billiards/break_shot
 ---
 
 <script>

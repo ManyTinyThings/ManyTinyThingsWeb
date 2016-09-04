@@ -1,10 +1,11 @@
 ---
-title: Two Things that Like Each Other
-previous: /states/interactions
-next: /states/repulsive_potential
+chapterTitle: Particle Attraction
+title: Particles in Love
+previous: /billiards/kickoff
+next: /billiards/interaction/high_speed_love
 ---
 
-<script src="states.js"></script>
+<script src="shared.js"></script>
 <script>
 
     var interactionSim = createSimulation({
@@ -18,34 +19,42 @@ next: /states/repulsive_potential
             ljInteraction.strength = 10;
             setInteraction(simulation, 0, 0, ljInteraction);
 
-            setToolbarAvailableTools(simulation.toolbar, ["impulse"]);
+
+            setToolbarAvailableTools(simulation.toolbar, ["move"]);
         }
     });
+
 </script>
 
 <div id="chapter">
 
 <div class="page">
 <div class="stepLog twoColumn">
-Let's try something else.
-
-What happens if you collide the two particles at high speed?
+Move these particles closer to each other.
 
 <script>
     cue(function () {
         var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
-        // TODO: speed along normal instead
-        var relativeSpeed = v2.distance(interactionSim.particles[0].velocity, interactionSim.particles[1].velocity);
-        return (distance < 3) && (relativeSpeed > 1.0);
+        return (distance < 3);   
     });
     endStep();
 </script>
 
-They just bounce off each other!
+They seem to like each other! As they come closer, they attract and snap together.
 
-The _force_ between the particles wants to keep them together, but the speed is too high for the attraction to take hold.
+Can you get them to let go?
 
-Let's explore this in more detail.
+<script>
+    cue(function () {
+        var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
+        return (distance > 6);
+    });
+    endStep();
+</script>
+
+It takes some effort!
+
+There's a _force_ binding the particles together. You can think of this force as _love_: it's something that can't be explained, it's just there, binding things together.
 
 </div>
 
@@ -68,6 +77,14 @@ Let's explore this in more detail.
         }
     }));
     */
+    // createTimeSeriesHere({
+    //     timeRange: 20,
+    //     update: function() {
+    //         var sim = interactionSim;
+    //         var energy = getTotalEnergy(sim);
+    //         return {time: sim.time, data: [energy]};
+    //     },
+    // });
 </script>
 </div>
 </div>

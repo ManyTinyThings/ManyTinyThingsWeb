@@ -1,15 +1,17 @@
 ---
-title: No Friction
-previous: /intro/billiards_no_friction
+title: Many Particles
+previous: /billiards/many/few_particles
+next: /billiards/many/tons_of_particles
 ---
 
 <script>
     var sim = createSimulation({
         initialize: function(simulation) {
             var p = simulation.parameters;
-            p.friction = 0;
+            p.friction = 0.2;
+            p.boxWidth = 90;
 
-            initBilliards(simulation, 7);
+            initBilliards(simulation, 232);
 
     		setToolbarAvailableTools(simulation.toolbar, ["impulse"]);
         }
@@ -21,18 +23,11 @@ previous: /intro/billiards_no_friction
 
 <div class="page">
 <div class="stepLog twoColumn">
-How would it be to play billiards without friction?
+_Wow, that's a lot of particles!_
 
-You tell me.
+Yeah, makes for a _preeeetty_ long billiards game...
 
-<script>
-    cue(isBilliardsTriangleSplit(sim));
-    endStep();
-</script>
-
-_Madness!_
-
-Some particles move faster than others, but again, _they never stop_.
+But it's still not enough.
 
 </div>
 

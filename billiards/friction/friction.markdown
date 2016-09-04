@@ -1,7 +1,7 @@
 ---
 title: Friction
-previous: /intro/billiards
-next: /intro/billiards_no_friction
+previous: /billiards/friction/stopping
+next: /billiards/friction/no_friction
 ---
 
 <script>
@@ -22,25 +22,6 @@ next: /intro/billiards_no_friction
 
 <div class="page">
 <div class="stepLog twoColumn">
-Normally, if you stop pushing or pulling something, it will eventually stop moving.
-
-Drag around the ball a bit and then look at what happens when you let go.
-
-<script>
-    var isDragging = false
-	cue(function () {
-        if (sim.mouse.mode === MouseMode.move)
-        {
-            isDragging = true;
-        }
-
-        var didJustLetGo = isDragging && (sim.mouse.mode === MouseMode.none);
-        return didJustLetGo;
-    });
-	endStep();
-</script>
-
-When you let go, the ball starts slowing down and eventually stops.
 The force that that causes the ball to slow down is called **friction**.
 
 Some things have more friction than others: 
