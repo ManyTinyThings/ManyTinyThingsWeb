@@ -22,9 +22,11 @@ var initOneDimSim = function(simulation)
     var fixedParticle = new Particle();
     v2.set(fixedParticle.position, -d, 0);
     fixedParticle.mass = Infinity;
+    fixedParticle.color = hexColor("blue", 0x2244bb);
     addParticle(simulation, fixedParticle);
 
     var movingParticle = new Particle();
+    movingParticle.color = hexColor("red", 0xcc2222);
     v2.set(movingParticle.position, d, 0);
     addParticle(simulation, movingParticle);
 }
@@ -44,7 +46,7 @@ var createPotentialPlotHere = function(potential, simulation)
             var ys = [];
             var sampleCount = 100;
             for (var i = 0; i < sampleCount; i++) {
-                var x = lerp(0.6, i/(sampleCount - 1), xMax);
+                var x = lerp(0.3, i/(sampleCount - 1), xMax);
                 xs.push(x);
                 ys.push(potential(x))
             }
@@ -58,7 +60,21 @@ var createPotentialPlotHere = function(potential, simulation)
             drawGraph(graph);
            
             var markerRadius = 7;
-            drawDiscMarker(graph.renderer, v2(r, potential(r)), markerRadius, Color.black);
+            drawDiscMarker(graph.renderer, v2(r, potential(r)), markerRadius, hexColor("red", 0xcc2222));
         }
     });
+}
+
+
+function ensembleSpeed(particles)
+{
+    var totalVelocity = v2.alloc();
+    v2.set(totalVelocity, 0, 0);
+    for (var particleIndex = 0; particleIndex < particles.length; particleIndex++) {
+        var particle = particles[particleIndex];
+        v2.add(totalVelocity, totalVelocity, particle.velocity);
+    }
+    var ensembleSpeed = v2.magnitude(totalVelocity) / particles.length;
+    v2.free(totalVelocity);
+    return ensembleSpeed;
 }

@@ -4,7 +4,7 @@ previous: /states/repulsive_potential
 next: /states/solid_liquid_gas
 ---
 
-<script src="potential.js"></script>
+<script src="states.js"></script>
 
 <div id="chapter">
 
@@ -17,6 +17,7 @@ next: /states/solid_liquid_gas
         initialize: function(simulation) {
             var p = simulation.parameters;
             p.friction = 0.2;
+            p.dragStrength = 1;
             
             initOneDimSim(simulation);
 
@@ -29,10 +30,9 @@ next: /states/solid_liquid_gas
     });
 </script>
 
-
 Things get more interesting when the particles attract each other. The potential still has a steep hill that prevents the particles from overlapping too much, but there is now also a valley.
 
-Drag the rightmost particle toward the other.
+Drag the <span class="red">**red**</span> particle toward the <span class="blue">**blue**</span>.
 
 <script>
     cue(function () {
@@ -63,6 +63,15 @@ The back-and-forth rolling is why the particles vibrate a bit when they snap tog
     insertHere(lennardJonesPotentialSim.div);
     var lennardJonesGraph = createPotentialPlotHere(lennardJonesEnergy, lennardJonesPotentialSim);
     setGraphLimits(lennardJonesGraph, { yMax: 2 });
+
+        // createTimeSeriesHere({
+        //     timeRange: 10,
+        //     update: function() {
+        //         var sim = lennardJonesPotentialSim;
+        //         var energy = getTotalEnergy(sim);
+        //         return {time: sim.time, data: [energy]};
+        //     },
+        // });
 </script>
 </div>
 </div>

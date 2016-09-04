@@ -4,7 +4,7 @@ previous: /states/attractive_potential
 next: /states/evaporation
 ---
 
-<script src="potential.js"></script>
+<script src="states.js"></script>
 <script>
 
     var interactionSim = createSimulation({

@@ -1,16 +1,16 @@
 ---
 title: Repulsive potential
+previous: /states/fast_collision
+next: /states/attractive_potential
 ---
 
-<script src="potential.js"></script>
+<script src="states.js"></script>
 
 <div id="chapter">
 
-To better understand the interaction, let's first simplify the situation. 
+To better understand the attraction, let's first look at two _non-attracting_ particles.
 
 I have put the particles on a narrow track, so they can only move back and forth (and not around each other). Imagine the camera rotating with the particles so that they are always on a horizontal line.
-
-Then I glue the left particle to the wall so that only the right one can move. Imagine the camera following the left particle, always keeping it on the same place on the screen.
 
 <div class="page">
 
@@ -26,7 +26,7 @@ Then I glue the left particle to the wall so that only the right one can move. I
             initOneDimSim(simulation);
 
             var interaction = new RepulsiveInteraction();
-            interaction.strength = 1;
+            interaction.strength = 0.1 ;
             setInteraction(simulation, 0, 0, interaction);
 
             setToolbarAvailableTools(simulation.toolbar, ["move"]);
@@ -35,19 +35,19 @@ Then I glue the left particle to the wall so that only the right one can move. I
 </script>
 
 
-Try dragging the left particle.
+Try moving the <span class="blue">**blue**</span> particle on the left.
 
 <script>
     cue(function () {
-        var isDragging = (repulsivePotentialSim.mouse.draggedParticle === repulsivePotentialSim.particles[0]);
-        return isDragging;
+        var sim = repulsivePotentialSim;
+        return (sim.mouse.activeParticle === sim.particles[0]);
     });
     endStep();
 </script>
 
-It won't budge.
+I've glued the <span class="blue">**blue**</span> particle to the wall so that only the <span class="red">**red**</span> one can move. Imagine the camera following the <span class="blue">**blue**</span> particle, always keeping it on the same place on the screen.
 
-Below the particles I have added the **potential** for the interaction between the two particles. Think of it as an "interaction landscape", where the right particle can be thought of as a ball rolling in the landscape.
+Below the particles I have added the **potential** for the interaction between the two particles. Think of it as an "interaction landscape", where the <span class="red">**red**</span> particle can be thought of as a ball rolling in the landscape.
 
 Drag the right particle towards the left one and see what happens to the ball in the potential.
 
@@ -60,9 +60,7 @@ Drag the right particle towards the left one and see what happens to the ball in
     endStep();
 </script>
 
-As the particles bounce off each other, the ball in the landscape rolls up the hill, and then rolls back down again.
-
-[Next page](attractive_potential)
+The ball in the potential landscape rolls up the hill, and then rolls back down again – it bounces off the other one!
 
 </div>
 
@@ -71,7 +69,7 @@ As the particles bounce off each other, the ball in the landscape rolls up the h
     insertHere(repulsivePotentialSim.div);
 
     var repulsivePotential = function(x) { 
-        return (x < 1) ? (lennardJonesEnergy(x) - lennardJonesEnergy(1)) : 0;
+        return (x < 1) ? (lennardJonesEnergy(x) - lennardJonesEnergy(1)) / 100 : 0;
     }
     var repulsiveGraph = createPotentialPlotHere(repulsivePotential, repulsivePotentialSim);
     setGraphLimits(repulsiveGraph, { yMax: 50});
