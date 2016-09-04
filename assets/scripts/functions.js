@@ -424,16 +424,26 @@ function createSliderHere(opts)
     insertHere(createSlider(opts));
 }
 
+function identity(x)
+{
+    return x;
+}
+
 function createSlider(opts)
 {
     combineWithDefaults(opts,
     {
+        transform: identity,
+        inverseTransform: identity,
         minLabel: String(opts.min),
         maxLabel: String(opts.max),
         snapBack: false,
     });
 
-    var initialValue = opts.object[opts.name];
+    var initialSliderValue = opts.inverseTransform(opts.object[opts.name]);
+    var sliderMin = opts.inverseTransform(opts.min);
+    var sliderMax = opts.inverseTransform(opts.max);
+    var step = opts.step || (sliderMax - sliderMin) / 1000;
 
     // set up elements
 
@@ -445,31 +455,30 @@ function createSlider(opts)
     // configure slider
 
     slider.setAttribute("type", "range");
-    slider.setAttribute("value", initialValue);
-    slider.setAttribute("min", opts.min);
-    slider.setAttribute("max", opts.max);
-    var step = opts.step || (opts.max - opts.min) / 1000;
+    slider.setAttribute("value", initialSliderValue);
+    slider.setAttribute("min", sliderMin);
+    slider.setAttribute("max", sliderMax);
     slider.setAttribute("step", step);
 
     // set up callbacks
 
     slider.addEventListener("input", function()
     {
-        opts.object[opts.name] = Number(this.value);
+        opts.object[opts.name] = opts.transform(Number(this.value));
     });
 
     if (opts.snapBack)
     {
         slider.addEventListener("change", function()
         {
-            this.value = initialValue;
-            opts.object[opts.name] = Number(initialValue);
+            this.value = initialSliderValue;
+            opts.object[opts.name] = opts.transform(Number(initialSliderValue));
         });
     }
 
     var updater = function()
     {
-        slider.value = opts.object[opts.name];
+        slider.value = opts.inverseTransform(opts.object[opts.name]);
         window.requestAnimationFrame(updater);
     }
 
