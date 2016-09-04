@@ -1653,13 +1653,17 @@ addColor("transparent", [0, 0, 0, 0]);
 
 
 // inject these colors as class css
-var styleSheet = document.styleSheets[0];
-for (var key in Color)
+document.addEventListener("DOMContentLoaded", function()
 {
-    var color = Color[key];
-    var rule = "." + color.name + "{color: " + color.css + ";}"
-    styleSheet.insertRule(rule, 0);
-}
+    var styleElement = createAndAppend("style", document.head);
+    var styleSheet = styleElement.sheet;
+    for (var key in Color)
+    {
+        var color = Color[key];
+        var rule = "." + color.name + "{color: " + color.css + ";}";
+        styleSheet.insertRule(rule, 0);
+    }
+});
 
 Color.niceSwatch = [
     Color.black,
