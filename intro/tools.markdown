@@ -27,18 +27,22 @@ next: /intro/graphs
 </script>
 
 <div class="stepLog twoColumn">
-In the bottom right corner of the simulation you can change tools.
 
-Use the _create_ tool to create more particles.
+In the **bottom right corner** of the simulation you can **change tools**.
+
+Having only one ball is a little dull, so let's add more!
+
+Use the **create** tool to create more particles.
 
 <script>
 	cue(function()
 	{
-		return (introSim.particles.length > 10);
+		return (introSim.particles.length > 5);
 	});
+	endStep();
 </script>
 
-Use the _attract_ tool to lift up all the particles.
+Use the **attract** tool to lift all the balls off the ground.
 
 <script>
 	cue(function()
@@ -49,8 +53,8 @@ Use the _attract_ tool to lift up all the particles.
 		{ 
 			return particle.position[1];
 		});
-		var isHighEnough = (minHeight > (-sim.parameters.boxHeight/4));
-		return (isAttractTool && isHighEnough);
+		var requiredHeight = (-sim.boxBounds.height / 3);
+		return (isAttractTool && (minHeight > requiredHeight));
 	});
 	endStep();
 </script>

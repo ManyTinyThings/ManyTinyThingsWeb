@@ -1,7 +1,7 @@
 ---
 title: Graphs
 previous: /intro/tools
-next: /intro/phenomena
+next: /intro/billiards
 ---
 
 <div id="chapter">

@@ -21,7 +21,7 @@ previous: /
             particle.radius = pageGlobal.radius;
             addParticle(simulation, particle);
 
-    		setToolbarAvailableTools(singleEnergySim.toolbar, ["impulse"]);
+    		setToolbarAvailableTools(simulation.toolbar, ["impulse"]);
         }
     });
 </script>
