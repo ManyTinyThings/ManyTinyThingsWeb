@@ -38,11 +38,7 @@ Give the ball a kick.
 Wait for it to stop.
 
 <script>
-    var timer = 10;
-    cue(function(dt) {
-        timer -= dt;
-        return (timer < 0);
-    });
+    cue(waitCue(10));
     endStep();
 </script>
 

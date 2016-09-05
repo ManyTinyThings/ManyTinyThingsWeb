@@ -944,6 +944,24 @@ function initChapter()
 // NOTE: initChapter is always run on every document!
 document.addEventListener("DOMContentLoaded", initChapter);
 
+// ! Cue functions
+
+function waitCue(timeLeft) {
+    var cueFunction = function(dt)
+    {
+        timeLeft -= dt;
+        return (timeLeft <= 0);
+    }
+    return cueFunction;
+}
+
+function minimumEnergyCue(simulation, minEnergy) {
+    var cueFunction = function()
+    {
+        return (getTotalEnergy(simulation) > minEnergy);
+    }
+    return cueFunction;
+}
 
 // ! Toolbar
 
@@ -2333,30 +2351,25 @@ function square(x)
     return x * x;
 }
 
-function pickParticle(simulation, pickPosition, extraRadius)
+function findClosestParticle(simulation, position)
 {
-    extraRadius = extraRadius || 0;
-
+    var minDistance = Infinity;
+    var closestParticleIndex = -1;
     for (var particleIndex = 0; particleIndex < simulation.particles.length;
         ++particleIndex)
     {
         var particle = simulation.particles[particleIndex];
-        var squaredRadius = square(particle.radius + extraRadius);
-        var between = v2.alloc();
-        v2.subtract(between, pickPosition, particle.position);
-        var inside = v2.square(between) < squaredRadius;
-        v2.free(between);
-        if (inside)
+
+        var distanceToCenter = v2.distance(position, particle.position);
+        var distanceToRim = distanceToCenter - particle.radius;
+       
+        if (distanceToRim < minDistance)
         {
-            return particleIndex;
+            minDistance = distanceToRim;
+            closestParticleIndex = particleIndex;
         }
     }
-    return -1;
-}
-
-function setResetButtonVisibility(simulation, isVisible)
-{
-    set
+    return closestParticleIndex;
 }
 
 function createSimulationHere(opts)
@@ -2813,18 +2826,31 @@ var updateSimulation = function()
 
         if (simulation.mouse.leftButton.down)
         {
-            var leftButtonJustDown = (simulation.mouse.leftButton.transitionCount > 0);
-            var hitParticleIndex = pickParticle(simulation, simulation.mouse.worldPosition);
-            var tool = simulation.toolbar.selectedToolName;
+            var closestParticleIndex = findClosestParticle(simulation, simulation.mouse.worldPosition);
+            var closestParticleExists = (closestParticleIndex >= 0);
 
+            if (closestParticleExists)
+            {
+                var closestParticle = simulation.particles[closestParticleIndex];
+                var maxDistance = 5 / simulation.pixelWidth * simulation.boxBounds.width;
+                var distanceToCenter = v2.distance(closestParticle.position, simulation.mouse.worldPosition);
+                var distanceToRim = distanceToCenter - closestParticle.radius;
+                closestParticleExists = (distanceToRim < maxDistance);
+            }
+
+            // TODO: separate MouseMode and tool concepts
+            // TODO: make tool an enum too
+
+            var leftButtonJustDown = (simulation.mouse.leftButton.transitionCount > 0);
             if (leftButtonJustDown)
             {
-                simulation.mouse.mode = MouseMode[tool];
-                if (simulation.mouse.mode == MouseMode.impulse)
+                simulation.mouse.mode = MouseMode[simulation.toolbar.selectedToolName];
+
+                if (simulation.mouse.mode === MouseMode.impulse)
                 {
-                    if (hitParticleIndex >= 0)
+                    if (closestParticleExists)
                     {
-                        simulation.mouse.activeParticle = simulation.particles[hitParticleIndex];
+                        simulation.mouse.activeParticle = closestParticle;
                     }
                     else
                     {
@@ -2832,51 +2858,39 @@ var updateSimulation = function()
                     }
                 }
 
-                if (simulation.mouse.mode == MouseMode.move)
+                if (simulation.mouse.mode === MouseMode.move)
                 {
-                    if (hitParticleIndex >= 0)
+                    if (closestParticleExists)
                     {
-                        simulation.mouse.mode = MouseMode.move;
-                        simulation.mouse.activeParticle = simulation.particles[hitParticleIndex];
+                        simulation.mouse.activeParticle = closestParticle;
 
                         simulation.mouse.selectedParticleIndices.length = 0;
-                        simulation.mouse.selectedParticleIndices.push(hitParticleIndex);
+                        simulation.mouse.selectedParticleIndices.push(closestParticleIndex);    
                     }
                     else
                     {
                         simulation.mouse.mode = MouseMode.none;
                     }
                 }
-
-                if (simulation.mouse.mode == MouseMode.select)
+                
+                if (simulation.mouse.mode === MouseMode.select)
                 {
-                    simulation.mouse.mode = MouseMode.select;
                     simulation.mouse.selectAnchorPoint = v2.clone(simulation.mouse.worldPosition);
-
                     simulation.mouse.selectedParticleIndices.length = 0;
                 }
             }
 
-            if (simulation.mouse.mode == MouseMode.create)
+            if (simulation.mouse.mode === MouseMode.create)
             {
                 var particle = simulation.particleGenerator();
                 v2.copy(particle.position, simulation.mouse.worldPosition);
-
-                // TODO: this check should be made in addParticle
-                var extraRadius = 2;
-                var isCloseToParticle = (pickParticle(simulation, simulation.mouse.worldPosition, extraRadius) >= 0);
-
-                if (!isCloseToParticle)
-                {
-
-                    addParticle(simulation, particle);
-                }
+                addParticle(simulation, particle);
             }
-            else if (simulation.mouse.mode == MouseMode.delete)
+            else if (simulation.mouse.mode === MouseMode.delete)
             {
-                if (hitParticleIndex >= 0)
+                if (closestParticleExists)
                 {
-                    removeParticle(simulation, hitParticleIndex);
+                    removeParticle(simulation, closestParticleIndex);
                 }
             }
         }

@@ -1,7 +1,7 @@
 ---
 title: Friction
 previous: /billiards/friction/stopping
-next: /billiards/friction/no_friction
+next: /billiards/friction/frictionful_billiards
 ---
 
 <script>
