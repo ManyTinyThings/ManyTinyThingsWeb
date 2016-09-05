@@ -1,7 +1,7 @@
 ---
 chapterTitle: Uncountable Billiards
 title: One Particle
-previous: /billiards/impulse
+previous: /billiards/differences
 next: /billiards/many/few_particles
 ---
 

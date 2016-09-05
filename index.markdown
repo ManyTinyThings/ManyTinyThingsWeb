@@ -40,6 +40,7 @@ Every big thing in the world is made up of **many tiny things**.
 
 			setToolbarAvailableTools(simulation.toolbar, ["attract"]);
 			setElementIsVisible(simulation.resetButton, false);
+			setElementIsVisible(simulation.toolbar.div, false);
 		}
 	});
 </script>
@@ -80,6 +81,7 @@ Every big thing in the world is made up of **many tiny things**.
 
 			setToolbarAvailableTools(simulation.toolbar, ["repel"]);
 			setElementIsVisible(simulation.resetButton, false);
+			setElementIsVisible(simulation.toolbar.div, false);
 		}
 	});
 
@@ -134,6 +136,7 @@ Every big thing in the world is made up of **many tiny things**.
 
 			setToolbarAvailableTools(simulation.toolbar, ["move"]);
 			setElementIsVisible(simulation.resetButton, false);
+			setElementIsVisible(simulation.toolbar.div, false);
 		}
 	});
 </script>

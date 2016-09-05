@@ -1076,7 +1076,7 @@ function setToolbarAvailableTools(toolbar, availableToolNames)
     if (availableToolNames.length <= 1)
     {
         toolbar.selectElement.disabled = true;
-        setElementIsVisible(toolbar.div, false);
+        //setElementIsVisible(toolbar.div, false);
     }
 
 }
