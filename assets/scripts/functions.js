@@ -2030,6 +2030,8 @@ function initBilliards(simulation, particleCount)
         billiardsPosition(particle.position, i, 2.03);
         addParticle(simulation, particle);
     }
+
+    simulation.particles[0].color = Color.red;
 }
 
 function billiardsPosition(out, particleIndex, latticeSpacing)
@@ -2051,7 +2053,8 @@ function isBilliardsTriangleSplit(simulation)
     var cueFunction = function(){
         var totalEnergy = getTotalEnergy(simulation);
         var firstBall = simulation.particles[0];
-        var triangleEnergy = totalEnergy - firstBall.kineticEnergy - firstBall.potentialEnergy;
+        var firstEnergy = firstBall.kineticEnergy + firstBall.potentialEnergy;
+        var triangleEnergy = totalEnergy - firstEnergy;
         return (triangleEnergy > 1);    
     }
     

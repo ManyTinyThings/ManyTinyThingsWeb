@@ -9,8 +9,9 @@ next: /billiards/differences
         initialize: function(simulation) {
             var p = simulation.parameters;
             p.friction = 0;
+            p.boxWidth = 30;
 
-            initBilliards(simulation, 7);
+            initBilliards(simulation, 16);
 
     		setToolbarAvailableTools(simulation.toolbar, ["impulse"]);
         }
@@ -32,8 +33,6 @@ You tell me.
 </script>
 
 _Madness!_
-
-Some particles move faster than others, but again, _they never stop_.
 
 This is how the tiny, microscopic particles work. They keep bouncing all over and never stop.
 

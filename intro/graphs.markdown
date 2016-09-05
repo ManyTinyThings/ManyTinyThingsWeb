@@ -27,9 +27,9 @@ next: /billiards/impulse
 </script>
 
 <div class="stepLog twoColumn">
-We will explore a number of rather abstract concepts, and to help understand them there will be visualisations accompanying the models.
+To help us understand some of the more tricky concepts, we will use _visualisations_, mostly _graphs_.
 
-Here's an example:
+Here's an example of a graph:
 
 <script>
 	createTimeSeriesHere({
@@ -43,7 +43,7 @@ Here's an example:
 	})
 </script>
 
-Try figuring out what this graph shows by throwing around the ball a bit.
+Try figuring out what this graph is showing by throwing around the ball a bit.
 
 Does it show
 

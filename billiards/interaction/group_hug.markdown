@@ -30,11 +30,21 @@ next: /billiards/interaction/sticky_billiards
 
 What if there are more than two particles?
 
-Add more particles using the **create** tool.
+Add more particles using the **create** tool. 
+
+(If you hold down the mouse button, you "paint" particles when moving the mouse.)
 
 <script>
+    var requiredCount = 20;
+    insertHere(createOutput({
+        update: function() {
+            var result = String(interactionSim.particles.length);
+            result += " / " + String(requiredCount) + " particles";
+            return result;
+        },
+    }));
     cue(function () {
-        return (interactionSim.particles.length > 20);  
+        return (interactionSim.particles.length >= requiredCount);  
     });
     endStep();
 </script>

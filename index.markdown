@@ -140,11 +140,13 @@ Every big thing in the world is made up of **many tiny things**.
 
 But we can't see the tiny things without a microscope. They are too small, _microscopic_. We can only see the _macroscopic_ objects the tiny things make up. (And in the case of air, we can't see it at all!)
 
-This website is a _series of explanations_ on how the tiny, microscopic things are connected to the big, macroscopic things that we _can_ see, hear and feel. We will ask the question: What are the _macroscopic_ consequences of being made up of many _microscopic_ things?
+This website is a _series of explanations_ on how the tiny, microscopic things are connected to the big, macroscopic things that we _can_ see, hear and feel. We will ask the question:
 
-The explanations will include simulations of many tiny things, as you can see above. Not only are these simulations running in real time, they are also _interactive_. Try clicking and dragging in the simulations above and see what happens.
+What are the _macroscopic_ consequences of being made up of many _microscopic_ things?
+
+The explanations will include simulations of many tiny things, as you can see above. Not only are these simulations running in real time, they are also _interactive_. Try clicking, holding and dragging in the simulations above and see what happens.
 
 If you are ready, [let's start]({{ site.baseurl }}{{ page.next }})!
 
 
-{% include what_next.html %}
+<!-- {% include what_next.html %} -->

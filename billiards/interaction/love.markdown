@@ -34,6 +34,7 @@ Move these particles closer to each other.
 
 <script>
     cue(function () {
+        // TODO: timer here
         var distance = v2.distance(interactionSim.particles[0].position, interactionSim.particles[1].position);
         return (distance < 3);   
     });

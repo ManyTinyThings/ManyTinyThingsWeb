@@ -10,16 +10,18 @@ next: /billiards/differences
     var interactionSim = createSimulation({
         initialize: function(simulation) {
             var p = simulation.parameters;
-            p.friction = 0.1;
-            p.boxWidth = 25
+            p.friction = 0.2;
+            p.boxWidth = 30;
 
-            initBilliards(simulation, 11);
+            initBilliards(simulation, 16);
 
             p.isOnlyHardSpheres = false;
 
             var ljInteraction = new LennardJonesInteraction();
             ljInteraction.strength = 3;
             setInteraction(simulation, 0, 0, ljInteraction);
+
+            // TODO: maybe have the red particle not stick to the others
 
             setToolbarAvailableTools(simulation.toolbar, ["impulse"]);
         }

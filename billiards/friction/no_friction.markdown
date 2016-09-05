@@ -1,6 +1,6 @@
 ---
 title: No Friction
-previous: /billiards/friction/friction
+previous: /billiards/friction/frictionful_billiards
 next: /billiards/friction/frictionless_billiards
 ---
 
@@ -22,7 +22,7 @@ next: /billiards/friction/frictionless_billiards
 
 <div class="page">
 <div class="stepLog twoColumn">
-So, we have now tried playing billiards **on ice** and **in mud**. _Weird_.
+So, we have now tried playing billiards **on ice** and **in mud**. Kinda weird.
 
 But the tiny billiard balls that make up everything are _even weirder_ than that.
 

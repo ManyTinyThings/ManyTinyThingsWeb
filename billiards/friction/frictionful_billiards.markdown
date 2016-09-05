@@ -1,7 +1,7 @@
 ---
-title: Break Shot
-previous: /billiards/impulse
-next: /billiards/differences
+title: Frictionful Billiards
+previous: /billiards/friction/friction
+next: /billiards/friction/no_friction
 ---
 
 <script>
@@ -23,18 +23,20 @@ next: /billiards/differences
 
 <div class="page">
 <div class="stepLog twoColumn">
-I added some more balls!
-
-You know what to do.
+Let's invent a new game: _Billiards on ice or mud!_
 
 <script>
-	cue(isBilliardsTriangleSplit(sim));
-	endStep();
+createSliderHere({
+    object: sim.parameters,
+    name: "friction",
+    min: 0.04, max: 5,
+    minLabel: "Ice", maxLabel: "Mud",
+    transform: x => Math.exp(x),
+    inverseTransform: x => Math.log(x),
+});
 </script>
 
-Nice break shot!
-
-_Wait, why are we playing billiards?_
+Which one is the most fun?
 
 </div>
 

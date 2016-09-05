@@ -59,7 +59,7 @@ Use the **attract** tool to lift all the balls off the ground.
 	endStep();
 </script>
 
-The available tools will change from page to page, to suit the purpose of that page.
+The tools will change from page to page, to suit the purpose of that page.
 </div>
 
 <div class="twoColumn">

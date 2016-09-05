@@ -35,7 +35,7 @@ Here is a slider that changes the friction of the billiards table to be more _mu
 createSliderHere({
     object: sim.parameters,
     name: "friction",
-    min: 0.04, max: 2,
+    min: 0.04, max: 5,
     minLabel: "Ice", maxLabel: "Mud",
     transform: x => Math.exp(x),
     inverseTransform: x => Math.log(x),
