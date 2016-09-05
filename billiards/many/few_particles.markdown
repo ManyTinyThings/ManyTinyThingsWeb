@@ -19,10 +19,6 @@ next: /billiards/many/many_particles
 </script>
 
 
-<div id="chapter">
-
-<div class="page">
-<div class="stepLog twoColumn">
 Here's a few particles, enough to play billiards.
 
 Break shot!
@@ -33,13 +29,3 @@ Break shot!
 </script>
 
 Note how they spread out pretty evenly across the box.
-
-</div>
-
-<div class="twoColumn">
-<script>
-	insertHere(sim.div);
-</script>
-</div>
-</div>
-</div>

@@ -19,22 +19,8 @@ next: /billiards/many/tons_of_particles
 </script>
 
 
-<div id="chapter">
-
-<div class="page">
-<div class="stepLog twoColumn">
 _Wow, that's a lot of particles!_
 
 Yeah, makes for a _preeeetty_ long billiards game...
 
 But it's still not enough.
-
-</div>
-
-<div class="twoColumn">
-<script>
-	insertHere(sim.div);
-</script>
-</div>
-</div>
-</div>

@@ -18,10 +18,6 @@ next: /billiards/friction/no_friction
 </script>
 
 
-<div id="chapter">
-
-<div class="page">
-<div class="stepLog twoColumn">
 The force that that causes the ball to slow down is called **friction**.
 
 Some things have more friction than others: 
@@ -43,13 +39,3 @@ createSliderHere({
 </script>
 
 Change the friction with the slider and drag around the ball to get a feel for how friction works.
-
-</div>
-
-<div class="twoColumn">
-<script>
-	insertHere(sim.div);
-</script>
-</div>
-</div>
-</div>

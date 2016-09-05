@@ -11,7 +11,7 @@ defaults:
             path: ""
             type: "pages"
         values:
-            layout: "default"
+            layout: "two_column_explanation"
 
 kramdown:
     parse_block_html: true

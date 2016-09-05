@@ -19,10 +19,6 @@ next: /billiards/differences
 </script>
 
 
-<div id="chapter">
-
-<div class="page">
-<div class="stepLog twoColumn">
 I added some more balls!
 
 You know what to do.
@@ -35,13 +31,3 @@ You know what to do.
 Nice break shot!
 
 _Wait, why are we playing billiards?_
-
-</div>
-
-<div class="twoColumn">
-<script>
-	insertHere(sim.div);
-</script>
-</div>
-</div>
-</div>

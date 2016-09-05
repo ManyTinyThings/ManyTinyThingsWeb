@@ -1,6 +1,7 @@
 ---
 title: Phenomena
 previous: /
+layout: default
 ---
 
 Many familiar physical phenomena can be explained by looking through the _many-tiny-things_ lens. Here are the ones we'll be focusing on here, with some related questions to give you a feel for what each concept is about.

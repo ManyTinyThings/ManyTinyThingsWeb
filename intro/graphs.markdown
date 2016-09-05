@@ -4,11 +4,8 @@ previous: /intro/tools
 next: /billiards/impulse
 ---
 
-<div id="chapter">
-<div class="page flex">
-
 <script>
-    var introSim = createSimulation({
+    var sim = createSimulation({
         initialize: function(simulation) {
 			var p = simulation.parameters;
 			p.friction = 0.1;
@@ -26,7 +23,6 @@ next: /billiards/impulse
     });
 </script>
 
-<div class="stepLog twoColumn">
 To help us understand some of the more tricky concepts, we will use _visualisations_, mostly _graphs_.
 
 Here's an example of a graph:
@@ -34,11 +30,11 @@ Here's an example of a graph:
 <script>
 	createTimeSeriesHere({
 		timeRange: 50,
-		yMax: introSim.boxBounds.height,
+		yMax: sim.boxBounds.height,
 		update: function(graph) {
-            var particle = introSim.particles[0];
-			var height = particle.position[1] + introSim.boxBounds.height / 2 - particle.radius;
-			return {time: introSim.time, data: [height]};
+            var particle = sim.particles[0];
+			var height = particle.position[1] + sim.boxBounds.height / 2 - particle.radius;
+			return {time: sim.time, data: [height]};
 		},
 	})
 </script>
@@ -52,12 +48,3 @@ Does it show
 * the height of the ball over time?
 
 Figure it out yourself, I won't give you the right answer!
-</div>
-
-<div class="twoColumn">
-<script>
-	insertHere(introSim.div);
-</script>
-</div>
-</div>
-</div>

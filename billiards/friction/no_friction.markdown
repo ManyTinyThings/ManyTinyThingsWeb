@@ -18,10 +18,6 @@ next: /billiards/friction/frictionless_billiards
 </script>
 
 
-<div id="chapter">
-
-<div class="page">
-<div class="stepLog twoColumn">
 So, we have now tried playing billiards **on ice** and **in mud**. Kinda weird.
 
 But the tiny billiard balls that make up everything are _even weirder_ than that.
@@ -55,13 +51,3 @@ It never stops!
 Without friction slowing things down, _they never stop_.
 
 _They keep going **forever**._
-
-</div>
-
-<div class="twoColumn">
-<script>
-	insertHere(sim.div);
-</script>
-</div>
-</div>
-</div>

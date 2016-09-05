@@ -18,11 +18,6 @@ previous: /billiards/break_shot
 </script>
 
 
-<div id="chapter">
-
-<div class="page">
-<div class="stepLog twoColumn">
-
 Remember the **many tiny things** I was talking about earlier?
 
 
@@ -36,13 +31,3 @@ There are three big differences, though:
 3. [They can **like** or **dislike** each other](/billiards/interaction/love).
 
 Click the items in the list above to explore them.
-
-</div>
-
-<div class="twoColumn">
-<script>
-	insertHere(sim.div);
-</script>
-</div>
-</div>
-</div>

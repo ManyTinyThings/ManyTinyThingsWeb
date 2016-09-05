@@ -18,10 +18,6 @@ next: /billiards/friction/friction
 </script>
 
 
-<div id="chapter">
-
-<div class="page">
-<div class="stepLog twoColumn">
 Normally, if you stop pushing or pulling something, it will eventually stop moving.
 
 Drag around the ball a bit and then look at what happens when you let go.
@@ -41,13 +37,3 @@ Drag around the ball a bit and then look at what happens when you let go.
 </script>
 
 When you let go, the ball starts slowing down and eventually stops.
-
-</div>
-
-<div class="twoColumn">
-<script>
-	insertHere(sim.div);
-</script>
-</div>
-</div>
-</div>

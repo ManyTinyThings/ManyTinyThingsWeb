@@ -19,10 +19,6 @@ next: /billiards/many/spreading_out
 </script>
 
 
-<div id="chapter">
-
-<div class="page">
-<div class="stepLog twoColumn">
 _Now we're talking!_
 
 Well, no.
@@ -33,13 +29,3 @@ Also, the particles become so small on the screen that you can barely see them, 
 And we're still so, so far away from the amount of particles in just a single breath.
 
 You would need approximately 10,000,000,000,000,000,000 (or 10<sup>19</sup>) boxes with 1000 particles in each, just to get the amount of particles in a single breath.
-
-</div>
-
-<div class="twoColumn">
-<script>
-	insertHere(sim.div);
-</script>
-</div>
-</div>
-</div>

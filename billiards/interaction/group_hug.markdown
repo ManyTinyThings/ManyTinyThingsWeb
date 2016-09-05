@@ -6,7 +6,7 @@ next: /billiards/interaction/sticky_billiards
 
 <script src="shared.js"></script>
 <script>
-    var interactionSim = createSimulation({
+    var sim = createSimulation({
         initialize: function(simulation) {
             var p = simulation.parameters;
             p.friction = 0.1;
@@ -22,11 +22,6 @@ next: /billiards/interaction/sticky_billiards
     });
 </script>
 
-<div id="chapter">
-
-<div class="page">
-
-<div class="stepLog twoColumn">
 
 What if there are more than two particles?
 
@@ -38,13 +33,13 @@ Add more particles using the **create** tool.
     var requiredCount = 20;
     insertHere(createOutput({
         update: function() {
-            var result = String(interactionSim.particles.length);
+            var result = String(sim.particles.length);
             result += " / " + String(requiredCount) + " particles";
             return result;
         },
     }));
     cue(function () {
-        return (interactionSim.particles.length >= requiredCount);  
+        return (sim.particles.length >= requiredCount);  
     });
     endStep();
 </script>
@@ -57,7 +52,7 @@ Try moving the object around with the **move** tool.
 
 <script>
     cue(function () {
-        return (ensembleSpeed(interactionSim.particles) > 1); 
+        return (ensembleSpeed(sim.particles) > 1); 
     });
     endStep();
 </script>
@@ -65,14 +60,3 @@ Try moving the object around with the **move** tool.
 The tiny, _microscopic_ particles move together **as one**. 
 
 **One** big, _macroscopic_ thing.
-
-</div>
-
-<div class="twoColumn">
-<script>
-    insertHere(interactionSim.div);
-</script>
-</div>
-</div>
-
-</div>

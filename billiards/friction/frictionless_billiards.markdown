@@ -19,10 +19,6 @@ next: /billiards/differences
 </script>
 
 
-<div id="chapter">
-
-<div class="page">
-<div class="stepLog twoColumn">
 How would it be to play billiards without friction?
 
 You tell me.
@@ -35,13 +31,3 @@ You tell me.
 _Madness!_
 
 This is how the tiny, microscopic particles work. They keep bouncing all over and never stop.
-
-</div>
-
-<div class="twoColumn">
-<script>
-	insertHere(sim.div);
-</script>
-</div>
-</div>
-</div>

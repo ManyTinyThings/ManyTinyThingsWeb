@@ -1,6 +1,7 @@
 ---
 title: ""
 next: /intro/interaction
+layout: default
 ---
 
 Every big thing in the world is made up of **many tiny things**.

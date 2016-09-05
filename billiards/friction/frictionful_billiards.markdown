@@ -19,10 +19,6 @@ next: /billiards/friction/no_friction
 </script>
 
 
-<div id="chapter">
-
-<div class="page">
-<div class="stepLog twoColumn">
 Let's invent a new game: _Billiards on ice or mud!_
 
 <script>
@@ -37,13 +33,3 @@ createSliderHere({
 </script>
 
 Which one is the most fun?
-
-</div>
-
-<div class="twoColumn">
-<script>
-	insertHere(sim.div);
-</script>
-</div>
-</div>
-</div>
