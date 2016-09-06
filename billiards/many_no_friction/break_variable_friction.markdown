@@ -1,5 +1,5 @@
 ---
-title: Breaking the triangle
+title: The Return of Ice/Mud Billiards
 previous: break_friction
 next: break_no_friction
 ---

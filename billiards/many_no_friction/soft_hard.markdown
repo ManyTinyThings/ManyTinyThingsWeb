@@ -11,8 +11,6 @@ next: break_no_friction
             p.friction = 0;
             setBoxWidth(simulation, 90);
 
-            updateBounds(simulation);
-
             var b = simulation.boxBounds;
 
             var topRect = new Rectangle();

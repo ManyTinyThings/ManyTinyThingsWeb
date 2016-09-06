@@ -528,11 +528,12 @@ function createCheckbox(opts)
 
 function createButton(opts)
 {   
-    var button = createElement("input");
+    var div = createElement("div");
+    var button = createAndAppend("input", div);
     button.setAttribute("type", "button");
     button.setAttribute("value", opts.label);
     button.addEventListener("click", opts.action);
-    return button;
+    return div;
 }
 
 function createOutput(update)
@@ -2447,6 +2448,7 @@ function createSimulation(opts)
     simulation.resetButton = createButton({
         label: "Reset",
         action: function() {
+            simulation.resetButton.classList.remove("pulsing");
             resetSimulation(simulation);
         },
     });
@@ -2495,6 +2497,11 @@ function createSimulation(opts)
     resetSimulation(simulation);
 
     return simulation;
+}
+
+function setResetReminder(simulation, isReminding)
+{
+    setElementClass(simulation.resetButton, "pulsing", isReminding);
 }
 
 function resetSimulation(simulation)

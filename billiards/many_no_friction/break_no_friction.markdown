@@ -1,5 +1,5 @@
 ---
-title: Many particles, no friction
+title: Careful Breakage
 previous: break_variable_friction
 next: soft_hard
 ---
@@ -18,17 +18,37 @@ next: soft_hard
     });
 </script>
 
-With no friction, it doesn't matter how carefully you shoot, the triangle will always break, eventually.
+With **no friction**, it should be even easier to break the triangle than on ice.
 
-Break the triangle.
+Shoot the ball very carefully.
 
 <script>
-    cue(isBilliardsTriangleSplit(sim));
+    var isAiming = false;
+    cue(function() {
+        if (sim.mouse.mode === MouseMode.impulse)
+        {
+            isAiming = true;
+        }
+        var didJustShoot = isAiming && (sim.mouse.mode === MouseMode.none);
+        if (didJustShoot)
+        {
+            isAiming = false;
+            var isEnergyLowEnough = (getTotalEnergy(sim) < 50);
+            if (isEnergyLowEnough)
+            {
+                return true;
+            }
+            else
+            {
+                setResetReminder(sim, true);
+                return false;
+            }
+        }
+        // TODO: use least squares here
+    });
     endStep();
 </script>
 
-Reset and try softer or harder shots.
+The triangle will break, and the particles will spread out evenly.
 
-Notice how it takes longer for the particles to spread out with a slow shot, and faster with a hard shot.
-
-They also move slower/faster collectively.
+You just need to have _patience_.
