@@ -1,6 +1,7 @@
 ---
 title: Differences
 previous: /billiards/break_shot
+next: /billiards/combining
 ---
 
 <script>
