@@ -1,5 +1,4 @@
 ---
-title: ""
 next: /intro/interaction
 layout: default
 ---
@@ -19,14 +18,13 @@ Every big thing in the world is made up of **many tiny things**.
 		initialize: function(simulation)
 		{
 			var p = simulation.parameters;
-			p.boxWidth = 200;
 			p.isOnlyHardSpheres = true;
 			p.gravityAcceleration = 1;
 			p.attractStrength = 1;
 			p.thermostatSpeed = 0.1;
 			p.thermostatTemperature = 100;
 
-			updateBounds(simulation);
+			setBoxWidth(simulation, 200)
 
 			var particleCount = 200;
 			var initialSpeed = 10;
@@ -56,14 +54,13 @@ Every big thing in the world is made up of **many tiny things**.
 		initialize: function(simulation)
 		{
 			var p = simulation.parameters;
-			p.boxWidth = 60;
 			p.gravityAcceleration = 1;
 			p.thermostatSpeed = 0.1;
 			p.thermostatTemperature = 1;
 			p.repelStrength = 0.2;
 			//p.isOnlyHardSpheres = true;
+			setBoxWidth(simulation, 60);
 
-			updateBounds(simulation);
 			setWallsAlongBorder(simulation);
 
 			var particleCount = 200;
@@ -99,12 +96,11 @@ Every big thing in the world is made up of **many tiny things**.
 		initialize: function(simulation)
 		{
 			var p = simulation.parameters;
-			p.boxWidth = 40;
 			p.gravityAcceleration = 1;
 			p.dragStrength = 10;
 			p.friction = 0.1;
 
-			updateBounds(simulation);
+			setBoxWidth(simulation, 40);
 
 			var particleCount = 2 * 37;
 			var latticeSpacing = 2;

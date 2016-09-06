@@ -61,7 +61,7 @@ There are two things at play here: **air drag** and **inelastic collisions**. Le
             // p.onlyHardSpheres = true;
             p.lennardJonesStrength = 0.1;
             p.dt = 0.01;
-            p.boxWidth = 50;
+            setBoxWidth(simulation, 50);
 
 
             var bigRadius = 5;

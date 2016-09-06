@@ -26,7 +26,7 @@ The water is turning from liquid to gas form, which is called _evaporating_.
         	p.thermostatSpeed = 0.02;
         	p.thermostatTemperature = freezingTemperature;
         	p.maxParticleCount = 100;
-			p.boxWidth = 50;
+			setBoxWidth(simulation, 50);
 
         	simulation.particleGenerator = function () {
         		var particle = new Particle();

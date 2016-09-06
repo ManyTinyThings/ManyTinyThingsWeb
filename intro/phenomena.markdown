@@ -42,7 +42,7 @@ Many familiar physical phenomena can be explained by looking through the _many-t
         initialize: function(simulation) {
 
             var p = simulation.parameters;
-            p.boxWidth = 20;
+            setBoxWidth(simulation, 20);
             p.boxHeight = 20
             p.isPeriodic = true;
 
@@ -100,7 +100,7 @@ Many familiar physical phenomena can be explained by looking through the _many-t
         initialize: function(simulation) {
 
             var p = simulation.parameters;
-            p.boxWidth = 100;
+            setBoxWidth(simulation, 100);
             p.onlyHardSpheres = true;
 
             updateBounds(simulation);

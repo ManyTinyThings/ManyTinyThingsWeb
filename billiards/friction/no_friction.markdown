@@ -10,7 +10,7 @@ next: /billiards/friction/frictionless_billiards
             var p = simulation.parameters;
             p.friction = 0;
 
-            initBilliards(simulation, 1);
+            initBilliards(simulation, simulation.boxBounds);
 
     		setToolbarAvailableTools(simulation.toolbar, ["impulse"]);
         }

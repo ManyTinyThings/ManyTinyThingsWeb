@@ -11,9 +11,9 @@ next: /billiards/differences
         initialize: function(simulation) {
             var p = simulation.parameters;
             p.friction = 0.2;
-            p.boxWidth = 30;
+            setBoxWidth(simulation, 30);
 
-            initBilliards(simulation, 16);
+            initBilliards(simulation, simulation.boxBounds);
 
             p.isOnlyHardSpheres = false;
 

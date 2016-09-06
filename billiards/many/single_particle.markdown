@@ -11,7 +11,7 @@ next: /billiards/many/few_particles
             var p = simulation.parameters;
             p.friction = 0.2;
 
-            initBilliards(simulation, 1);
+            initBilliards(simulation, simulation.boxBounds, 0);
 
     		setToolbarAvailableTools(simulation.toolbar, ["impulse"]);
         }

@@ -2039,18 +2039,48 @@ function addParticlesRandomly(simulation, newParticles)
 
 // ! Billiards
 
-function initBilliards(simulation, particleCount)
+function triangleNumber(k)
+{
+    return k * (k + 1) / 2;
+}
+
+function initBilliards(simulation, rectangle, layerCount)
 {
     simulation.parameters.isOnlyHardSpheres = true;
-    updateBounds(simulation);
-    setWallsAlongBorder(simulation);
-    for (var i = 0; i < particleCount; i++) {
+
+    var r = rectangle;
+
+    var firstParticle = new Particle();
+    firstParticle.color = Color.red;
+    v2.set(firstParticle.position, r.left + r.width / 4, r.center[1]);
+    addParticle(simulation, firstParticle);
+
+    var margin = 0.1;
+    var available = 1 - 2 * margin;
+    var triangleWidth = available * rectangle.width / 2;
+    var triangleHeight = available * rectangle.height;
+
+    var particleRadius = 1;
+    var latticeSpacing = 2.03 * particleRadius;
+
+    if (layerCount === undefined)
+    {
+        var heightInParticles = triangleHeight / latticeSpacing;
+        // NOTE: next line isn't exact
+        var widthInParticleLayers = triangleWidth / (Math.sqrt(3) / 2 * latticeSpacing);
+        layerCount = Math.floor(Math.min(heightInParticles, widthInParticleLayers));
+    }
+    
+
+    var triangleParticleCount = triangleNumber(layerCount);
+
+    for (var particleIndex = 0; particleIndex < triangleParticleCount; particleIndex++) {
         var particle = new Particle();
-        billiardsPosition(particle.position, i, 2.03);
+        triangularLatticePosition(particle.position, particleIndex, latticeSpacing);
+        particle.position[0] += margin * rectangle.width / 2;
+        particle.position[1] += rectangle.center[1];
         addParticle(simulation, particle);
     }
-
-    simulation.particles[0].color = Color.red;
 }
 
 function billiardsPosition(out, particleIndex, latticeSpacing)
@@ -2137,21 +2167,21 @@ function setWallsAlongBorder(simulation)
     }
 }
 
-// TODO: maybe make this a setter instead, but seems nontrivial
+function setBoxWidth(simulation, boxWidth)
+{
+    var boxHeight = boxWidth / simulation.canvas.width * simulation.canvas.height;
+    updateBounds(simulation, boxWidth, boxHeight);
+}
 
-function updateBounds(simulation)
+function setBoxHeight(simulation, boxHeight)
+{
+    var boxWidth = boxHeight / simulation.canvas.height * simulation.canvas.width;
+    updateBounds(simulation, boxWidth, boxHeight);
+}
+
+function updateBounds(simulation, boxWidth, boxHeight)
 {
     // TODO: scale regions with the updated bounds?
-
-    var aspectRatio = simulation.canvas.width / simulation.canvas.height;
-    var boxWidth = simulation.parameters.boxWidth;
-    var boxHeight = boxWidth / aspectRatio;
-
-    if (simulation.parameters.boxHeight !== null)
-    {
-        boxHeight = simulation.parameters.boxHeight;
-        boxWidth = simulation.parameters.boxHeight * aspectRatio;
-    }
 
     var origin = v2(0, 0);
 
@@ -2468,8 +2498,6 @@ function resetSimulation(simulation)
     p.shouldResetOnExplosion = true;
 
     // box
-    p.boxWidth = 20;
-    p.boxHeight = null;
     p.isPeriodic = false;
 
     // collisions
@@ -2533,7 +2561,7 @@ function resetSimulation(simulation)
     simulation.regions = [];
 
     getInteraction(simulation, 0, 0); // NOTE: this get sets up default interaction
-    updateBounds(simulation);
+    setBoxWidth(simulation, 25);
 
     // ! User initialization
 
@@ -2545,8 +2573,6 @@ function resetSimulation(simulation)
         simulation.parameters.isSlowCollisionEnabled = true;
         simulation.parameters.isSlowParticleParticleCollisionEnabled = true;
     }
-
-    updateBounds(simulation);
 
     if (simulation.walls === null)
     {
@@ -3389,7 +3415,7 @@ var updateSimulation = function()
                         v2.subtract(mouseToParticle, particle.position, simulation.mouse.worldPosition);
 
                         // NOTE: constant force
-                        var repelFactor = - params.boxWidth / 10 / v2.magnitude(mouseToParticle);
+                        var repelFactor = - simulation.boxBounds.width / 10 / v2.magnitude(mouseToParticle);
 
                         v2.scaleAndAdd(particle.acceleration, particle.acceleration,
                             mouseToParticle, repelFactor * params.attractStrength / particle.mass);
@@ -3406,7 +3432,7 @@ var updateSimulation = function()
                         v2.subtract(mouseToParticle, particle.position, simulation.mouse.worldPosition);
 
                         // NOTE: 1/r force
-                        var repelFactor = params.boxWidth / v2.square(mouseToParticle);
+                        var repelFactor = simulation.boxBounds.width / v2.square(mouseToParticle);
 
                         v2.scaleAndAdd(particle.acceleration, particle.acceleration,
                             mouseToParticle, repelFactor * params.repelStrength / particle.mass);

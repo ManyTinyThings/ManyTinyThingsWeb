@@ -1,15 +1,15 @@
 ---
-title: Frictionless Billiards
-previous: /billiards/friction/no_friction
-next: /billiards/differences
+title: Breaking with friction
+previous: /billiards/combining
+next: break_variable_friction
 ---
 
 <script>
     var sim = createSimulation({
         initialize: function(simulation) {
             var p = simulation.parameters;
-            p.friction = 0;
-            setBoxWidth(simulation, 30);
+            p.friction = 0.2;
+            setBoxWidth(simulation, 90);
 
             initBilliards(simulation, simulation.boxBounds);
 
@@ -18,16 +18,13 @@ next: /billiards/differences
     });
 </script>
 
+With friction, we need a lot of force to break a triangle this big, maybe even multiple shots.
 
-How would it be to play billiards without friction?
-
-You tell me.
+Break the triangle.
 
 <script>
     cue(isBilliardsTriangleSplit(sim));
     endStep();
 </script>
 
-_Madness!_
-
-This is how the tiny, microscopic particles work. They keep bouncing all over and never stop.
+And we need even more shots to spread out the particles evenly.

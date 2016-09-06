@@ -1,15 +1,15 @@
 ---
-title: Frictionful Billiards
-previous: /billiards/friction/friction
-next: /billiards/friction/no_friction
+title: Breaking the triangle
+previous: break_friction
+next: break_no_friction
 ---
 
 <script>
     var sim = createSimulation({
         initialize: function(simulation) {
             var p = simulation.parameters;
-            p.friction = 0.2;
-            setBoxWidth(simulation, 30);
+            p.friction = 0;
+            setBoxWidth(simulation, 90);
 
             initBilliards(simulation, simulation.boxBounds);
 
@@ -18,8 +18,9 @@ next: /billiards/friction/no_friction
     });
 </script>
 
+With more friction (_mud_), it becomes harder to break the triangle.
 
-Let's invent a new game: _Billiards on ice or mud!_
+With less friction (_ice_), it gets easier.
 
 <script>
 createSliderHere({
@@ -32,4 +33,3 @@ createSliderHere({
 });
 </script>
 
-Which one is the most fun?

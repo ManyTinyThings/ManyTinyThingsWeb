@@ -9,7 +9,7 @@ next: /entropy/big_half_box
     var halfBoxSim = createSimulation({
         initialize: function(simulation) {
             var p = simulation.parameters;
-            p.boxWidth = 30;
+            setBoxWidth(simulation, 30);
 
             updateBounds(simulation);
             setWallsAlongBorder(simulation);

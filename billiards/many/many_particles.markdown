@@ -9,9 +9,9 @@ next: /billiards/many/tons_of_particles
         initialize: function(simulation) {
             var p = simulation.parameters;
             p.friction = 0.2;
-            p.boxWidth = 90;
+            setBoxWidth(simulation, 90);
 
-            initBilliards(simulation, 232);
+            initBilliards(simulation, simulation.boxBounds);
 
     		setToolbarAvailableTools(simulation.toolbar, ["impulse"]);
         }

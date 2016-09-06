@@ -17,7 +17,7 @@ title: Inelastic collisions
             p.separationFactor = 1.1;
             p.maxParticleCount = 1000;
             p.dragStrength = 3;
-            p.boxWidth = 30;
+            setBoxWidth(simulation, 30);
 
             var layers = 5;
             var particleCount = 1 + (6 * layers * (layers + 1) / 2);

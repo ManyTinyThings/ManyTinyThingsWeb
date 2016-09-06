@@ -95,7 +95,7 @@ This simulates you pushing the ball toward the wall, which puts _pressure_ on th
         initialize: function(simulation) {
             var p = simulation.parameters;
             p.friction = 0;
-            p.boxWidth = 100;
+            setBoxWidth(simulation, 100);
             p.maxParticleCount = 1000;
 
             updateBounds(simulation);

@@ -17,7 +17,7 @@ But what _is_ heat?
             var p = simulation.parameters;
             p.friction = 0.1;
             p.dt = 0.005;
-            p.boxWidth = 30;
+            setBoxWidth(simulation, 30);
 
             updateBounds(simulation);
 

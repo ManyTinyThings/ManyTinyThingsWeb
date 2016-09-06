@@ -9,9 +9,9 @@ next: /billiards/many/spreading_out
         initialize: function(simulation) {
             var p = simulation.parameters;
             p.friction = 0.2;
-            p.boxWidth = 200;
+            setBoxWidth(simulation, 200);
 
-            initBilliards(simulation, 1036);
+            initBilliards(simulation, simulation.boxBounds);
 
     		setToolbarAvailableTools(simulation.toolbar, ["impulse"]);
         }
