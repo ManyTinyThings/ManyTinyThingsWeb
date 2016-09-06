@@ -2516,7 +2516,7 @@ function resetSimulation(simulation)
     p.maxInitialSpeed = 0.1;
     p.soundEnabled = false;
     p.maxParticleCount = 0;
-    p.shouldResetOnExplosion = true;
+    p.shouldRemindOnEscape = true;
 
     // box
     p.isPeriodic = false;
@@ -3186,16 +3186,15 @@ var updateSimulation = function()
                     var isFinite = v2.isFinite(particle.position);
                     var isOutside = (!params.isPeriodic) && (!doesRectContainPoint(simulation.boxBounds, particle.position));
 
-                    // TODO: reset on isOutside too? or maybe add shouldResetOnOutside
-                    if (params.shouldResetOnExplosion && (!isFinite))
-                    {
-                        resetSimulation(simulation);
-                        return;
-                    }
                     if ((!isFinite) || isOutside)
                     {
                         removeParticle(simulation, particleIndex);
                         particleIndex -= 1;
+
+                        if (params.shouldRemindOnEscape)
+                        {
+                            setResetReminder(simulation, true);
+                        }
                     }
                 }
 
