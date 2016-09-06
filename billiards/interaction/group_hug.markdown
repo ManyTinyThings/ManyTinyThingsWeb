@@ -31,12 +31,8 @@ Add more particles using the **create** tool.
 
 <script>
     var requiredCount = 20;
-    insertHere(createOutput({
-        update: function() {
-            var result = String(sim.particles.length);
-            result += " / " + String(requiredCount) + " particles";
-            return result;
-        },
+    insertHere(createOutput(function() {
+        return `${sim.particles.length} / ${requiredCount} particles`;
     }));
     cue(function () {
         return (sim.particles.length >= requiredCount);  
@@ -57,6 +53,6 @@ Try moving the object around with the **move** tool.
     endStep();
 </script>
 
-The tiny, _microscopic_ particles move together **as one**. 
+The tiny, **microscopic** particles move together _as one_. 
 
-**One** big, _macroscopic_ thing.
+_One_ big, **macroscopic** thing.

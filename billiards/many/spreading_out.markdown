@@ -1,5 +1,5 @@
 ---
-title: Tons of Particles
+title: Spreading Out
 previous: /billiards/many/tons_of_particles
 next: /billiards/differences
 ---
@@ -23,9 +23,30 @@ next: /billiards/differences
 
 Okay, let's go with an amount that the simulation can handle.
 
-Note how, when you smash the particles together, they keep bumping into each other.
-Every kick you give them results in a chain reaction.
+Do a few shots.
 
-And every time you kick them, they spread out more.
-At first they're neatly organised in a tidy triangle.
-But every time you kick 'em they get less tidy and more messy.
+<script>
+    var shotCount = 0;
+    var requiredShotCount = 3;
+    insertHere(createOutput(function() {
+        return `${shotCount} / ${requiredShotCount} shots`; 
+    }));
+    var impendingShot = false;
+    cue(function(){
+        if (sim.mouse.mode === MouseMode.impulse)
+        {
+            impendingShot = true;
+        }
+
+        var didJustShoot = impendingShot && (sim.mouse.mode === MouseMode.none);
+        if (didJustShoot)
+        {
+            impendingShot = false;
+            shotCount += 1;
+        }
+        return (shotCount >= requiredShotCount);
+    });
+    endStep();
+</script>
+
+Notice how the particles get more and more spread out for each shot you make.

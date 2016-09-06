@@ -521,15 +521,14 @@ function createButton(opts)
     return button;
 }
 
-function createOutput(opts)
+function createOutput(update)
 {
     var p = createElement("p");
-    p.insertAdjacentText("afterbegin", opts.label || "");
     var output = createAndAppend("output", p);
 
     var updater = function()
     {
-        var value = opts.update();
+        var value = update();
         if (isNumber(value))
         {
             output.value = value.toFixed(2);
@@ -546,6 +545,8 @@ function createOutput(opts)
 
     return p;
 }
+
+// TODO: progress bar
 
 // ! Interactive Slides
 

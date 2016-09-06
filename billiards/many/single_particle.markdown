@@ -21,6 +21,8 @@ next: /billiards/many/few_particles
 
 A single ball makes for pretty boring billiards.
 
-And the world is hardly made up from _one_ tiny thing, it's made up of _lots and lots_ of them.
+And the world is made of **many** tiny things, not **one** tiny thing.
 
-If we want to explore things being made up of many tiny things, then we definitely need more than one of them!
+(If there was only one tiny thing, would we even call it tiny?)
+
+_We need more particles._

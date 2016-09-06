@@ -1,5 +1,5 @@
 ---
-title: Many Particles
+title: Even More Particles
 previous: /billiards/many/few_particles
 next: /billiards/many/tons_of_particles
 ---
@@ -19,8 +19,8 @@ next: /billiards/many/tons_of_particles
 </script>
 
 
-_Wow, that's a lot of particles!_
+Wow, that's a lot of particles!
 
-Yeah, makes for a _preeeetty_ long billiards game...
+It's getting hard to count them.
 
-But it's still not enough.
+But it's _still not enough_.

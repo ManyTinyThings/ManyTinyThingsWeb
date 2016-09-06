@@ -1,5 +1,5 @@
 ---
-title: A Few Particles
+title: More Particles
 previous: /billiards/many/single_particle
 next: /billiards/many/many_particles
 ---
@@ -19,13 +19,9 @@ next: /billiards/many/many_particles
 </script>
 
 
-Here's a few particles, enough to play billiards.
+Here's some more particles!
 
-Break shot!
+While they are enough to play billiards with, it isn't really that many.
 
-<script>
-    cue(isBilliardsTriangleSplit(sim));
-    endStep();
-</script>
+_More!_
 
-Note how they spread out pretty evenly across the box.
