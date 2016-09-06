@@ -28,8 +28,8 @@ createSliderHere({
     name: "friction",
     min: 0.04, max: 5,
     minLabel: "Ice", maxLabel: "Mud",
-    transform: x => Math.exp(x),
-    inverseTransform: x => Math.log(x),
+    transform: function(x) { return Math.exp(x); },
+    inverseTransform: function(x) { return Math.log(x); },
 });
 </script>
 

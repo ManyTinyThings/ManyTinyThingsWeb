@@ -437,7 +437,8 @@ function createSlider(opts)
         inverseTransform: identity,
         minLabel: String(opts.min),
         maxLabel: String(opts.max),
-        snapBack: false,
+        isSnapBack: false,
+        isExternallyChangeable: false,
     });
 
     var initialSliderValue = opts.inverseTransform(opts.object[opts.name]);
@@ -464,26 +465,39 @@ function createSlider(opts)
 
     slider.addEventListener("input", function()
     {
-        opts.object[opts.name] = opts.transform(Number(this.value));
+        opts.object[opts.name] = opts.transform(Number(slider.value));
     });
 
-    if (opts.snapBack)
+    if (opts.isSnapBack)
     {
         slider.addEventListener("change", function()
         {
-            this.value = initialSliderValue;
+            slider.value = initialSliderValue;
             opts.object[opts.name] = opts.transform(Number(initialSliderValue));
         });
     }
 
-    var updater = function()
+    var updater;
+
+    if (opts.isExternallyChangeable)
     {
-        slider.value = opts.inverseTransform(opts.object[opts.name]);
-        window.requestAnimationFrame(updater);
+        updater = function()
+        {
+            slider.value = opts.inverseTransform(opts.object[opts.name]);
+            window.requestAnimationFrame(updater);
+        }
+    }
+    else
+    {
+        updater = function()
+        {
+            opts.object[opts.name] = opts.transform(Number(slider.value));
+            window.requestAnimationFrame(updater);
+        }
     }
 
     updater();
-
+    
     return p;
 }
 
