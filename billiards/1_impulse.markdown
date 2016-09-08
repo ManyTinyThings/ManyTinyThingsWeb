@@ -1,5 +1,5 @@
 ---
-chapterTitle: Tiny Billiards
+sequenceTitle: Billiards
 title: Impulse
 ---
 

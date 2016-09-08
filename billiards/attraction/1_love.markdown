@@ -1,5 +1,5 @@
 ---
-chapterTitle: Particle Attraction
+sequenceTitle: Billiards Attraction
 title: Particles in Love
 ---
 

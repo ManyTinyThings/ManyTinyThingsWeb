@@ -1,15 +1,10 @@
 ---
 title: Adding Movement Energy
-
 ---
 
 <script src="shared.js"></script>
-
-<div id="chapter">
-
-<div class="page">
 <script>
-    var energyAdditionSim = createSimulation({
+    var sim = createSimulation({
         initialize: function(simulation) {
             var p = simulation.parameters;
             p.friction = pageGlobal.friction;
@@ -30,7 +25,6 @@ title: Adding Movement Energy
     });
 
 </script>
-<div class="stepLog twoColumn">
 
 To understand what happens to the energy as the particles collide, I have colored each particle in a unique color.
 
@@ -39,7 +33,7 @@ Play with the particles and look at how their energy changes over time in the gr
 <script>
     var energyAdditionState = {throwCount: 0, hadHighSpeed: false};
     cue(function (dt) {
-            var energy = getTotalEnergy(energyAdditionSim);
+            var energy = getTotalEnergy(sim);
             var hasHighSpeedNow = energy > 0.2;
             if (energyAdditionState.hadHighSpeed && (!hasHighSpeedNow))
             {
@@ -55,7 +49,6 @@ Play with the particles and look at how their energy changes over time in the gr
 		update: function(graph) {
 			var stackedEnergy = [0];
 			var currentEnergy = 0;
-			var sim = energyAdditionSim;
 			for (var particleIndex = 0; particleIndex < sim.particles.length; particleIndex++) {
 				var particle = sim.particles[particleIndex];
 				currentEnergy += (particle.kineticEnergy + particle.potentialEnergy);
@@ -96,10 +89,10 @@ Lower the friction using the slider below.
 
 <script>
     cue(function() {
-            return (energyAdditionSim.parameters.friction == 0);
+            return (sim.parameters.friction == 0);
     });
 	insertHere(createSlider({
-		object: energyAdditionSim.parameters,
+		object: sim.parameters,
 		name: "friction",
 		min: 0, max: 0.3,
 		minLabel: "No friction", maxLabel: "Some",
@@ -110,24 +103,13 @@ Then give the particles a little bit of energy.
 
 <script>
     cue(function() {
-        var isFrictionless = energyAdditionSim.parameters.friction == 0;
-        var hasEnoughEnergy = getTotalEnergy(energyAdditionSim) > 0.1;
+        var isFrictionless = sim.parameters.friction == 0;
+        var hasEnoughEnergy = getTotalEnergy(sim) > 0.1;
         return (isFrictionless && hasEnoughEnergy);
     });
     endStep();
 </script>
 
 Without friction, the particles never stop bouncing! The total energy stays the same, even though each individual particle changes its speed often. Because the energy keeps steady, the particles will on the whole neither speed up nor slow down.
-
-</div>
-<div class="twoColumn">
-<script>
-	insertHere(energyAdditionSim.div);
-</script>
-</div>
-
-</div>
-
-</div>
 
 

@@ -1,4 +1,5 @@
 ---
+sequenceTitle: Billiards Friction
 title: Stopping
 ---
 

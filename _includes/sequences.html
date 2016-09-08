@@ -1,0 +1,7 @@
+<h2>Sequences</h2>
+
+{% for page in site.pages %}
+{% if page.sequenceTitle %}
+* <a href="{{ page.url | prepend: site.baseurl }}">{{ page.sequenceTitle | escape }}</a>
+{% endif %}
+{% endfor %}

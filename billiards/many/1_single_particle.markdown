@@ -1,5 +1,5 @@
 ---
-chapterTitle: Uncountable Billiards
+sequenceTitle: Billiards Many
 title: One Particle
 ---
 

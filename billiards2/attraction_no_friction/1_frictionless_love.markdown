@@ -1,5 +1,5 @@
 ---
-chapterTitle: Attraction & No Friction
+sequenceTitle: Attraction & No Friction
 title: Frictionless attraction
 ---
 

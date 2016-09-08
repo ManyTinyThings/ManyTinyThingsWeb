@@ -1,5 +1,4 @@
 ---
-chapterTitle: Entropy – Things Spread Out
 title: Messines
 ---
 
