@@ -4,7 +4,6 @@ previous: /billiards/interaction/group_hug
 next: /billiards/differences
 ---
 
-<script src="shared.js"></script>
 <script>
 
     var sim = createSimulation({

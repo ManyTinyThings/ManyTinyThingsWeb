@@ -1,7 +1,7 @@
 ---
-title: High Speed Lovin'
-previous: /billiards/interaction/love
-next: /billiards/interaction/group_hug
+title: Low Speed Bouncin'
+previous: frictionless_love
+next: forever_bouncing
 ---
 
 <script>
@@ -9,7 +9,7 @@ next: /billiards/interaction/group_hug
     var sim = createSimulation({
         initialize: function(simulation) {
             var p = simulation.parameters;
-            p.friction = 0.1;
+            p.friction = 0;
 
             addOppositeParticles(simulation);
 
@@ -23,9 +23,9 @@ next: /billiards/interaction/group_hug
 </script>
 
 
-Let's try something else.
+With no friction, can the particles ever find a partner?
 
-What happens if the particles collide at high speed?
+Carefully shoot the particles toward each other.
 
 <script>
     cue(function () {
@@ -38,6 +38,7 @@ What happens if the particles collide at high speed?
     endStep();
 </script>
 
-They just bounce off each other!
+They bounce off each other, even with very little speed.
 
-The _force_ between the particles wants to keep them together, but the speed is too high for the attraction to take hold.
+Without friction, the speed they get from the attraction is too high to stay.
+

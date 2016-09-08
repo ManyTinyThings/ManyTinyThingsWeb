@@ -30,4 +30,4 @@ Let's now put them together and see what happens!
 
 * [Attraction & many particles](/billiards/attraction_many/TODO)
 * [Many particles & no friction](/billiards/many_no_friction/break_friction)
-* [No friction & attraction](/billiards/attraction_no_friction/TODO)
+* [No friction & attraction](/billiards/attraction_no_friction/frictionless_love)

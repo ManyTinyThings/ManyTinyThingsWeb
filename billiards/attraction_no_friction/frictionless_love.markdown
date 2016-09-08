@@ -1,8 +1,8 @@
 ---
-chapterTitle: Particle Attraction
-title: Particles in Love
-previous: /billiards/kickoff
-next: /billiards/interaction/high_speed_love
+chapterTitle: Attraction & No Friction
+title: Frictionless attraction
+previous: ../combining
+next: low_speed
 ---
 
 <script>
@@ -19,7 +19,7 @@ next: /billiards/interaction/high_speed_love
             setInteraction(simulation, 0, 0, ljInteraction);
 
 
-            setToolbarAvailableTools(simulation.toolbar, ["move"]);
+            setToolbarAvailableTools(simulation.toolbar, ["move", "create"]);
         }
     });
 
@@ -36,19 +36,17 @@ Move these particles closer to each other.
     endStep();
 </script>
 
-They seem to like each other! As they come closer, they attract and snap together.
+They still like each other!
 
-Can you get them to let go?
+But what if the friction is removed?
 
 <script>
-    cue(function () {
-        var distance = v2.distance(sim.particles[0].position, sim.particles[1].position);
-        return (distance > 6);
-    });
-    endStep();
+    createSliderHere({
+        object: sim.parameters,
+        name: "friction",
+        min: 0, max: 0.2,
+        minLabel: "No friction", maxLabel: "Some",
+    }); 
 </script>
 
-It takes some effort!
-
-There's a _force_ binding the particles together. You can think of this force as _love_: it's something that can't be explained, it's just there, binding things together.
-
+They keep vibrating together forever.

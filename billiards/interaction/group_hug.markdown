@@ -4,7 +4,6 @@ previous: /billiards/interaction/high_speed_love
 next: /billiards/interaction/sticky_billiards
 ---
 
-<script src="shared.js"></script>
 <script>
     var sim = createSimulation({
         initialize: function(simulation) {
