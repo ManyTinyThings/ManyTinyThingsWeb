@@ -1,7 +1,5 @@
 ---
-title: Repulsive potential
-previous: /states/fast_collision
-next: /states/attractive_potential
+title: Repulsive potentia
 ---
 
 <script src="states.js"></script>

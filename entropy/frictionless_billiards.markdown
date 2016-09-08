@@ -1,7 +1,5 @@
 ---
-title: Frictionless Messiness
-previous: /entropy/billiards
-next: /entropy/half_box
+title: Frictionless Messines
 ---
 
 <script src="billiards.js"></script>

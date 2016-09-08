@@ -1,7 +1,5 @@
 ---
-title: Attractive potential
-previous: /states/repulsive_potential
-next: /states/solid_liquid_gas
+title: Attractive potentia
 ---
 
 <script src="states.js"></script>

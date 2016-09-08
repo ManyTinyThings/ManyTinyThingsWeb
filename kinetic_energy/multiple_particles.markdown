@@ -1,7 +1,5 @@
 ---
-title: Multiple particles
-previous: /kinetic_energy/single_particle
-next: /kinetic_energy/adding_energy
+title: Multiple particle
 ---
 
 <script src="shared.js"></script>

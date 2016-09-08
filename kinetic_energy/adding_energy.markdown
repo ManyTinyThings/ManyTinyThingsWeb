@@ -1,6 +1,6 @@
 ---
 title: Adding Movement Energy
-previous: /kinetic_energy/multiple_particles
+
 ---
 
 <script src="shared.js"></script>

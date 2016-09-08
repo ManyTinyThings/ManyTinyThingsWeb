@@ -2,7 +2,7 @@
 chapterTitle: Movement Energy
 title: Single particle
 next: /kinetic_energy/multiple_particles
-previous: /
+
 ---
 
 

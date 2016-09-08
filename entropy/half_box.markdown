@@ -1,7 +1,5 @@
 ---
-title: Half box
-previous: /entropy/frictionless_billiards
-next: /entropy/big_half_box
+title: Half bo
 ---
 
 

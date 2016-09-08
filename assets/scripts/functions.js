@@ -1,4 +1,95 @@
+---
+layout:
+---
+
 "use strict";
+
+// ! URLs
+
+function parentUrl(url)
+{
+    var urlParts = removeTrailingSlash(url).split("/");
+    return urlParts.slice(0, urlParts.length - 1).join("/");
+}
+
+function removeTrailingSlash(url)
+{
+    if(url.endsWith("/") && (url.length > 1))
+    {
+        return url.slice(0, url.length - 1);
+    }
+    return url;
+}
+
+// ! Site navigation
+
+var NavigationInfo = new function ()
+{
+    // TODO: do this statically instead!
+
+    var allUrls = [
+        {% for page in site.pages %}"{{ page.url }}",{% endfor %}
+    ];
+
+    var Sequence = function()
+    {
+        this.baseUrl = null;
+        this.panelUrls = [];
+    }
+
+    this.sequences = {};
+
+    for (var url of allUrls) {
+        var baseUrl = parentUrl(url)
+        var sequence = this.sequences[baseUrl];
+        if (sequence === undefined) {
+            sequence = new Sequence();
+            sequence.baseUrl = baseUrl;
+            this.sequences[baseUrl] = sequence;
+        }
+        sequence.panelUrls.push(url);
+    }
+
+    var currentUrl = removeTrailingSlash(window.location.pathname);
+    var currentBaseUrl = parentUrl(currentUrl);
+    var currentSequence = this.sequences[currentBaseUrl];
+    var panelIndex = currentSequence.panelUrls.indexOf(currentUrl);
+    if (panelIndex < 0)
+    {
+        throw "Something wrong with urls."
+    }
+    this.currentPosition = {
+        sequence: currentSequence,
+        panelIndex: panelIndex,
+    };
+}();
+
+// Add navigation
+document.addEventListener("DOMContentLoaded", function() {
+    var currentPos = NavigationInfo.currentPosition;
+    var isFirstPanel = (currentPos.panelIndex === 0);
+    var isLastPanel = (currentPos.panelIndex === (currentPos.sequence.panelUrls.length - 1));
+    if (!isFirstPanel)
+    {
+        var prevUrl = currentPos.sequence.panelUrls[currentPos.panelIndex - 1];
+        document.getElementById("leftNavigationArea").innerHTML = `<a href=${prevUrl}>«</a>`;
+    }
+
+    var nextUrl;
+    if (isLastPanel)
+    {
+        var parentBaseUrl = parentUrl(currentPos.sequence.baseUrl);
+        var parentSequence = NavigationInfo.sequences[parentBaseUrl];
+        nextUrl = arrayLast(parentSequence.panelUrls);
+    }
+    else
+    {
+        nextUrl = currentPos.sequence.panelUrls[currentPos.panelIndex + 1];
+    }
+
+    document.getElementById("rightNavigationArea").innerHTML = `<a href=${nextUrl}>»</a>`;
+    document.getElementById("pageFooter").innerHTML = `<a href=${nextUrl}>Next <span class="chevron">»</span></a>`;
+});
 
 // ! Dependency graph
 

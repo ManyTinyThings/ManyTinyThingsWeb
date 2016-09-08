@@ -1,9 +1,9 @@
 title: Many Tiny Things
 description: >
-  Explorable explanations about how everything is made up of many tiny things.
+  Explorable explanations on how all big things are made up of many tiny things.
 baseurl: ""
 url: "http://example.com" # TODO: change this
-
+permalink: /:year/:month/:title
 
 defaults:
     -

@@ -23,10 +23,7 @@
     <a class="siteTitle" href="{{ site.baseurl }}/">{{ site.title | escape }}</a>
 </header>
 <div id="body">
-	<div class="navigationArea">
-		{% if page.previous %}
-			<a href="{{ site.baseurl }}{{ page.previous }}">«</a>
-		{% endif %}
+	<div id="leftNavigationArea" class="navigationArea">
 	</div>
 	
 	<div id="content">
@@ -36,16 +33,10 @@
 		{{ content }}
 	</div>
 
-	<div class="navigationArea">
-		{% if page.next %}
-			<a href="{{ site.baseurl }}{{ page.next }}">»</a>
-		{% endif %}
+	<div id="rightNavigationArea" class="navigationArea">
 	</div>
 </div>
-<footer>
-	{% if page.next %}
-		<a href="{{ site.baseurl }}{{ page.next }}">Next <span class="chevron">»</span></a>
-	{% endif %}
+<footer id="pageFooter">
 </footer>
 </body>
 </html>

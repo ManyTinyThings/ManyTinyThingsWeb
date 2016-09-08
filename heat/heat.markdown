@@ -1,7 +1,7 @@
 ---
 chapterTitle: Heat
 title: Heat
-previous: /
+
 ---
 
 To a person like you and me, heat is very important. We heat our food, get hot in the sun, feel the body heat when hugging someone, avoid touching things that are too hot and with too little heat we start freezing.

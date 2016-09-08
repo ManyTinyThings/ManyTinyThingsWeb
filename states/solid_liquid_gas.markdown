@@ -1,7 +1,5 @@
 ---
-title: Group Hug
-previous: /states/attractive_potential
-next: /states/evaporation
+title: Group Hu
 ---
 
 <script src="shared.js"></script>

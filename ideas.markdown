@@ -1,6 +1,3 @@
----
-
----
 
 # Dynamic Thermodynamics
 #### A study in static

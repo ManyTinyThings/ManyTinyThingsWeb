@@ -152,4 +152,4 @@ The explanations will include simulations of many tiny things, as you can see ab
 If you are ready, [let's start]({{ site.baseurl }}{{ page.next }})!
 
 
-<!-- {% include all_pages.html %} -->
+{% include all_pages.html %}
