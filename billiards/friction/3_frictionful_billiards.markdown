@@ -8,7 +8,6 @@ title: Frictionful Billiards
         initialize: function(simulation) {
             var p = simulation.parameters;
             p.friction = 0.2;
-            setBoxWidth(simulation, 30);
 
             initBilliards(simulation, simulation.boxBounds);
 
