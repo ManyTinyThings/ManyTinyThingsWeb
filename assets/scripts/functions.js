@@ -109,6 +109,12 @@ function createSequenceDots(sequence)
 
 document.addEventListener("DOMContentLoaded", function() {
     var currentPos = NavigationInfo.currentPosition;
+
+    if (currentPos.sequence.baseUrl == "/")
+    {
+        return;
+    }
+
     var isFirstPanel = (currentPos.panelIndex === 0);
     var isLastPanel = (currentPos.panelIndex === (currentPos.sequence.panelUrls.length - 1));
     if (!isFirstPanel)
@@ -143,13 +149,11 @@ document.addEventListener("DOMContentLoaded", function() {
         url = parentUrl(url);
     }
 
-
     var navBar = document.getElementById("navBar");
     var sequenceTitle = createAndAppend("h1", navBar);
     sequenceTitle.innerHTML = title;
     var sequenceDots = createSequenceDots(currentPos.sequence);
     navBar.appendChild(sequenceDots);
-
 });
 
 // ! Dependency graph
