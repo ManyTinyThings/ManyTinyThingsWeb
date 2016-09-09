@@ -94,7 +94,18 @@ function createSequenceDots(sequence)
 
         if (sequence === current.sequence)
         {
-            a.innerHTML = (panelIndex <= current.panelIndex) ? "●" : "○";
+            if (panelIndex < current.panelIndex)
+            {
+                a.innerHTML = "●";
+            }
+            else if (panelIndex === current.panelIndex)
+            {
+                a.innerHTML = "●";
+            }
+            else
+            {
+                a.innerHTML = "○";
+            }
         }
         else
         {

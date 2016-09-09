@@ -6,9 +6,12 @@ title: No Friction
     var sim = createSimulation({
         initialize: function(simulation) {
             var p = simulation.parameters;
+            p.isOnlyHardSpheres = true;
             p.friction = 0;
 
-            initBilliards(simulation, simulation.boxBounds);
+            var particle = new Particle();
+            particle.color = Color.red;
+            addParticle(simulation, particle);
 
     		setToolbarAvailableTools(simulation.toolbar, ["impulse"]);
         }
