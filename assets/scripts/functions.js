@@ -99,10 +99,47 @@ function createSequenceDots(sequence)
         else
         {
             // TODO: remember position with cookie instead
+            a.innerHTML = "○";
         }
     }
 
     return div;
+}
+
+function createSequenceLink(sequenceUrl, content)
+{
+    var sequence = NavigationInfo.sequences[sequenceUrl];
+
+
+
+    var div = createElement("div");
+
+    var a = createAndAppend("a", div);
+    a.href = sequence.panelUrls[0];
+    a.appendChild(content)
+
+    var sequenceDots = createSequenceDots(sequence);
+    div.appendChild(sequenceDots);
+
+    return div;
+}
+
+function makeParentElementSequenceLink(sequenceUrl)
+{
+    var sequence = NavigationInfo.sequences[sequenceUrl];
+    var parentElement = document.currentScript.parentNode;
+    parentElement.classList.add("sequenceLink");
+
+    var a = createElement("a");
+    while (parentElement.childNodes.length > 0)
+    {
+        a.appendChild(parentElement.firstChild);
+    }
+    parentElement.appendChild(a);
+    a.href = sequence.panelUrls[0];
+
+    var sequenceDots = createSequenceDots(sequence);
+    parentElement.appendChild(sequenceDots);
 }
 
 // Add navigation links to page
@@ -2302,9 +2339,9 @@ function isBilliardsTriangleSplit(simulation)
 
 // ! Particle setup
 
-var addOppositeParticles = function(simulation)
+var addOppositeParticles = function(simulation, d)
 {
-    var d = simulation.boxBounds.width / 4;
+    d = d || simulation.boxBounds.width / 4;
     var particleSW = new Particle();
     v2.set(particleSW.position, -d, -d);
     addParticle(simulation, particleSW);
