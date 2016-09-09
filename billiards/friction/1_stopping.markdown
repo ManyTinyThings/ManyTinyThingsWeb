@@ -8,8 +8,11 @@ title: Stopping
         initialize: function(simulation) {
             var p = simulation.parameters;
             p.friction = 0.2;
+            p.isOnlyHardSpheres = true;
 
-            initBilliards(simulation, simulation.boxBounds);
+            var particle = new Particle();
+            particle.color = Color.red;
+            addParticle(simulation, particle);
 
     		setToolbarAvailableTools(simulation.toolbar, ["move"]);
         }

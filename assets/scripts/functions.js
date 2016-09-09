@@ -90,31 +90,32 @@ function createSequenceDots(sequence)
 
     for (var panelIndex = 0; panelIndex < sequence.panelUrls.length; panelIndex++) {
         var a = createAndAppend("a", div);
-        a.href = sequence.panelUrls[panelIndex];
-
-        if (sequence === current.sequence)
+        var sequenceProgress = localStorage[sequence.baseUrl];
+        if (sequenceProgress)
         {
-            if (panelIndex < current.panelIndex)
-            {
-                a.innerHTML = "●";
-            }
-            else if (panelIndex === current.panelIndex)
-            {
-                a.innerHTML = "●";
-            }
-            else
-            {
-                a.innerHTML = "○";
-            }
+            a.innerHTML = sequenceProgress[panelIndex];    
         }
         else
         {
-            // TODO: remember position with cookie instead
             a.innerHTML = "○";
+        }
+        if ((sequence === current.sequence) && (panelIndex === current.panelIndex))
+        {
+            a.classList.add("current");
+        }
+        if (a.innerHTML !== "○")
+        {
+            a.href = sequence.panelUrls[panelIndex];
+            a.classList.add("visited");
         }
     }
 
     return div;
+}
+
+function resetProgress()
+{
+    localStorage.clear();
 }
 
 function createSequenceLink(sequenceUrl, content)
@@ -153,34 +154,51 @@ function makeParentElementSequenceLink(sequenceUrl)
     parentElement.appendChild(sequenceDots);
 }
 
+function replaceAt(string, index, replacementString)
+{
+    return string.substr(0, index) + replacementString + string.substr(index + replacementString.length);
+}
+
+// Record this panel as visited
+(function() {
+    var current = NavigationInfo.currentPosition;
+    var sequenceProgress = localStorage[current.sequence.baseUrl];
+    if (!sequenceProgress)
+    {
+        sequenceProgress = "○".repeat(current.sequence.panelUrls.length);      
+    }
+    localStorage[current.sequence.baseUrl] = replaceAt(sequenceProgress, current.panelIndex, "●");
+}());
+
+
 // Add navigation links to page
 
 document.addEventListener("DOMContentLoaded", function() {
-    var currentPos = NavigationInfo.currentPosition;
+    var current = NavigationInfo.currentPosition;
 
-    if (currentPos.sequence.baseUrl == "/")
+    if (current.sequence.baseUrl == "/")
     {
         return;
     }
 
-    var isFirstPanel = (currentPos.panelIndex === 0);
-    var isLastPanel = (currentPos.panelIndex === (currentPos.sequence.panelUrls.length - 1));
+    var isFirstPanel = (current.panelIndex === 0);
+    var isLastPanel = (current.panelIndex === (current.sequence.panelUrls.length - 1));
     if (!isFirstPanel)
     {
-        var prevUrl = currentPos.sequence.panelUrls[currentPos.panelIndex - 1];
+        var prevUrl = current.sequence.panelUrls[current.panelIndex - 1];
         document.getElementById("leftNavigationArea").innerHTML = `<a href=${prevUrl}>«</a>`;
     }
 
     var nextUrl;
     if (isLastPanel)
     {
-        var parentBaseUrl = parentUrl(currentPos.sequence.baseUrl);
+        var parentBaseUrl = parentUrl(current.sequence.baseUrl);
         var parentSequence = NavigationInfo.sequences[parentBaseUrl];
         nextUrl = arrayLast(parentSequence.panelUrls);
     }
     else
     {
-        nextUrl = currentPos.sequence.panelUrls[currentPos.panelIndex + 1];
+        nextUrl = current.sequence.panelUrls[current.panelIndex + 1];
     }
 
     document.getElementById("rightNavigationArea").innerHTML = `<a href=${nextUrl}>»</a>`;
@@ -188,8 +206,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // nav bar
 
-    var title = currentPos.sequence.title;
-    var url = parentUrl(currentPos.sequence.baseUrl);
+    var title = current.sequence.title;
+    var url = parentUrl(current.sequence.baseUrl);
     while (url !== "/")
     {
         var sequence = NavigationInfo.sequences[url];
@@ -200,7 +218,7 @@ document.addEventListener("DOMContentLoaded", function() {
     var navBar = document.getElementById("navBar");
     var sequenceTitle = createAndAppend("h1", navBar);
     sequenceTitle.innerHTML = title;
-    var sequenceDots = createSequenceDots(currentPos.sequence);
+    var sequenceDots = createSequenceDots(current.sequence);
     navBar.appendChild(sequenceDots);
 });
 

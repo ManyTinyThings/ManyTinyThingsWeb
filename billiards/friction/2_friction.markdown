@@ -8,7 +8,8 @@ title: Friction
         initialize: function(simulation) {
             var p = simulation.parameters;
             p.friction = 0.2;
-            
+            p.isOnlyHardSpheres = true;
+
             var particle = new Particle();
             particle.color = Color.red;
             addParticle(simulation, particle);

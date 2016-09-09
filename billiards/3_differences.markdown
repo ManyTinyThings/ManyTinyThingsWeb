@@ -48,7 +48,7 @@ There are three big differences, though. The tiny particles ...
 
 <div class="threeColumn">
 
-... can **like** each other.
+... can **attract** each other.
 
 <script>
 	var likeSim = createSimulationHere({
