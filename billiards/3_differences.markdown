@@ -24,8 +24,8 @@ They _move_ like billiard balls, and _bounce_ like billiard balls.
 
 There are three big differences, though:
 
-1. [They **never stop** moving](/billiards/friction/stopping).
-2. [There are **a lot more than 16** of them](/billiards/many/single_particle).
-3. [They can **like** or **dislike** each other](/billiards/interaction/love).
+1. [They **never stop** moving](/billiards/friction/1_stopping).
+2. [There are **a lot more than 16** of them](/billiards/many/1_single_particle).
+3. [They can **like** or **dislike** each other](/billiards/attraction/1_love).
 
 Click the items in the list above to explore them.

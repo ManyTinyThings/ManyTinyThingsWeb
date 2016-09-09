@@ -25,7 +25,7 @@ In the **bottom right corner** of the simulation you can **change tools**.
 
 Having only one ball is a little dull, so let's add more!
 
-Use the **create** tool to create more particles.
+Use the **create** tool to create more balls.
 
 <script>
 	cue(function()
