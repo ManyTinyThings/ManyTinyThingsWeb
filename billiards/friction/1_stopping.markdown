@@ -1,5 +1,5 @@
 ---
-sequenceTitle: Billiards Friction
+sequenceTitle: Never stop
 title: Stopping
 ---
 

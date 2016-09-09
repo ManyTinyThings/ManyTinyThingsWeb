@@ -9,7 +9,12 @@ layout:
 function parentUrl(url)
 {
     var urlParts = removeTrailingSlash(url).split("/");
-    return urlParts.slice(0, urlParts.length - 1).join("/");
+    var result = urlParts.slice(0, urlParts.length - 1).join("/");
+    if (result.length === 0)
+    {
+        return "/";
+    }
+    return result;
 }
 
 function removeTrailingSlash(url)
@@ -27,27 +32,38 @@ var NavigationInfo = new function ()
 {
     // TODO: do this statically instead!
 
-    var allUrls = [
-        {% for page in site.pages %}"{{ page.url }}",{% endfor %}
+    var allPages = [
+        {% for page in site.pages %}
+        {
+            url: "{{ page.url }}",
+            title: "{{ page.title }}",
+            {% if page.sequenceTitle %}sequenceTitle: "{{ page.sequenceTitle }}",{% endif %}
+        },
+        {% endfor %}
     ];
 
     var Sequence = function()
     {
+        this.title = "";
         this.baseUrl = null;
         this.panelUrls = [];
     }
 
     this.sequences = {};
 
-    for (var url of allUrls) {
-        var baseUrl = parentUrl(url)
+    for (var page of allPages) {
+        var baseUrl = parentUrl(page.url)
         var sequence = this.sequences[baseUrl];
         if (sequence === undefined) {
             sequence = new Sequence();
             sequence.baseUrl = baseUrl;
+            if (page.sequenceTitle)
+            {
+                sequence.title = page.sequenceTitle;
+            }
             this.sequences[baseUrl] = sequence;
         }
-        sequence.panelUrls.push(url);
+        sequence.panelUrls.push(page.url);
     }
 
     var currentUrl = removeTrailingSlash(window.location.pathname);
@@ -64,7 +80,33 @@ var NavigationInfo = new function ()
     };
 }();
 
-// Add navigation
+function createSequenceDots(sequence)
+{
+    var div = createElement("div");
+    div.classList.add("sequenceDots");
+
+    var current = NavigationInfo.currentPosition;
+    var currentUrl = current.sequence.panelUrls[current.panelIndex];
+
+    for (var panelIndex = 0; panelIndex < sequence.panelUrls.length; panelIndex++) {
+        var a = createAndAppend("a", div);
+        a.href = sequence.panelUrls[panelIndex];
+
+        if (sequence === current.sequence)
+        {
+            a.innerHTML = (panelIndex <= current.panelIndex) ? "●" : "○";
+        }
+        else
+        {
+            // TODO: remember position with cookie instead
+        }
+    }
+
+    return div;
+}
+
+// Add navigation links to page
+
 document.addEventListener("DOMContentLoaded", function() {
     var currentPos = NavigationInfo.currentPosition;
     var isFirstPanel = (currentPos.panelIndex === 0);
@@ -89,6 +131,25 @@ document.addEventListener("DOMContentLoaded", function() {
 
     document.getElementById("rightNavigationArea").innerHTML = `<a href=${nextUrl}>»</a>`;
     document.getElementById("pageFooter").innerHTML = `<a href=${nextUrl}>Next <span class="chevron">»</span></a>`;
+
+    // nav bar
+
+    var title = currentPos.sequence.title;
+    var url = parentUrl(currentPos.sequence.baseUrl);
+    while (url !== "/")
+    {
+        var sequence = NavigationInfo.sequences[url];
+        title = `${sequence.title} ⟩ ${title}`; 
+        url = parentUrl(url);
+    }
+
+
+    var navBar = document.getElementById("navBar");
+    var sequenceTitle = createAndAppend("h1", navBar);
+    sequenceTitle.innerHTML = title;
+    var sequenceDots = createSequenceDots(currentPos.sequence);
+    navBar.appendChild(sequenceDots);
+
 });
 
 // ! Dependency graph

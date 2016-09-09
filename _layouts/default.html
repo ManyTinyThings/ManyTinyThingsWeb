@@ -19,17 +19,17 @@
 	<link rel="mask-icon" href="{{ site.baseurl }}/assets/images/favicons/safari-pinned-tab.svg" color="#000000">
 </head>
 <body>
-<header>
-    <a class="siteTitle" href="{{ site.baseurl }}/">{{ site.title | escape }}</a>
-</header>
+<div class="wrapper">
+	<header>
+	    <a class="siteTitle" href="{{ site.baseurl }}/">{{ site.title | escape }}</a>
+	</header>
+</div>
 <div id="body">
 	<div id="leftNavigationArea" class="navigationArea">
 	</div>
 	
 	<div id="content">
-		{% if page.title %}
-			<h1>{{ page.title }}</h1>
-		{% endif %}
+		<nav id="navBar"></nav>
 		{{ content }}
 	</div>
 

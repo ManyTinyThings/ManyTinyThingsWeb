@@ -1,5 +1,5 @@
 ---
-sequenceTitle: Billiards Attraction
+sequenceTitle: Attraction
 title: Particles in Love
 ---
 

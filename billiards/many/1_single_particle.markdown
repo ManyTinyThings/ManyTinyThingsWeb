@@ -1,5 +1,5 @@
 ---
-sequenceTitle: Billiards Many
+sequenceTitle: Many Particles
 title: One Particle
 ---
 

@@ -60,21 +60,35 @@ html, body
 
 // layout
 
-header
-    background-color: $backgroundColor
-    min-height: 100px
+.wrapper
     display: flex
     justify-content: center
+    background-color: $backgroundColor
+
+header
+    width: $contentWidth
+    padding: $contentPadding
 
     .siteTitle
-        width: $contentWidth
-        padding: $contentPadding
         font-size: $titleFontSize
         text-decoration: none
 
         &,
         &:visited
             color: black
+
+nav
+    padding-bottom: $contentPadding
+    display: flex
+    align-items: baseline
+    
+    > *
+        margin-right: 10px
+
+.sequenceDots
+    font-size: 30px
+    a
+        text-decoration: none
 
 
 
@@ -106,7 +120,6 @@ footer
 #content
     width: $contentWidth
     padding: $contentPadding
-    margin-top: -30px
 
 .navigationArea
     flex: 1
