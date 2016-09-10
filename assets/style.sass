@@ -24,7 +24,8 @@ input[type="range"]
     -webkit-appearance: none
     width: 250px
     margin: 0 10px
-    focus-outline: none
+    &:focus
+        outline: none
     
     &::-webkit-slider-runnable-track
         height: 10px
@@ -57,6 +58,8 @@ html, body
     flex-direction: column
     min-height: 100vh
 
+input
+    font-size: $bodyFontSize
 
 // layout
 

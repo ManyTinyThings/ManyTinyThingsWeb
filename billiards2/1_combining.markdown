@@ -1,6 +1,6 @@
 ---
 title: Combining
-
+sequenceTitle: Combinations
 ---
 
 <script>

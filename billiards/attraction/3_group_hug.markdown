@@ -37,7 +37,7 @@ Add more particles using the **create** tool.
     endStep();
 </script>
 
-A group hug! How cute!
+A _group hug_! How cute!
 
 The attraction between each pair of particles holds them together, and together they now make up a bigger object.
 

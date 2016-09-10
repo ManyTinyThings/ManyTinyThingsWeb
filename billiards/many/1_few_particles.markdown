@@ -1,14 +1,13 @@
 ---
-title: Even More Particles
+sequenceTitle: Many particles
+title: Follow
 ---
 
 <script>
-	var boxWidth = 25
     var sim = createSimulation({
         initialize: function(simulation) {
             var p = simulation.parameters;
             p.friction = 0.2;
-            setBoxWidth(simulation, boxWidth);
 
             initBilliards(simulation, simulation.boxBounds);
             simulation.particles[0].color = Color.black;
@@ -18,28 +17,20 @@ title: Even More Particles
     });
 </script>
 
-16 balls might be enough for billiards, but 16 tiny particles is hardly enough to make up any big things.
+Billiards is usually played using 16 balls.
 
-Here are a lot more particles.
+It's enough balls to make the game interesting, while not too many to keep track of.
 
-Try following the particle you shoot here
-
-It becomes very hard to 
+Make a pretty hard shot and try to follow the ball you shot with your eyes.
 
 <script>
-	createSliderHere({
-		initialValue: boxWidth,
-		min: 25, max: 150,
-		minLabel: "16", maxLabel: "A lot",
-		update: function(value)
-		{
-			if (boxWidth != value)
-			{
-				boxWidth = value;
-				resetSimulation(sim);
-			}
-		},
-	});
+	cue(isBilliardsTriangleSplit(sim));
+	endStep();
+</script>
+
+It's not too hard, even though I've removed any numbers or markings from the balls.
+
+<script>
 	insertHere(createButton({
 		label: "Show latest shot ball",
 		mouseDown: function()

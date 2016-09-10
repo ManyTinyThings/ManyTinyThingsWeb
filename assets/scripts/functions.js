@@ -118,24 +118,6 @@ function resetProgress()
     localStorage.clear();
 }
 
-function createSequenceLink(sequenceUrl, content)
-{
-    var sequence = NavigationInfo.sequences[sequenceUrl];
-
-
-
-    var div = createElement("div");
-
-    var a = createAndAppend("a", div);
-    a.href = sequence.panelUrls[0];
-    a.appendChild(content)
-
-    var sequenceDots = createSequenceDots(sequence);
-    div.appendChild(sequenceDots);
-
-    return div;
-}
-
 function makeParentElementSequenceLink(sequenceUrl)
 {
     var sequence = NavigationInfo.sequences[sequenceUrl];
@@ -211,7 +193,7 @@ document.addEventListener("DOMContentLoaded", function() {
     while (url !== "/")
     {
         var sequence = NavigationInfo.sequences[url];
-        title = `${sequence.title} ⟩ ${title}`; 
+        title = `<a href="${arrayLast(sequence.panelUrls)}">${sequence.title}</a> ⟩ ${title}`; 
         url = parentUrl(url);
     }
 
@@ -663,7 +645,7 @@ function createSlider(opts)
         isExternallyChangeable: false,
     });
 
-    var initialSliderValue = opts.inverseTransform(opts.object[opts.name]);
+    var initialSliderValue = opts.inverseTransform(opts.initialValue);
     var sliderMin = opts.inverseTransform(opts.min);
     var sliderMax = opts.inverseTransform(opts.max);
     var step = opts.step || (sliderMax - sliderMin) / 1000;
@@ -685,37 +667,19 @@ function createSlider(opts)
 
     // set up callbacks
 
-    slider.addEventListener("input", function()
-    {
-        opts.object[opts.name] = opts.transform(Number(slider.value));
-    });
-
     if (opts.isSnapBack)
     {
         slider.addEventListener("change", function()
         {
             slider.value = initialSliderValue;
-            opts.object[opts.name] = opts.transform(Number(initialSliderValue));
+            opts.update(opts.transform(initialSliderValue));
         });
     }
 
-    var updater;
-
-    if (opts.isExternallyChangeable)
+    var updater = function()
     {
-        updater = function()
-        {
-            slider.value = opts.inverseTransform(opts.object[opts.name]);
-            window.requestAnimationFrame(updater);
-        }
-    }
-    else
-    {
-        updater = function()
-        {
-            opts.object[opts.name] = opts.transform(Number(slider.value));
-            window.requestAnimationFrame(updater);
-        }
+        opts.update(opts.transform(Number(slider.value)));
+        window.requestAnimationFrame(updater);
     }
 
     updater();
@@ -754,7 +718,19 @@ function createButton(opts)
     var button = createAndAppend("input", div);
     button.setAttribute("type", "button");
     button.setAttribute("value", opts.label);
-    button.addEventListener("click", opts.action);
+    if (opts.action)
+    {
+        button.addEventListener("click", opts.action);    
+    }
+    else if(opts.mouseDown && opts.mouseUp)
+    {
+        button.addEventListener("mousedown", opts.mouseDown);
+        button.addEventListener("mouseup", opts.mouseUp);
+    }
+    else
+    {
+        throw "Specify either an action callback or mouseUp, mouseDown callbacks."
+    }
     return div;
 }
 
@@ -2761,9 +2737,113 @@ function createSimulation(opts)
 
     selectTool(simulation.toolbar, "move");
 
+    // ! Event listeners
+
+    document.addEventListener("keydown", function(event)
+    {
+        var downKey = String.fromCharCode(event.keyCode).toLowerCase();
+        simulation.downKeys.push(downKey);
+    });
+
+    document.addEventListener("keyup", function(event)
+    {
+        var releasedKey = String.fromCharCode(event.keyCode).toLowerCase();
+        simulation.downKeys = simulation.downKeys.filter(function(key)
+        {
+            return key != releasedKey;
+        });
+    });
+
+    function updateMouseButton(button, isDown)
+    {
+        button.transitionCount += button.down ^ isDown;
+        button.down = isDown;
+    }
+    
+    function updateMouseButtonsFromEvent(event, isDown)
+    {
+        if (simulation.mouse.active)
+        {
+            if (event.button == 0) {
+                updateMouseButton(simulation.mouse.leftButton, isDown);
+            }
+            if (event.button == 2) {
+                updateMouseButton(simulation.mouse.rightButton, isDown);
+            }
+        }
+    }
+
+    function updateMousePositionFromEvent(event)
+    {
+        if (simulation.mouse.active)
+        {
+            simulation.mouse.worldPosition = worldFromPage(simulation.renderer, v2(event.clientX, event.clientY));
+            event.preventDefault();
+        }
+    }
+
+    // NOTE: only listen to mouse events that start on this canvas
+    simulation.canvas.addEventListener("mousedown", function(event)
+    {
+        simulation.mouse.active = true;
+        updateMouseButtonsFromEvent(event, true);
+        updateMousePositionFromEvent(event);
+    });
+    document.addEventListener("mouseup", function(event)
+    {
+        updateMouseButtonsFromEvent(event, false);
+        updateMousePositionFromEvent(event);
+        simulation.mouse.active = false;
+    });
+    document.addEventListener("mousemove", updateMousePositionFromEvent);
+
+    // ! Pause when simulation is not visible
+
+    function pauseIfHidden(event)
+    {
+        // TODO: maybe just keep one playing at a time, the one we are scrolling towards
+        var divBounds = simulation.div.getBoundingClientRect();
+
+        var isAboveViewport = divBounds.bottom < 0;
+        var isBelowViewport = divBounds.top > window.innerHeight;
+
+        var isAutoPaused = document.hidden || isAboveViewport || isBelowViewport;
+
+        if (isAutoPaused)
+        {
+            if (simulation.requestFrameId)
+            {
+                window.cancelAnimationFrame(simulation.requestFrameId);
+                simulation.requestFrameId = null;
+            }
+        }
+        else
+        {
+            if (simulation.requestFrameId === null)
+            {
+                simulation.isFirstFrameAfterPause = true;
+                simulation.requestFrameId = window.requestAnimationFrame(simulation.updateFunction);
+            }
+        }
+    }
+
+    document.addEventListener('visibilitychange', pauseIfHidden);
+    document.addEventListener("scroll", pauseIfHidden);
+    document.addEventListener("resize", pauseIfHidden);
+    window.addEventListener("load", pauseIfHidden);
+
     simulation.renderer = createRenderer(simulation.canvas);
 
     resetSimulation(simulation);
+
+    // ! Start simulation
+
+    simulation.updateFunction = function(timestamp)
+    {
+        updateSimulation(simulation.updateFunction, simulation, timestamp);
+    };
+
+    simulation.requestFrameId = window.requestAnimationFrame(simulation.updateFunction);
 
     return simulation;
 }
@@ -2884,20 +2964,7 @@ function resetSimulation(simulation)
 
     simulation.downKeys = [];
 
-    document.addEventListener("keydown", function(event)
-    {
-        var downKey = String.fromCharCode(event.keyCode).toLowerCase();
-        simulation.downKeys.push(downKey);
-    });
-
-    document.addEventListener("keyup", function(event)
-    {
-        var releasedKey = String.fromCharCode(event.keyCode).toLowerCase();
-        simulation.downKeys = simulation.downKeys.filter(function(key)
-        {
-            return key != releasedKey;
-        });
-    });
+    
 
     // ! Mouse
 
@@ -2926,94 +2993,6 @@ function resetSimulation(simulation)
             length: 0.8,
         }
     }
-
-    function updateMouseButton(button, isDown)
-    {
-	    button.transitionCount += button.down ^ isDown;
-		button.down = isDown;
-    }
-	
-	function updateMouseButtonsFromEvent(event, isDown)
-	{
-		if (simulation.mouse.active)
-		{
-			if (event.button == 0) {
-				updateMouseButton(simulation.mouse.leftButton, isDown);
-			}
-			if (event.button == 2) {
-				updateMouseButton(simulation.mouse.rightButton, isDown);
-			}
-		}
-	}
-
-    function updateMousePositionFromEvent(event)
-    {
-        if (simulation.mouse.active)
-        {
-            simulation.mouse.worldPosition = worldFromPage(simulation.renderer, v2(event.clientX, event.clientY));
-            event.preventDefault();
-        }
-    }
-
-    // NOTE: only listen to mouse events that start on this canvas
-    simulation.canvas.addEventListener("mousedown", function(event)
-    {
-        simulation.mouse.active = true;
-        updateMouseButtonsFromEvent(event, true);
-        updateMousePositionFromEvent(event);
-    });
-    document.addEventListener("mouseup", function(event)
-    {
-		updateMouseButtonsFromEvent(event, false);
-        updateMousePositionFromEvent(event);
-        simulation.mouse.active = false;
-    });
-    document.addEventListener("mousemove", updateMousePositionFromEvent);
-
-    // ! Pause when simulation is not visible
-
-    function pauseIfHidden(event)
-    {
-        // TODO: maybe just keep one playing at a time, the one we are scrolling towards
-        var divBounds = simulation.div.getBoundingClientRect();
-
-        var isAboveViewport = divBounds.bottom < 0;
-        var isBelowViewport = divBounds.top > window.innerHeight;
-
-        var isAutoPaused = document.hidden || isAboveViewport || isBelowViewport;
-
-        if (isAutoPaused)
-        {
-            if (simulation.requestFrameId)
-            {
-                window.cancelAnimationFrame(simulation.requestFrameId);
-                simulation.requestFrameId = null;
-            }
-        }
-        else
-        {
-            if (simulation.requestFrameId === null)
-            {
-                simulation.isFirstFrameAfterPause = true;
-                simulation.requestFrameId = window.requestAnimationFrame(simulation.updateFunction);
-            }
-        }
-    }
-
-    document.addEventListener('visibilitychange', pauseIfHidden);
-    document.addEventListener("scroll", pauseIfHidden);
-    document.addEventListener("resize", pauseIfHidden);
-    window.addEventListener("load", pauseIfHidden);
-
-
-    // ! Start simulation
-
-    simulation.updateFunction = function(timestamp)
-    {
-        updateSimulation(simulation.updateFunction, simulation, timestamp);
-    };
-
-    simulation.requestFrameId = window.requestAnimationFrame(simulation.updateFunction);
 
     return simulation;
 }
@@ -3138,7 +3117,6 @@ var updateSimulation = function()
             }
 
             simulation.mouse.mode = MouseMode.none;
-            simulation.mouse.activeParticle = null;
         }
 
         if (simulation.mouse.leftButton.down)
