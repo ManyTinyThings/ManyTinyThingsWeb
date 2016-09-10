@@ -2,6 +2,7 @@
 title: Even More Particles
 ---
 
+<script src="shared.js"></script>
 <script>
 	var boxWidth = 25
     var sim = createSimulation({
@@ -40,15 +41,5 @@ It becomes very hard to
 			}
 		},
 	});
-	insertHere(createButton({
-		label: "Show latest shot ball",
-		mouseDown: function()
-		{
-			sim.mouse.activeParticle.color = Color.red;
-		},
-		mouseUp: function()
-		{
-			sim.mouse.activeParticle.color = Color.black;
-		},
-	}));
+	createShowLatestShotBallButton();
 </script>
