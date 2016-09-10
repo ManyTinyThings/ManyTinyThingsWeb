@@ -22,6 +22,7 @@ Every big thing in the world is made up of **many tiny things**.
 			p.attractStrength = 1;
 			p.thermostatSpeed = 0.1;
 			p.thermostatTemperature = 100;
+			p.isPausedWithoutMouse = true;
 
 			setBoxWidth(simulation, 200)
 
@@ -57,6 +58,7 @@ Every big thing in the world is made up of **many tiny things**.
 			p.thermostatSpeed = 0.1;
 			p.thermostatTemperature = 1;
 			p.repelStrength = 0.2;
+			p.isPausedWithoutMouse = true;
 			//p.isOnlyHardSpheres = true;
 			setBoxWidth(simulation, 60);
 
@@ -98,6 +100,7 @@ Every big thing in the world is made up of **many tiny things**.
 			p.gravityAcceleration = 1;
 			p.dragStrength = 10;
 			p.friction = 0.1;
+			p.isPausedWithoutMouse = true;
 
 			setBoxWidth(simulation, 40);
 

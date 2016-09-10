@@ -19,6 +19,7 @@ Let's play some billiards!
 		{
 			var p = simulation.parameters;
 			p.isOnlyHardSpheres = true;
+			p.isPausedWithoutMouse = true;
 
 			initBilliards(simulation, simulation.boxBounds);
 
@@ -60,9 +61,10 @@ There are three big differences, though. The tiny particles ...
 		{
 			var p = simulation.parameters;
 			p.isOnlyHardSpheres = true;
+			p.isPausedWithoutMouse = true;
 
 			var particleCount = 10;
-			var initialSpeed = 1;
+			var initialSpeed = 5;
 			for (var i = 0; i < particleCount; i++) {
 				var particle = new Particle();
 				particle.position = randomDiscInRect(simulation.boxBounds, particle.radius);
@@ -94,6 +96,7 @@ There are three big differences, though. The tiny particles ...
 		{
 			var p = simulation.parameters;
 			p.friction = 0.2;
+			p.isPausedWithoutMouse = true;
 
 			addOppositeParticles(simulation, 1);
 
@@ -125,6 +128,7 @@ There are three big differences, though. The tiny particles ...
 		{
 			var p = simulation.parameters;
 			p.friction = 0.2;
+			p.isPausedWithoutMouse = true;
 			setBoxWidth(simulation, 80);
 
 			initBilliards(simulation, simulation.boxBounds);
@@ -179,6 +183,7 @@ They **attract** each other and **never stop**.
 		{
 			var p = simulation.parameters;
 			p.friction = 0;
+			p.isPausedWithoutMouse = true;
 
 			addOppositeParticles(simulation, 1);
 
@@ -209,10 +214,11 @@ They **never stop** and are **very many**.
 		{
 			var p = simulation.parameters;
 			p.isOnlyHardSpheres = true;
+			p.isPausedWithoutMouse = true;
 			setBoxWidth(simulation, 100)
 
 			var particleCount = 100;
-			var initialSpeed = 1;
+			var initialSpeed = 5;
 			for (var i = 0; i < particleCount; i++) {
 				var particle = new Particle();
 				particle.position = randomDiscInRect(simulation.boxBounds, particle.radius);
@@ -244,6 +250,7 @@ They are **very many** and **attract** each other.
 		{
 			var p = simulation.parameters;
 			p.friction = 0.2;
+			p.isPausedWithoutMouse = true;
 
 			var particleCount = 100;
 			var initialSpeed = 1;

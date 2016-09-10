@@ -2770,7 +2770,7 @@ function createSimulation(opts)
     
     function updateMouseButtonsFromEvent(event, isDown)
     {
-        if (simulation.mouse.active)
+        if (simulation.mouse.isActive)
         {
             if (event.button == 0) {
                 updateMouseButton(simulation.mouse.leftButton, isDown);
@@ -2783,7 +2783,7 @@ function createSimulation(opts)
 
     function updateMousePositionFromEvent(event)
     {
-        if (simulation.mouse.active)
+        if (true || simulation.mouse.isActive)
         {
             simulation.mouse.worldPosition = worldFromPage(simulation.renderer, v2(event.clientX, event.clientY));
             event.preventDefault();
@@ -2793,7 +2793,7 @@ function createSimulation(opts)
     // NOTE: only listen to mouse events that start on this canvas
     simulation.canvas.addEventListener("mousedown", function(event)
     {
-        simulation.mouse.active = true;
+        simulation.mouse.isActive = true;
         updateMouseButtonsFromEvent(event, true);
         updateMousePositionFromEvent(event);
     });
@@ -2801,9 +2801,10 @@ function createSimulation(opts)
     {
         updateMouseButtonsFromEvent(event, false);
         updateMousePositionFromEvent(event);
-        simulation.mouse.active = false;
+        simulation.mouse.isActive = false;
     });
     document.addEventListener("mousemove", updateMousePositionFromEvent);
+
 
     // ! Pause when simulation is not visible
 
@@ -2874,6 +2875,7 @@ function resetSimulation(simulation)
     p.soundEnabled = false;
     p.maxParticleCount = 0;
     p.shouldRemindOnEscape = true;
+    p.isPausedWithoutMouse = false;
 
     // box
     p.isPeriodic = false;
@@ -2977,8 +2979,8 @@ function resetSimulation(simulation)
     // ! Mouse
 
     simulation.mouse = {
-        active: false,
-        worldPosition: v2(0, 0),
+        isActive: false,
+        worldPosition: v2(Infinity, Infinity),
         leftButton:
         {
             down: false,
@@ -3197,8 +3199,10 @@ var updateSimulation = function()
                 }
             }
         }
-
-        if (!simulation.pausedByUser)
+        var isMouseInside = doesRectContainPoint(simulation.boxBounds, simulation.mouse.worldPosition);
+        var isMouseActive = simulation.mouse.isActive || (isMouseInside && (!simulation.mouse.leftButton.down));
+        var isPaused = simulation.pausedByUser || (simulation.parameters.isPausedWithoutMouse && (!isMouseActive));
+        if (!isPaused)
         {
 
 
