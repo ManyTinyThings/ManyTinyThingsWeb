@@ -85,8 +85,12 @@ function createSequenceDots(sequence)
     var div = createElement("div");
     div.classList.add("sequenceDots");
 
+    if (sequence.panelUrls.length <= 1)
+    {
+        return div;
+    }
+
     var current = NavigationInfo.currentPosition;
-    var currentUrl = current.sequence.panelUrls[current.panelIndex];
 
     for (var panelIndex = 0; panelIndex < sequence.panelUrls.length; panelIndex++) {
         var a = createAndAppend("a", div);
@@ -188,20 +192,24 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // nav bar
 
-    var title = current.sequence.title;
-    var url = parentUrl(current.sequence.baseUrl);
-    while (url !== "/")
-    {
-        var sequence = NavigationInfo.sequences[url];
-        title = `<a href="${arrayLast(sequence.panelUrls)}">${sequence.title}</a> ⟩ ${title}`; 
-        url = parentUrl(url);
-    }
-
     var navBar = document.getElementById("navBar");
-    var sequenceTitle = createAndAppend("h1", navBar);
-    sequenceTitle.innerHTML = title;
-    var sequenceDots = createSequenceDots(current.sequence);
-    navBar.appendChild(sequenceDots);
+
+    if (navBar)
+    {
+        var title = current.sequence.title;
+        var url = parentUrl(current.sequence.baseUrl);
+        while (url !== "/")
+        {
+            var sequence = NavigationInfo.sequences[url];
+            title = `<a href="${arrayLast(sequence.panelUrls)}">${sequence.title}</a> ⟩ ${title}`; 
+            url = parentUrl(url);
+        }
+
+        var sequenceTitle = createAndAppend("h1", navBar);
+        sequenceTitle.innerHTML = title;
+        var sequenceDots = createSequenceDots(current.sequence);
+        navBar.appendChild(sequenceDots);
+    }
 });
 
 // ! Dependency graph

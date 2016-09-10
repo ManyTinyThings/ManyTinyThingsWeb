@@ -41,5 +41,5 @@ It becomes very hard to
 			}
 		},
 	});
-	createShowLatestShotBallButton();
+	createShowLatestShotParticleButton();
 </script>

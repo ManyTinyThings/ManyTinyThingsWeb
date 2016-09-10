@@ -32,5 +32,5 @@ Make a pretty hard shot and try to follow the ball you shot with your eyes.
 It's not too hard, even though I've removed any numbers or markings from the balls.
 
 <script>
-	createShowLatestShotBallButton();
+	createShowLatestShotParticleButton();
 </script>
