@@ -2783,9 +2783,9 @@ function createSimulation(opts)
 
     function updateMousePositionFromEvent(event)
     {
-        if (true || simulation.mouse.isActive)
+        simulation.mouse.worldPosition = worldFromPage(simulation.renderer, v2(event.clientX, event.clientY));
+        if (simulation.mouse.isActive)
         {
-            simulation.mouse.worldPosition = worldFromPage(simulation.renderer, v2(event.clientX, event.clientY));
             event.preventDefault();
         }
     }
