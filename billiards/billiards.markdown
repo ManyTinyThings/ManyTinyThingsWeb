@@ -19,8 +19,11 @@ Let's play some billiards!
 		{
 			var p = simulation.parameters;
 			p.isOnlyHardSpheres = true;
+			p.friction = 0.1;
 
 			initBilliards(simulation, simulation.boxBounds);
+
+			v2.set(simulation.particles[0].velocity, 20, 1);
 
 			thumbnailSim(simulation);
 		}
@@ -60,7 +63,7 @@ There are three big differences, though. The tiny particles ...
 			p.isOnlyHardSpheres = true;
 
 			var particleCount = 10;
-			var initialSpeed = 5;
+			var initialSpeed = 2;
 			for (var i = 0; i < particleCount; i++) {
 				var particle = new Particle();
 				randomDiscInRect(particle.position, particle.radius, simulation.boxBounds);
@@ -123,9 +126,7 @@ There are three big differences, though. The tiny particles ...
 
 			initBilliards(simulation, simulation.boxBounds);
 
-			var ljInteraction = new LennardJonesInteraction();
-			ljInteraction.strength = 10;
-			setInteraction(simulation, 0, 0, ljInteraction);
+			v2.set(simulation.particles[0].velocity, 50, 12);
 
 			thumbnailSim(simulation);
 		}
@@ -153,7 +154,7 @@ Let's now put them together and see what happens!
 
 <div class="threeColumn">
 
-They **attract** each other and **never stop**.
+The particles **attract** each other and **never stop**.
 
 <script>
 	var attractNeverStopSim = createSimulationHere({
@@ -181,7 +182,7 @@ They **attract** each other and **never stop**.
 
 <div class="threeColumn">
 
-They **never stop** and are **very many**.
+The particles **never stop** and are **very many**.
 
 <script>
 	var neverStopManySim = createSimulationHere({
@@ -214,7 +215,7 @@ They **never stop** and are **very many**.
 
 <div class="threeColumn">
 
-They are **very many** and **attract** each other.
+The particles are **very many** and **attract** each other.
 
 <script>
 	var likeSim = createSimulationHere({
@@ -289,7 +290,7 @@ Finally, we put it all together.
 In this chapter we started with the game of billiards, and modified it to be **very many**, **attractive**, **frictionless** particles.
 
 What we have done is create a **model** of how the tiny particles in the real world work.
-The model is not _exactly_ like the real world, it's simpler.
+The model is not _exactly_ like the real world – it's simpler.
 But by being simpler, it makes it easier for us to explore and understand things about the real world.
 
 * In the real world there are **incredibly many** particles, and we have only a few hundred.
