@@ -8,26 +8,17 @@ title: Forever on the Move
             var p = simulation.parameters;
             p.friction = 0;
 
-            var particle = new Particle();
-            addParticle(simulation, particle);
+            addOppositeParticles(simulation, 1);
 
             var ljInteraction = new LennardJonesInteraction();
             ljInteraction.strength = 10;
             setInteraction(simulation, 0, 0, ljInteraction);
 
-            setToolbarAvailableTools(simulation.toolbar, ["move"]);
+            setToolbarAvailableTools(simulation.toolbar, ["impulse"]);
         }
     });
 </script>
 
-A single particle with no friction never stops.
+Did you expect them to vibrate forever?
 
-Give the particle some speed.
-
-<script>
-    // TODO: check for speed?
-    cue(releaseCue(sim));
-    endStep();
-</script>
-
-It keeps going at the same speed forever.
+You were right! But they have to start close enough.

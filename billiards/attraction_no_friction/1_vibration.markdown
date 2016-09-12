@@ -1,6 +1,6 @@
 ---
 sequenceTitle: Attraction & No Friction
-title: Frictionless attraction
+title: Snap vibration
 ---
 
 <script>
@@ -34,17 +34,4 @@ Move these particles closer to each other.
     endStep();
 </script>
 
-They still like each other!
-
-But what if the friction is removed?
-
-<script>
-    createSliderHere({
-        object: sim.parameters,
-        name: "friction",
-        min: 0, max: 0.2,
-        minLabel: "No friction", maxLabel: "Some",
-    }); 
-</script>
-
-They keep vibrating together forever.
+As they come together, they vibrate a bit.

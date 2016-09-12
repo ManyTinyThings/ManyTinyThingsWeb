@@ -1,4 +1,5 @@
 ---
+sequenceTitle: Many & Attracting
 title: Group Hug
 ---
 
@@ -14,26 +15,37 @@ title: Group Hug
             ljInteraction.strength = 10;
             setInteraction(simulation, 0, 0, ljInteraction);
 
-            setToolbarAvailableTools(simulation.toolbar, ["create", "move"]);
+            setToolbarAvailableTools(simulation.toolbar, ["move", "create"]);
         }
     });
 </script>
 
+Move these two closer.
 
-What if there are more than two particles?
+<script>
+    cue(function () {
+        // TODO: timer here
+        var distance = v2.distance(sim.particles[0].position, sim.particles[1].position);
+        return (distance < 3);   
+    });
+    endStep();
+</script>
+
+They still like each other!
+
+What if there were more than two particles?
 
 Add more particles using the **create** tool. 
 
-(If you hold down the mouse button, you "paint" particles when moving the mouse.)
 
 <script>
+    cue(function () {
+        return (sim.particles.length >= requiredCount);  
+    });
     var requiredCount = 20;
     insertHere(createOutput(function() {
         return `${sim.particles.length} / ${requiredCount} particles`;
     }));
-    cue(function () {
-        return (sim.particles.length >= requiredCount);  
-    });
     endStep();
 </script>
 

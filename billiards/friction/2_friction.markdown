@@ -2,7 +2,6 @@
 title: Friction
 ---
 
-<script src="shared.js"></script>
 <script>
     var sim = createSimulation({
         initialize: function(simulation) {

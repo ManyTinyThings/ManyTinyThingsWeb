@@ -19,13 +19,10 @@ Let's play some billiards!
 		{
 			var p = simulation.parameters;
 			p.isOnlyHardSpheres = true;
-			p.isPausedWithoutMouse = true;
 
 			initBilliards(simulation, simulation.boxBounds);
 
-			setToolbarAvailableTools(simulation.toolbar, ["move"]);
-			setElementIsVisible(simulation.resetButton, false);
-			setElementIsVisible(simulation.toolbar.div, false);
+			thumbnailSim(simulation);
 		}
 	});
 
@@ -36,8 +33,8 @@ Let's play some billiards!
 Click the sequence above and explore it.
 
 <script>
-	cue(waitCue(0));
-	endStep();
+	// cue(waitCue(0));
+	// endStep();
 </script>
 
 Remember the **many tiny things** I was talking about earlier?
@@ -61,21 +58,18 @@ There are three big differences, though. The tiny particles ...
 		{
 			var p = simulation.parameters;
 			p.isOnlyHardSpheres = true;
-			p.isPausedWithoutMouse = true;
 
 			var particleCount = 10;
 			var initialSpeed = 5;
 			for (var i = 0; i < particleCount; i++) {
 				var particle = new Particle();
-				particle.position = randomDiscInRect(simulation.boxBounds, particle.radius);
+				randomDiscInRect(particle.position, particle.radius, simulation.boxBounds);
 				v2.set(particle.velocity, randomGaussian(), randomGaussian());
 				v2.scale(particle.velocity, particle.velocity, initialSpeed);
 				addParticle(simulation, particle);
 			}
 
-			setToolbarAvailableTools(simulation.toolbar, ["move"]);
-			setElementIsVisible(simulation.resetButton, false);
-			setElementIsVisible(simulation.toolbar.div, false);
+			thumbnailSim(simulation);
 		}
 	});
 
@@ -96,7 +90,6 @@ There are three big differences, though. The tiny particles ...
 		{
 			var p = simulation.parameters;
 			p.friction = 0.2;
-			p.isPausedWithoutMouse = true;
 
 			addOppositeParticles(simulation, 1);
 
@@ -104,9 +97,7 @@ There are three big differences, though. The tiny particles ...
 			ljInteraction.strength = 10;
 			setInteraction(simulation, 0, 0, ljInteraction);
 
-			setToolbarAvailableTools(simulation.toolbar, ["move"]);
-			setElementIsVisible(simulation.resetButton, false);
-			setElementIsVisible(simulation.toolbar.div, false);
+			thumbnailSim(simulation);
 		}
 
 	});
@@ -128,7 +119,6 @@ There are three big differences, though. The tiny particles ...
 		{
 			var p = simulation.parameters;
 			p.friction = 0.2;
-			p.isPausedWithoutMouse = true;
 			setBoxWidth(simulation, 80);
 
 			initBilliards(simulation, simulation.boxBounds);
@@ -137,9 +127,7 @@ There are three big differences, though. The tiny particles ...
 			ljInteraction.strength = 10;
 			setInteraction(simulation, 0, 0, ljInteraction);
 
-			setToolbarAvailableTools(simulation.toolbar, ["impulse"]);
-			setElementIsVisible(simulation.resetButton, false);
-			setElementIsVisible(simulation.toolbar.div, false);
+			thumbnailSim(simulation);
 		}
 	});
 
@@ -153,19 +141,11 @@ There are three big differences, though. The tiny particles ...
 Click on each difference to explore it.
 
 <script>
-	cue(waitCue(0));
-	endStep();
+	// cue(waitCue(0));
+	// endStep();
 </script>
 
-What have we learned?
-
-Everything is made up of **tiny particles** that behave kind of like billiards balls, except:
-
-* The particles **never stop moving**, because they have **no friction**.
-* There are **incredible many** tiny particles, which means they tend to **spread out everywhere**.
-* The particles can **attract each other**, so they can make up **bigger things**.
-
-We have looked at these three properties separately.
+We have looked at each difference separately.
 
 Let's now put them together and see what happens!
 
@@ -183,7 +163,6 @@ They **attract** each other and **never stop**.
 		{
 			var p = simulation.parameters;
 			p.friction = 0;
-			p.isPausedWithoutMouse = true;
 
 			addOppositeParticles(simulation, 1);
 
@@ -191,9 +170,7 @@ They **attract** each other and **never stop**.
 			ljInteraction.strength = 10;
 			setInteraction(simulation, 0, 0, ljInteraction);
 
-			setToolbarAvailableTools(simulation.toolbar, ["move"]);
-			setElementIsVisible(simulation.resetButton, false);
-			setElementIsVisible(simulation.toolbar.div, false);
+			thumbnailSim(simulation);
 		}
 	});
 
@@ -214,22 +191,19 @@ They **never stop** and are **very many**.
 		{
 			var p = simulation.parameters;
 			p.isOnlyHardSpheres = true;
-			p.isPausedWithoutMouse = true;
-			setBoxWidth(simulation, 100)
+			setBoxWidth(simulation, 150)
 
-			var particleCount = 100;
+			var particleCount = 200;
 			var initialSpeed = 5;
 			for (var i = 0; i < particleCount; i++) {
 				var particle = new Particle();
-				particle.position = randomDiscInRect(simulation.boxBounds, particle.radius);
+				randomDiscInRect(particle.position, particle.radius, simulation.boxBounds);
 				v2.set(particle.velocity, randomGaussian(), randomGaussian());
 				v2.scale(particle.velocity, particle.velocity, initialSpeed);
 				addParticle(simulation, particle);
 			}
 
-			setToolbarAvailableTools(simulation.toolbar, ["move"]);
-			setElementIsVisible(simulation.resetButton, false);
-			setElementIsVisible(simulation.toolbar.div, false);
+			thumbnailSim(simulation);
 		}
 	});
 	
@@ -250,13 +224,13 @@ They are **very many** and **attract** each other.
 		{
 			var p = simulation.parameters;
 			p.friction = 0.2;
-			p.isPausedWithoutMouse = true;
+			setBoxWidth(simulation, 40);
 
 			var particleCount = 100;
 			var initialSpeed = 1;
 			for (var i = 0; i < particleCount; i++) {
 				var particle = new Particle();
-				particle.position = randomDiscInRect(simulation.boxBounds, particle.radius);
+				randomDiscInRect(particle.position, particle.radius, simulation.boxBounds);
 				v2.set(particle.velocity, randomGaussian(), randomGaussian());
 				v2.scale(particle.velocity, particle.velocity, initialSpeed);
 				addParticle(simulation, particle);
@@ -266,20 +240,67 @@ They are **very many** and **attract** each other.
 			ljInteraction.strength = 10;
 			setInteraction(simulation, 0, 0, ljInteraction);
 
-			setToolbarAvailableTools(simulation.toolbar, ["impulse"]);
-			setElementIsVisible(simulation.resetButton, false);
-			setElementIsVisible(simulation.toolbar.div, false);
+			thumbnailSim(simulation);
 		}
 	});
 
-	makeParentElementSequenceLink("/billiards/many");
+	makeParentElementSequenceLink("/billiards/many_attraction");
 </script>
 
 </div>
 
 </div>
 
-Explore these too!
+Finally, we put it all together.
+
+**Very many** particles that **attract** each other and **never stop** moving.
+
+<div class="threeColumn">
+<script>
+	var billiardsSim = createSimulationHere({
+		pixelWidth: 250,
+		pixelHeight: 250,
+		initialize: function(simulation)
+		{
+			var p = simulation.parameters;
+			p.friction = 0;
+			setBoxWidth(simulation, 100);
+
+			var particleCount = 200;
+			for (var i = 0; i < particleCount; i++) {
+				var particle = new Particle();
+				randomDiscInRect(particle.position, particle.radius, simulation.boxBounds);
+				v2.set(particle.velocity, randomGaussian(), randomGaussian());
+				addParticle(simulation, particle);
+			}
+
+			var ljInteraction = new LennardJonesInteraction();
+			ljInteraction.strength = 10;
+			setInteraction(simulation, 0, 0, ljInteraction);
+
+			thumbnailSim(simulation);
+		}
+	});
+
+	makeParentElementSequenceLink("/billiards/attraction_many_no_friction");
+</script>
+</div>
+
+In this chapter we started with the game of billiards, and modified it to be **very many**, **attractive**, **frictionless** particles.
+
+What we have done is create a **model** of how the tiny particles in the real world work.
+The model is not _exactly_ like the real world, it's simpler.
+But by being simpler, it makes it easier for us to explore and understand things about the real world.
+
+* In the real world there are **incredibly many** particles, and we have only a few hundred.
+	* The particles in the real world are too many and small to see. It's easier to think about a few hundred.
+* There are many different kinds of particle, and the attraction between them is more complicated in the real world.
+	* Most things we will explore here work just as well with one or two kinds of particle.
+* Our particles move only in two dimensions, but the real world is three-dimensional.
+	* In 2D, we can see all the particles. In 3D, particles can hide behind other particles, which makes it harder to see what they're doing.
+
+Now that we've created this model, let's put it to use!
+In the coming chapters we will use our **model** to help us understand things about the **real world**.
 
 </div>
 </div>

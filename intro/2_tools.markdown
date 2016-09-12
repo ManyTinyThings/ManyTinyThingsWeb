@@ -35,6 +35,8 @@ Use the **create** tool to create more balls.
 	endStep();
 </script>
 
+(If you hold down the mouse button, you "paint" particles when moving the mouse.)
+
 Use the **attract** tool to lift all the balls off the ground.
 
 <script>

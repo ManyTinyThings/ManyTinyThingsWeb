@@ -1,12 +1,12 @@
 ---
-title: Breaking with friction
+title: The Return of Ice/Mud Billiards
 ---
 
 <script>
     var sim = createSimulation({
         initialize: function(simulation) {
             var p = simulation.parameters;
-            p.friction = 0.2;
+            p.friction = 0;
             setBoxWidth(simulation, 90);
 
             initBilliards(simulation, simulation.boxBounds);
@@ -16,13 +16,9 @@ title: Breaking with friction
     });
 </script>
 
-With friction, we need a lot of force to break a triangle this big, maybe even multiple shots.
-
-Break the triangle.
+Does friction make it easier or harder to spread out the particles?
 
 <script>
-    cue(isBilliardsTriangleSplit(sim));
-    endStep();
+    createIceMudSliderHere();
 </script>
 
-And we need even more shots to spread out the particles evenly.

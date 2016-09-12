@@ -22,7 +22,6 @@ Every big thing in the world is made up of **many tiny things**.
 			p.attractStrength = 1;
 			p.thermostatSpeed = 0.1;
 			p.thermostatTemperature = 100;
-			p.isPausedWithoutMouse = true;
 
 			setBoxWidth(simulation, 200)
 
@@ -30,15 +29,14 @@ Every big thing in the world is made up of **many tiny things**.
 			var initialSpeed = 10;
 			for (var i = 0; i < particleCount; i++) {
 				var particle = new Particle();
-				particle.position = randomDiscInRect(simulation.boxBounds, particle.radius);
+				randomDiscInRect(particle.position, particle.radius, simulation.boxBounds);
 				v2.set(particle.velocity, randomGaussian(), randomGaussian());
 				v2.scale(particle.velocity, particle.velocity, 10);
 				addParticle(simulation, particle);
 			}
 
 			setToolbarAvailableTools(simulation.toolbar, ["attract"]);
-			setElementIsVisible(simulation.resetButton, false);
-			setElementIsVisible(simulation.toolbar.div, false);
+			thumbnailSim(simulation);
 		}
 	});
 </script>
@@ -58,28 +56,29 @@ Every big thing in the world is made up of **many tiny things**.
 			p.thermostatSpeed = 0.1;
 			p.thermostatTemperature = 1;
 			p.repelStrength = 0.2;
-			p.isPausedWithoutMouse = true;
 			//p.isOnlyHardSpheres = true;
 			setBoxWidth(simulation, 60);
 
 			setWallsAlongBorder(simulation);
+			var wallY = -10;
+			simulation.walls.push(new Wall(v2(simulation.boxBounds.left, wallY), v2(simulation.boxBounds.right, wallY)));
 
 			var particleCount = 200;
 			var particles = [];
 			for (var i = 0; i < particleCount; i++) {
 				var particle = new Particle();
-				particle.position = randomPointInRect(simulation.boxBounds);
 				particles.push(particle);
 			}
-			addParticlesRandomly(simulation, particles);
+			addParticlesRandomlyAround(simulation, particles, v2(0, simulation.boxBounds.bottom + 2));
+
+			arrayRemoveElementAt(simulation.walls, -1);
 
 			var ljInteraction = new LennardJonesInteraction();
 			ljInteraction.separation *= 0.8;
 			setInteraction(simulation, 0, 0, ljInteraction);
 
 			setToolbarAvailableTools(simulation.toolbar, ["repel"]);
-			setElementIsVisible(simulation.resetButton, false);
-			setElementIsVisible(simulation.toolbar.div, false);
+			thumbnailSim(simulation);
 		}
 	});
 
@@ -100,7 +99,6 @@ Every big thing in the world is made up of **many tiny things**.
 			p.gravityAcceleration = 1;
 			p.dragStrength = 10;
 			p.friction = 0.1;
-			p.isPausedWithoutMouse = true;
 
 			setBoxWidth(simulation, 40);
 
@@ -133,8 +131,7 @@ Every big thing in the world is made up of **many tiny things**.
 			setInteraction(simulation, 1, 1, ljInteraction);
 
 			setToolbarAvailableTools(simulation.toolbar, ["move"]);
-			setElementIsVisible(simulation.resetButton, false);
-			setElementIsVisible(simulation.toolbar.div, false);
+			thumbnailSim(simulation);
 		}
 	});
 </script>
@@ -151,7 +148,7 @@ What are the _macroscopic_ consequences of being made up of many _microscopic_ t
 
 The explanations will include simulations of many tiny things, as you can see above. Not only are these simulations running in real time, they are also _interactive_. Try clicking, holding and dragging in the simulations above and see what happens.
 
-If you are ready, [let's start](/billiards/1_impulse)!
+If you are ready, [let's start](/billiards/billiards)!
 
 
-{% include sequences.html %}
+<!-- {% include sequences.html %} -->

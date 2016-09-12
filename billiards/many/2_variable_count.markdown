@@ -19,19 +19,13 @@ title: Even More Particles
     });
 </script>
 
-16 balls might be enough for billiards, but 16 tiny particles is hardly enough to make up any big things.
-
-Here are a lot more particles.
-
-Try following the particle you shoot here
-
-It becomes very hard to 
+16 balls might be enough for billiards, but in the real world there are **incredibly many** more than 16 tiny particles.
 
 <script>
 	createSliderHere({
 		initialValue: boxWidth,
 		min: 25, max: 150,
-		minLabel: "16", maxLabel: "A lot",
+		minLabel: "16 particles", maxLabel: "Many",
 		update: function(value)
 		{
 			if (boxWidth != value)
@@ -41,5 +35,10 @@ It becomes very hard to
 			}
 		},
 	});
+</script>
+
+The more particles, the harder it becomes to track a single particle.
+
+<script>
 	createShowLatestShotParticleButton();
 </script>

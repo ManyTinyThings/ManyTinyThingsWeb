@@ -15,15 +15,15 @@ title: Low Speed Bouncin'
             ljInteraction.strength = 10;
             setInteraction(simulation, 0, 0, ljInteraction);
 
-            setToolbarAvailableTools(simulation.toolbar, ["impulse"]);
+            setToolbarAvailableTools(simulation.toolbar, ["move"]);
         }
     });
 </script>
 
 
-With no friction, can the particles ever find a partner?
+What do you think will happen when there is **no friction**?
 
-Carefully shoot the particles toward each other.
+Move the particles together.
 
 <script>
     cue(function () {
@@ -36,7 +36,7 @@ Carefully shoot the particles toward each other.
     endStep();
 </script>
 
-They bounce off each other, even with very little speed.
+They don't want to stay together!
 
 Without friction, the speed they get from the attraction is too high to stay.
 

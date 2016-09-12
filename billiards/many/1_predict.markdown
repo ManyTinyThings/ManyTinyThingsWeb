@@ -18,19 +18,28 @@ title: Follow
     });
 </script>
 
-Billiards is usually played using 16 balls.
-
-It's enough balls to make the game interesting, while not too many to keep track of.
-
-Make a pretty hard shot and try to follow the ball you shot with your eyes.
+Make a break shot!
 
 <script>
 	cue(isBilliardsTriangleSplit(sim));
 	endStep();
 </script>
 
-It's not too hard, even though I've removed any numbers or markings from the balls.
+If you shoot hard enough, the balls will split and end up spread out across the billiards table.
+
+This makes for new situations every game.
+
+Now, shoot a ball and try to predict where it will end up.
 
 <script>
-	createShowLatestShotParticleButton();
+    cue(releaseCue(sim));
+    endStep();
 </script>
+
+Was your prediction correct?
+
+<script>
+    createShowLatestShotParticleButton();
+</script>
+
+Being able to predict where particles end up is what makes billiards a fun and challenging game.

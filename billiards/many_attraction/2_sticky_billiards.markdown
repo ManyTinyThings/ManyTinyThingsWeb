@@ -26,7 +26,7 @@ title: Sticky Billiards
 
 Back to billiards!
 
-Split the triangle.
+Split the group-hugging triangle.
 
 <script>
     cue(isBilliardsTriangleSplit(sim));

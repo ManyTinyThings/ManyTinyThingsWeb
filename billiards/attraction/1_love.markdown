@@ -48,5 +48,5 @@ Can you get them to let go?
 
 It takes some effort!
 
-There's a _force_ binding the particles together. You can think of this force as _love_: it's something that can't be explained, it's just there, binding things together.
+There's a _force_ binding the particles together.
 

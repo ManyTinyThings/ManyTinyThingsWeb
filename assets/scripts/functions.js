@@ -140,6 +140,12 @@ function makeParentElementSequenceLink(sequenceUrl)
     parentElement.appendChild(sequenceDots);
 }
 
+function thumbnailSim(simulation)
+{
+    simulation.parameters.isPausedWithoutMouse = true;
+    setElementIsVisible(simulation.controlsDiv, false);
+}
+
 function replaceAt(string, index, replacementString)
 {
     return string.substr(0, index) + replacementString + string.substr(index + replacementString.length);
@@ -509,6 +515,10 @@ function copyObject(destination, source)
 
 function arrayRemoveElementAt(array, index)
 {
+    if (index < 0)
+    {
+        index = array.length + index;
+    }
     array.splice(index, 1);
 }
 
@@ -641,6 +651,11 @@ function identity(x)
     return x;
 }
 
+function dontBreak(string)
+{
+    return string.replace(" ", "&nbsp;");
+}
+
 function createSlider(opts)
 {
     combineWithDefaults(opts,
@@ -661,9 +676,10 @@ function createSlider(opts)
     // set up elements
 
     var p = createElement("p");
-    p.appendChild(document.createTextNode(opts.minLabel));
+    p.classList.add("slider");
+    createAndAppend("div", p).innerHTML = dontBreak(opts.minLabel);
     var slider = createAndAppend("input", p);
-    p.appendChild(document.createTextNode(opts.maxLabel));
+    createAndAppend("div", p).innerHTML = dontBreak(opts.maxLabel);
 
     // configure slider
 
@@ -2206,7 +2222,7 @@ function latticeParticleGenerator(simulation, particleIndex)
     return particle;
 }
 
-function addParticlesRandomly(simulation, newParticles)
+function addParticlesRandomlyAround(simulation, newParticles, startingPoint)
 {
     var maxTryCount = 10;
     var candidates = [];
@@ -2215,11 +2231,7 @@ function addParticlesRandomly(simulation, newParticles)
     if (simulation.particles.length == 0)
     {
         var newParticle = newParticles[0];
-        var r = newParticle.radius;
-        var b = simulation.boxBounds;
-        var x = randomInInterval(b.left + r, b.right - r);
-        var y = randomInInterval(b.bottom + r, b.top - r);
-        v2.set(newParticle.position, x, y);
+        v2.copy(newParticle.position, startingPoint);
         addParticle(simulation, newParticle);
         candidates.push(newParticle);
         startingNewParticleIndex = 1;
@@ -2231,6 +2243,8 @@ function addParticlesRandomly(simulation, newParticles)
             candidates.push(simulation.particles[particleIndex]);
         }
     }
+    var wallStart = v2.alloc();
+    var wallVector = v2.alloc();
 
     for (var newParticleIndex = startingNewParticleIndex; newParticleIndex < newParticles.length; newParticleIndex++)
     {
@@ -2262,7 +2276,22 @@ function addParticlesRandomly(simulation, newParticles)
                 var deltaPosition = randomUnitVector();
                 v2.scale(deltaPosition, deltaPosition, randomRadius);
                 v2.add(newParticle.position, candidate.position, deltaPosition);
-                if (!isColliding(simulation, newParticle))
+
+                var isAcrossWall = false;
+                for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++) {
+                    var wall = simulation.walls[wallIndex];
+                    v2.subtract(wallStart, wall.vertices[0], candidate.position);
+                    v2.subtract(wallVector, wall.vertices[1], wall.vertices[0]);
+                    var intersection = intersectionOriginLineLine(deltaPosition, wallStart, wallVector);
+                    var isIntersecting = isBetween(0, intersection.tOriginLine, 1) && isBetween(0, intersection.tLine, 1);
+                    if (isIntersecting)
+                    {
+                        isAcrossWall = true;
+                        break;
+                    }
+                }
+                var isValid = !(isAcrossWall || isColliding(simulation, newParticle));
+                if (isValid)
                 {
                     isSearching = false;
                 }
@@ -2274,6 +2303,9 @@ function addParticlesRandomly(simulation, newParticles)
             candidates.push(newParticle);
         };
     }
+
+    v2.free(wallStart);
+    v2.free(wallVector);
 }
 
 // ! Billiards
@@ -2348,6 +2380,25 @@ function isBilliardsTriangleSplit(simulation)
     
     return cueFunction;
 }
+
+// ! Friction
+
+function createIceMudSliderHere()
+{
+    createSliderHere({
+        initialValue: sim.parameters.friction,
+        min: 0.04, max: 5,
+        minLabel: "Ice", maxLabel: "Mud",
+        transform: function(x) { return Math.exp(x); },
+        inverseTransform: function(x) { return Math.log(x); },
+        update: function(value)
+        {
+            sim.parameters.friction = value;
+        }
+    }); 
+}
+
+
 
 
 // ! Particle setup
@@ -2538,7 +2589,6 @@ function isColliding(simulation, particle)
 
     if (simulation.walls)
     {
-
         var particleFromWall = v2.alloc();
 
         for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++) {
@@ -2557,77 +2607,6 @@ function isColliding(simulation, particle)
         v2.free(particleFromWall);
     }
     return isCollidingWithWall;
-}
-
-function moveOutOfCollision(simulation, particle)
-{
-    var relativePosition = v2.alloc();
-    var wallVector = v2.alloc();
-
-    var hasCollisions = true;
-    while (hasCollisions)
-    {
-        hasCollisions = false;
-        if (simulation.walls)
-        {
-            for (var wallIndex = 0; wallIndex < simulation.walls.length; wallIndex++)
-            {
-                var wall = simulation.walls[wallIndex];
-
-                shortestVectorFromLine(relativePosition, particle.position, wall.vertices[1], wall.vertices[0]);
-
-                var squaredDistance = v2.square(relativePosition);
-                if (squaredDistance < square(particle.radius))
-                {
-                    var distance = Math.sqrt(squaredDistance);
-                    var overlapRatio = (particle.radius - distance) / distance;
-                    v2.scaleAndAdd(particle.position,
-                        particle.position, relativePosition, overlapRatio);
-                    hasCollisions = true;
-                    break;
-                }
-            }
-            if (hasCollisions)
-            {
-                continue;
-            }
-        }
-
-        // for (var otherParticleIndex = 0; otherParticleIndex < simulation.particles.length; otherParticleIndex++)
-        // {
-        //     var otherParticle = simulation.particles[otherParticleIndex];
-        //     if (otherParticle === particle)
-        //     {
-        //         continue;
-        //     }
-
-        //     var distanceLimit = particle.radius + otherParticle.radius;
-        //     v2.subtract(relativePosition, otherParticle.position, particle.position);
-        //     var squaredDistance = v2.square(relativePosition);
-
-        //     if (squaredDistance < square(distanceLimit))
-        //     {
-        //         var distance = Math.sqrt(squaredDistance);
-        //         var overlapRatio = (distanceLimit - distance) / distance;
-
-        //         // NOTE: move particles according to their relative size, 
-        //         // otherwise very big particles might have problems
-        //         // v2.scaleAndAdd(particle.position,
-        //         //     particle.position, relativePosition, -overlapRatio * otherParticle.radius / distanceLimit);
-        //         // v2.scaleAndAdd(otherParticle.position,
-        //         //     otherParticle.position, relativePosition, overlapRatio * particle.radius / distanceLimit);
-
-        //         v2.scaleAndAdd(particle.position,
-        //             particle.position, relativePosition, -overlapRatio);
-
-        //         hasCollisions = true;
-        //         break;
-        //     }
-        // }
-    }
-
-    v2.free(relativePosition);
-    v2.free(wallVector);
 }
 
 function removeParticle(simulation, particleIndex)
@@ -3953,6 +3932,11 @@ function atMost(a, b)
     return Math.min(a, b);
 }
 
+function isBetween(a, x, b)
+{
+    return (a <= x) && (x <= b);
+}
+
 function clamp(a, x, b)
 {
     return Math.max(a, Math.min(b, x));
@@ -4138,11 +4122,11 @@ function randomPointInRect(rect)
         randomInInterval(rect.bottom, rect.top));
 }
 
-function randomDiscInRect(rect, radius)
+function randomDiscInRect(out, radius, rect)
 {
-    var x = randomInInterval(rect.left + radius, rect.right - radius);
-    var y = randomInInterval(rect.bottom + radius, rect.top - radius);
-    return v2(x, y);
+    out[0] = randomInInterval(rect.left + radius, rect.right - radius);
+    out[1] = randomInInterval(rect.bottom + radius, rect.top - radius);
+    return out;
 }
 
 function randomInInterval(a, b)

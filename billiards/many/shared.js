@@ -1,5 +1,5 @@
 
-function createShowLatestShotBallButton()
+function createShowLatestShotParticleButton()
 {
 	insertHere(createButton({
 		label: "Show latest shot ball",

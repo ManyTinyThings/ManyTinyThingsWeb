@@ -47,6 +47,6 @@ Shoot the ball very carefully.
     endStep();
 </script>
 
-The triangle will break, and the particles will spread out evenly.
+The triangle _will_ break, and the particles _will_ spread out evenly.
 
 You just need to have _patience_.
