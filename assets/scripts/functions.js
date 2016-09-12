@@ -155,7 +155,7 @@ function replaceAt(string, index, replacementString)
 (function() {
     var current = NavigationInfo.currentPosition;
     var sequenceProgress = localStorage[current.sequence.baseUrl];
-    if (!sequenceProgress)
+    if (!sequenceProgress || (sequenceProgress.length != current.sequence.panelUrls.length))
     {
         sequenceProgress = "○".repeat(current.sequence.panelUrls.length);      
     }
