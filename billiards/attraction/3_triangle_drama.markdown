@@ -43,3 +43,5 @@ Will there be a fight?
 </script>
 
 No, they all like each other equally!
+
+Move them around a bit and you'll notice that they don't just move towards the mouse. They also move or rotate around each other!
