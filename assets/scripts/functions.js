@@ -1840,6 +1840,16 @@ function getTotalPressure(simulation)
     return pressure;
 }
 
+function getTotalTemperature(simulation)
+{
+    var totalKineticEnergy = 0;
+    for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++) {
+        var particle = simulation.particles[particleIndex];
+        totalKineticEnergy += particle.kineticEnergy;
+    }
+    return (totalKineticEnergy / simulation.particles.length);
+}
+
 // ! Regions
 
 function Region()
@@ -2891,8 +2901,9 @@ function resetSimulation(simulation)
     p.impulseStrength = 1;
 
     // thermostat
-    p.thermostatSpeed = 0;
-    p.thermostatTemperature = 0.01;
+    p.thermostatRandomStrength = 0;
+    p.thermostatDeterministicStrength = 0;
+    p.thermostatTemperature = 1;
 
     // reset stuff
     var s = simulation;
@@ -3220,19 +3231,23 @@ var updateSimulation = function()
                 // ! Equations of motion
                 var particles = simulation.particles;
 
+                var temperature = atLeast(0.00001, getTotalTemperature(simulation));
+                var relativeTemperatureDifference = (params.thermostatTemperature - temperature) / temperature;
+                var thermostatScaling = Math.sqrt(1 + params.thermostatDeterministicStrength * dt * relativeTemperatureDifference);
+
                 // langevin setup
 
-                applyLangevinNoise(particles, params.thermostatSpeed, params.thermostatTemperature, dt);
+                applyLangevinNoise(particles, params.thermostatRandomStrength, params.thermostatTemperature, dt);
 
                 for (var particleIndex = 0; particleIndex < particles.length;
                     ++particleIndex)
                 {
                     var particle = particles[particleIndex];
 
-                    // Scale velocities with delta temperature
-
-                    v2.scale(particle.velocity, particle.velocity,
-                        Math.pow(params.velocityAmplification, dt));
+                    // Scale velocities with thermostat
+                    
+                    v2.scale(particle.velocity, particle.velocity, thermostatScaling);
+                    
 
                     // velocity verlet
                     v2.scaleAndAdd(particle.velocity, particle.velocity, particle.acceleration, 0.5 * dt);
@@ -3740,7 +3755,7 @@ var updateSimulation = function()
                     }
                 }
 
-                applyLangevinNoise(particles, params.thermostatSpeed, params.thermostatTemperature, dt);
+                applyLangevinNoise(particles, params.thermostatRandomStrength, params.thermostatTemperature, dt);
 
             }
 
