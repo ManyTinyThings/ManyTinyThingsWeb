@@ -3949,12 +3949,7 @@ function lerp(a, t, b)
 
 function mod(a, b)
 {
-    var result = a % b;
-    if (result < 0)
-    {
-        result += b;
-    }
-    return result;
+    return ((a % b) + b) % b;
 }
 
 function microstateEntropy(p)
