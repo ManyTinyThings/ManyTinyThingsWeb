@@ -29,15 +29,17 @@ Let's play some billiards!
 		}
 	});
 
-	makeParentElementSequenceLink("/billiards/intro");
+	var introSequence = makeParentElementSequenceLink("/billiards/intro");
 </script>
 </div>
 
-Click the sequence above and explore it.
+Click the sequence above to explore it.
 
 <script>
-	// cue(waitCue(0));
-	// endStep();
+	cue(function() {
+		return isSequenceCompleted("/billiards/intro");
+	});
+	endStep();
 </script>
 
 Remember the **many tiny things** I was talking about earlier?
@@ -142,8 +144,10 @@ There are three big differences, though. The tiny particles ...
 Click on each difference to explore it.
 
 <script>
-	// cue(waitCue(0));
-	// endStep();
+	cue(function() {
+		return (isSequenceCompleted("/billiards/many") && isSequenceCompleted("/billiards/attraction") && isSequenceCompleted("/billiards/friction"));
+	});
+	endStep();
 </script>
 
 We have looked at each difference separately.
@@ -252,11 +256,20 @@ The particles are **very many** and **attract** each other.
 
 </div>
 
+Complete these.
+
+<script>
+	cue(function() {
+		return (isSequenceCompleted("/billiards/many_attraction") && isSequenceCompleted("/billiards/many_no_friction") && isSequenceCompleted("/billiards/attraction_no_friction"));
+	});
+	endStep();
+</script>
+
 Finally, we put it all together.
 
+<div class="threeColumn">
 **Very many** particles that **attract** each other and **never stop** moving.
 
-<div class="threeColumn">
 <script>
 	var billiardsSim = createSimulationHere({
 		pixelWidth: 250,
@@ -287,13 +300,22 @@ Finally, we put it all together.
 </script>
 </div>
 
+Explore this.
+
+<script>
+	cue(function() {
+		return isSequenceCompleted("/billiards/attraction_many_no_friction");
+	});
+	endStep();
+</script>
+
 In this chapter we started with the game of billiards, and modified it to be **very many**, **attractive**, **frictionless** particles.
 
 What we have done is create a **model** of how the tiny particles in the real world work.
 The model is not _exactly_ like the real world – it's simpler.
 But by being simpler, it makes it easier for us to explore and understand things about the real world.
 
-* In the real world there are **incredibly many** particles, and we have only a few hundred.
+<!-- * In the real world there are **incredibly many** particles, and we have only a few hundred.
 	* The particles in the real world are too many and small to see. It's easier to think about a few hundred.
 * There are many different kinds of particle, and the attraction between them is more complicated in the real world.
 	* Most things we will explore here work just as well with one or two kinds of particle.
@@ -301,7 +323,7 @@ But by being simpler, it makes it easier for us to explore and understand things
 	* In 2D, we can see all the particles. In 3D, particles can hide behind other particles, which makes it harder to see what they're doing.
 
 Now that we've created this model, let's put it to use!
-In the coming chapters we will use our **model** to help us understand things about the **real world**.
+In the coming chapters we will use our **model** to help us understand things about the **real world**. -->
 
 </div>
 </div>

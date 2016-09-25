@@ -26,10 +26,16 @@ title: Fast and slow
     		setToolbarAvailableTools(simulation.toolbar, ["impulse"]);
         }
     });
+
+    // TODO: make two separate sims instead?
 </script>
 
 I've put two billiards tables side-by-side.
 
-Make a hard break shot in one.
+Make a hard shot in one.
 
-And a soft break shot in the other.
+And a soft shot in the other.
+
+The soft shot takes a lot longer to spread all the particles out, as we saw before.
+
+But notice too that the strength of your shot is still visible. The particles in one table are a lot more energetic than the particles in the other.

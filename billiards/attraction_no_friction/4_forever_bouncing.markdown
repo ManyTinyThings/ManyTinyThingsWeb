@@ -17,6 +17,9 @@ title: Forever on the Move
             setToolbarAvailableTools(simulation.toolbar, ["impulse"]);
         }
     });
+
+    // TODO: maybe talk about rotation here?
+    // TODO: what about a third particle?
 </script>
 
 Did you expect them to vibrate forever?

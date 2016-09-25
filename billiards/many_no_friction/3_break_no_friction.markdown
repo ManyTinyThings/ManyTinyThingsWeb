@@ -18,7 +18,7 @@ title: Careful Breakage
 
 With **no friction**, it should be even easier to break the triangle than on ice.
 
-Shoot the ball very carefully.
+Shoot the ball _very carefully_.
 
 <script>
     var isAiming = false;
@@ -50,3 +50,21 @@ Shoot the ball very carefully.
 The triangle _will_ break, and the particles _will_ spread out evenly.
 
 You just need to have _patience_.
+
+(_Psst!_ If you get bored, use this slider to speed up time.)
+
+<script>
+    createSliderHere({
+        initialValue: sim.parameters.simulationTimePerSecond,
+        min: sim.parameters.simulationTimePerSecond,
+        max: 10 * sim.parameters.simulationTimePerSecond,
+        minLabel: "Normal",
+        maxLabel: "Fast",
+        transform: function(x) { return Math.exp(x); },
+        inverseTransform: function(x) { return Math.log(x); },
+        update: function (value)
+        {
+            sim.parameters.simulationTimePerSecond = value;
+        },
+    });
+</script>

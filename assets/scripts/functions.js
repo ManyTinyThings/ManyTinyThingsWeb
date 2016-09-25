@@ -138,6 +138,21 @@ function makeParentElementSequenceLink(sequenceUrl)
 
     var sequenceDots = createSequenceDots(sequence);
     parentElement.appendChild(sequenceDots);
+
+    return sequence;
+}
+
+function isSequenceCompleted(sequenceUrl)
+{
+    var sequenceProgress = localStorage[sequenceUrl];
+    for (var i = 0; i < sequenceProgress.length; i++) {
+        var char = sequenceProgress[i];
+        if (char !== "●")
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
 function thumbnailSim(simulation)
@@ -2894,6 +2909,7 @@ function resetSimulation(simulation)
     p.cutoffFactor = 2.5;
     p.wallStrength = 1;
 
+
     // user forces
     p.dragStrength = 1;
     p.repelStrength = 1;
@@ -3098,23 +3114,15 @@ var updateSimulation = function()
     return function(updateFunction, simulation, timestamp)
     {
 
+        var doImpulseNow = false;
+
         // ! Process input
 
         // TODO: handle periodic boundary conditions in mouse input
 
         if (simulation.mouse.leftButton.transitionCount > 0)
         {
-            if (simulation.mouse.mode == MouseMode.impulse)
-            {
-                var particle = simulation.mouse.activeParticle;
-                if (particle)
-                {
-                    var strength = simulation.parameters.impulseStrength;
-                    v2.subtract(relativePosition, simulation.mouse.worldPosition, particle.position);
-                    v2.scaleAndAdd(particle.velocity, 
-                        particle.velocity, relativePosition, strength);
-                }
-            }
+            var doImpulseNow = (simulation.mouse.mode == MouseMode.impulse);
 
             simulation.mouse.mode = MouseMode.none;
         }
@@ -3712,16 +3720,24 @@ var updateSimulation = function()
                     }
                 }
 
-                // ! Move tool
-
-                if (simulation.mouse.mode === MouseMode.move)
+                // TODO: not really happy with the .isRemoved and the handling of the selectedParticles
+                var activeParticle = simulation.mouse.activeParticle;
+                if (activeParticle && !activeParticle.isRemoved)
                 {
-                    var activeParticle = simulation.mouse.activeParticle;
-                    // TODO: not really happy with the .isRemoved and the handling of the selectedParticles
-                    if (!activeParticle.isRemoved)
-                    {
-                        v2.subtract(mouseToParticle, activeParticle.position, simulation.mouse.worldPosition);
+                    v2.subtract(mouseToParticle, activeParticle.position, simulation.mouse.worldPosition);
 
+                    // ! Impulse tool
+
+                    if (doImpulseNow)
+                    {
+                        v2.scaleAndAdd(particle.acceleration,
+                            particle.acceleration, mouseToParticle, - params.impulseStrength / dt);
+                    }
+
+                    // ! Move tool
+
+                    if (simulation.mouse.mode === MouseMode.move)
+                    {
                         for (var i = 0; i < simulation.mouse.selectedParticleIndices.length; i++)
                         {
                             var particle = particles[simulation.mouse.selectedParticleIndices[i]];
@@ -3730,10 +3746,22 @@ var updateSimulation = function()
                                 mouseToParticle, -params.dragStrength / particle.mass);
                             v2.scaleAndAdd(particle.acceleration, particle.acceleration,
                                 particle.velocity, -1 / particle.mass);
+
+                            // Only damp in the direction of the mouse
+                            // var squaredDistance = v2.square(mouseToParticle)
+                            // if (squaredDistance > 0)
+                            // {
+                            //     var velocityProjection = v2.inner(particle.velocity, mouseToParticle) / squaredDistance;
+                            //     v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                            //         mouseToParticle, -velocityProjection / particle.mass);    
+                            // }
+                            
                         }    
                     }
+
                 }
 
+                
                 v2.free(mouseToParticle);
 
                 for (var particleIndex = 0; particleIndex < particles.length;
