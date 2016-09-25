@@ -3123,7 +3123,6 @@ var updateSimulation = function()
         if (simulation.mouse.leftButton.transitionCount > 0)
         {
             var doImpulseNow = (simulation.mouse.mode == MouseMode.impulse);
-
             simulation.mouse.mode = MouseMode.none;
         }
 
@@ -3131,11 +3130,12 @@ var updateSimulation = function()
         {
             var closestParticleIndex = findClosestParticle(simulation, simulation.mouse.worldPosition);
             var closestParticleExists = (closestParticleIndex >= 0);
+            
+            var maxDistance = 5 / simulation.pixelWidth * simulation.boxBounds.width;
 
             if (closestParticleExists)
             {
                 var closestParticle = simulation.particles[closestParticleIndex];
-                var maxDistance = 5 / simulation.pixelWidth * simulation.boxBounds.width;
                 var distanceToCenter = v2.distance(closestParticle.position, simulation.mouse.worldPosition);
                 var distanceToRim = distanceToCenter - closestParticle.radius;
                 closestParticleExists = (distanceToRim < maxDistance);
@@ -3730,8 +3730,8 @@ var updateSimulation = function()
 
                     if (doImpulseNow)
                     {
-                        v2.scaleAndAdd(particle.acceleration,
-                            particle.acceleration, mouseToParticle, - params.impulseStrength / dt);
+                        v2.scaleAndAdd(activeParticle.acceleration,
+                            activeParticle.acceleration, mouseToParticle, - params.impulseStrength / dt);
                     }
 
                     // ! Move tool
