@@ -20,13 +20,13 @@ Every big thing in the world is made up of **many tiny things**.
 			p.isOnlyHardSpheres = true;
 			p.gravityAcceleration = 1;
 			p.attractStrength = 1;
-			p.thermostatSpeed = 1;
-			p.thermostatTemperature = 10;
+			p.thermostatRandomStrength = 0.1;
+			p.thermostatTemperature = 100;
 
 			setBoxWidth(simulation, 200)
 
 			var particleCount = 200;
-			var initialSpeed = 10;
+			var initialSpeed = 1;
 			for (var i = 0; i < particleCount; i++) {
 				var particle = new Particle();
 				randomDiscInRect(particle.position, particle.radius, simulation.boxBounds);
@@ -53,7 +53,7 @@ Every big thing in the world is made up of **many tiny things**.
 		{
 			var p = simulation.parameters;
 			p.gravityAcceleration = 1;
-			p.thermostatSpeed = 0.1;
+			p.thermostatDeterministicStrength = 0.1
 			p.thermostatTemperature = 1;
 			p.repelStrength = 0.2;
 			//p.isOnlyHardSpheres = true;
