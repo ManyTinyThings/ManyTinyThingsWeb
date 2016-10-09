@@ -3686,38 +3686,26 @@ var updateSimulation = function()
 
                 var mouseToParticle = v2.alloc();
 
-                // ! Attract tool
 
-                if (simulation.mouse.mode === MouseMode.attract)
-                {
-                    for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++) {
-                        var particle = simulation.particles[particleIndex];
+                var attractToolEnabled = (simulation.mouse.mode === MouseMode.attract);
+                var attractFactor = - attractToolEnabled * params.attractStrength * simulation.boxBounds.width / 20;
 
-                        v2.subtract(mouseToParticle, particle.position, simulation.mouse.worldPosition);
+                var repelToolEnabled = (simulation.mouse.mode === MouseMode.repel);
+                var repelFactor = repelToolEnabled * params.repelStrength * simulation.boxBounds.width;
 
-                        // NOTE: constant force
-                        var repelFactor = - simulation.boxBounds.width / 10 / v2.magnitude(mouseToParticle);
+                for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++) {
+                    var particle = simulation.particles[particleIndex];
+                    v2.subtract(mouseToParticle, particle.position, simulation.mouse.worldPosition);
 
-                        v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                            mouseToParticle, repelFactor * params.attractStrength / particle.mass);
-                    }
-                }
+                    // ! Attract tool
+                    // NOTE: constant force
+                    v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                        mouseToParticle, attractFactor / v2.magnitude(mouseToParticle) / particle.mass);
 
-                // ! Repel tool
-
-                if (simulation.mouse.mode === MouseMode.repel)
-                {
-                    for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++) {
-                        var particle = simulation.particles[particleIndex];
-
-                        v2.subtract(mouseToParticle, particle.position, simulation.mouse.worldPosition);
-
-                        // NOTE: 1/r force
-                        var repelFactor = simulation.boxBounds.width / v2.square(mouseToParticle);
-
-                        v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                            mouseToParticle, repelFactor * params.repelStrength / particle.mass);
-                    }
+                    // ! Repel tool
+                    // NOTE: 1/r force
+                    v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                        mouseToParticle, repelFactor / v2.square(mouseToParticle) / particle.mass);
                 }
 
                 // TODO: not really happy with the .isRemoved and the handling of the selectedParticles
@@ -3736,33 +3724,29 @@ var updateSimulation = function()
 
                     // ! Move tool
 
-                    if (simulation.mouse.mode === MouseMode.move)
-                    {
-                        for (var i = 0; i < simulation.mouse.selectedParticleIndices.length; i++)
-                        {
-                            var particle = particles[simulation.mouse.selectedParticleIndices[i]];
+                    var moveToolEnabled = (simulation.mouse.mode === MouseMode.move);
+                    var moveFactor = - moveToolEnabled / activeParticle.mass;
+                    v2.scaleAndAdd(activeParticle.acceleration, activeParticle.acceleration,
+                        mouseToParticle, moveFactor * params.dragStrength);
+                    v2.scaleAndAdd(activeParticle.acceleration, activeParticle.acceleration,
+                        activeParticle.velocity, moveFactor);
 
-                            v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                                mouseToParticle, -params.dragStrength / particle.mass);
-                            v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                                particle.velocity, -1 / particle.mass);
-
-                            // Only damp in the direction of the mouse
-                            // var squaredDistance = v2.square(mouseToParticle)
-                            // if (squaredDistance > 0)
-                            // {
-                            //     var velocityProjection = v2.inner(particle.velocity, mouseToParticle) / squaredDistance;
-                            //     v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                            //         mouseToParticle, -velocityProjection / particle.mass);    
-                            // }
-                            
-                        }    
-                    }
+                    // Only damp in the direction of the mouse
+                    // var squaredDistance = v2.square(mouseToParticle)
+                    // if (squaredDistance > 0)
+                    // {
+                    //     var velocityProjection = v2.inner(particle.velocity, mouseToParticle) / squaredDistance;
+                    //     v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                    //         mouseToParticle, -velocityProjection / particle.mass);    
+                    // }
+                    
 
                 }
 
                 
                 v2.free(mouseToParticle);
+
+                // ! Finish velocity verlet
 
                 for (var particleIndex = 0; particleIndex < particles.length;
                     ++particleIndex)

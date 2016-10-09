@@ -20,8 +20,8 @@ Every big thing in the world is made up of **many tiny things**.
 			p.isOnlyHardSpheres = true;
 			p.gravityAcceleration = 1;
 			p.attractStrength = 1;
-			p.thermostatSpeed = 0.1;
-			p.thermostatTemperature = 100;
+			p.thermostatSpeed = 1;
+			p.thermostatTemperature = 10;
 
 			setBoxWidth(simulation, 200)
 
