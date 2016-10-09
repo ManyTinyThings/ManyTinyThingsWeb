@@ -108,5 +108,3 @@ The particles are **very many** and **attract** each other.
 </div>
 
 </div>
-
-Complete these.

@@ -36,7 +36,8 @@ Every big thing in the world is made up of **many tiny things**.
 			}
 
 			setToolbarAvailableTools(simulation.toolbar, ["attract"]);
-			thumbnailSim(simulation);
+			//thumbnailSim(simulation);
+			setElementIsVisible(simulation.controlsDiv, false);
 		}
 	});
 </script>
@@ -78,7 +79,8 @@ Every big thing in the world is made up of **many tiny things**.
 			setInteraction(simulation, 0, 0, ljInteraction);
 
 			setToolbarAvailableTools(simulation.toolbar, ["repel"]);
-			thumbnailSim(simulation);
+			//thumbnailSim(simulation);
+			setElementIsVisible(simulation.controlsDiv, false);
 		}
 	});
 
@@ -131,7 +133,8 @@ Every big thing in the world is made up of **many tiny things**.
 			setInteraction(simulation, 1, 1, ljInteraction);
 
 			setToolbarAvailableTools(simulation.toolbar, ["move"]);
-			thumbnailSim(simulation);
+			//thumbnailSim(simulation);
+			setElementIsVisible(simulation.controlsDiv, false);
 		}
 	});
 </script>
@@ -140,15 +143,74 @@ Every big thing in the world is made up of **many tiny things**.
 
 </div>
 
-But we can't see the tiny things without a microscope. They are too small, _microscopic_. We can only see the _macroscopic_ objects the tiny things make up. (And in the case of air, we can't see it at all!)
+But we can't see the tiny things without a microscope. They are too small, **microscopic**.
+We can only see the **macroscopic** objects the tiny things make up
+(and in the case of air, we can't see it at all!).
 
-This website is a _series of explanations_ on how the tiny, microscopic things are connected to the big, macroscopic things that we _can_ see, hear and feel. We will ask the question:
+This website is a series of explanations on how the tiny, microscopic things are connected to the big, macroscopic things that we _can_ see, hear and feel. We will ask the question:
 
-What are the _macroscopic_ consequences of being made up of many _microscopic_ things?
+_What are the **macroscopic** consequences of being made up of many **microscopic** things?_
 
-The explanations will include simulations of many tiny things, as you can see above. Not only are these simulations running in real time, they are also _interactive_. Try clicking, holding and dragging in the simulations above and see what happens.
+The explanations will include simulations of many tiny things, as you can see above. Not only are these simulations running in real time, they are also _interactive_. Try clicking, holding and dragging in the simulations above and see what happens!
 
-If you are ready, [let's start](/billiards/1_impulse)!
+<div class="flex">
 
+<div class="threeColumn">
+
+When you are ready, click here for an **introduction**!
+
+<script>
+    var neverStopManySim = createSimulationHere({
+        pixelWidth: 250,
+        pixelHeight: 250,
+        initialize: function(simulation)
+        {
+            var p = simulation.parameters;
+            p.isOnlyHardSpheres = true;
+            p.friction = 0.1;
+            p.gravityAcceleration = 1;
+
+            var particle = new Particle();
+            addParticle(simulation, particle);
+
+
+            thumbnailSim(simulation);
+        }
+    });
+    
+    makeParentElementSequenceLink("/intro");
+</script>
+
+</div>
+
+<div class="threeColumn">
+
+Then continue here, with **billiards**!
+
+<script>
+    var neverStopManySim = createSimulationHere({
+        pixelWidth: 250,
+        pixelHeight: 250,
+        initialize: function(simulation)
+        {
+            var p = simulation.parameters;
+            
+            initBilliards(simulation, simulation.boxBounds);
+
+            v2.set(simulation.particles[0].velocity, 5, -0.1);
+
+            thumbnailSim(simulation);
+        }
+    });
+    
+    makeParentElementSequenceLink("/billiards");
+</script>
+</div>
+
+<div class="threeColumn">
+</div>
+
+
+</div>
 
 <!-- {% include sequences.html %} -->

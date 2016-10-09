@@ -21,7 +21,7 @@ title: Graph
     });
 </script>
 
-To help us understand some of the more tricky concepts, we will use _visualisations_, mostly _graphs_.
+To help us understand some of the more tricky concepts, we will use _visualisations_, mostly **graphs**.
 
 Here's an example of a graph:
 

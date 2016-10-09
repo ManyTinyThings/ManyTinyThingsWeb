@@ -103,3 +103,5 @@ There are three big differences, though. The tiny particles ...
 </div>
 
 Click on each difference to explore it.
+
+When you are done, go to the next page by clicking down there &darr; or over there &rarr;.

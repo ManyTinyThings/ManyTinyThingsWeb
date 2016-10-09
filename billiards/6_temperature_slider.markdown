@@ -39,9 +39,9 @@ title: Frictionless Hugs for Everyone!
     });
 </script>
 
-Crashing stuff into walls is not a very precise method of investigation.
+Bumping stuff into walls is not a very precise method of investigation.
 
-Here is instead a slider that controls how much movement there is.
+Instead, here is a slider that controls how much the particles move.
 
 <script>
     // TODO: maybe have buttons for critical temperatures

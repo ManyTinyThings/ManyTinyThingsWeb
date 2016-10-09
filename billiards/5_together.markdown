@@ -21,9 +21,9 @@ title: Group Hug
     });
 </script>
 
-Let's recap!
+Let's now put it _all_ together!
 
-We start with a single particle that we can move around.
+We start with a single particle that you can **move around**.
 
 <script>
     cue(function () {
@@ -33,7 +33,7 @@ We start with a single particle that we can move around.
     endStep();
 </script>
 
-We add many more (with the **create** tool).
+We add **many more particles** (with the **create** tool).
 
 <script>
     cue(function () {
@@ -46,9 +46,9 @@ We add many more (with the **create** tool).
     endStep();
 </script>
 
-They attract each other and form a bigger object.
+They **attract each other** and form a bigger object.
 
-Now we turn off the friction.
+Now **turn off the friction**.
 
 <script>
     cue(function () {
@@ -82,6 +82,6 @@ Gently bump the object into a wall.
     endStep();
 </script>
 
-As the object bumps into the wall, the particles start vibrating.
+As the object bumps into the wall, the particles start **vibrating**.
 
-What happens if you keep crashing it into walls?
+What happens if you keep bumping it into walls?
