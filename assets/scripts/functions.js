@@ -2986,7 +2986,7 @@ function resetSimulation(simulation)
 
     simulation.mouse = {
         isActive: false,
-        worldPosition: v2(Infinity, Infinity),
+        worldPosition: v2(0, 0),
         leftButton:
         {
             down: false,
@@ -3693,22 +3693,24 @@ var updateSimulation = function()
                 var repelToolEnabled = (simulation.mouse.mode === MouseMode.repel);
                 var repelFactor = repelToolEnabled * params.repelStrength * simulation.boxBounds.width;
 
-                for (var particleIndex = 0; particleIndex < simulation.particles.length; particleIndex++) {
-                    var particle = simulation.particles[particleIndex];
+                for (var particleIndex = 0; particleIndex < particles.length; particleIndex++) {
+                    var particle = particles[particleIndex];
                     v2.subtract(mouseToParticle, particle.position, simulation.mouse.worldPosition);
+                    var distanceSquared = v2.square(mouseToParticle);
 
                     // ! Attract tool
                     // NOTE: constant force
                     v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                        mouseToParticle, attractFactor / v2.magnitude(mouseToParticle) / particle.mass);
+                        mouseToParticle, attractFactor / Math.sqrt(distanceSquared) / particle.mass);
 
                     // ! Repel tool
                     // NOTE: 1/r force
                     v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                        mouseToParticle, repelFactor / v2.square(mouseToParticle) / particle.mass);
+                        mouseToParticle, repelFactor / distanceSquared / particle.mass);
                 }
 
                 // TODO: not really happy with the .isRemoved and the handling of the selectedParticles
+                // TODO: use a dummyparticle as activeParticle to avoid this branch?
                 var activeParticle = simulation.mouse.activeParticle;
                 if (activeParticle && !activeParticle.isRemoved)
                 {
@@ -3730,17 +3732,6 @@ var updateSimulation = function()
                         mouseToParticle, moveFactor * params.dragStrength);
                     v2.scaleAndAdd(activeParticle.acceleration, activeParticle.acceleration,
                         activeParticle.velocity, moveFactor);
-
-                    // Only damp in the direction of the mouse
-                    // var squaredDistance = v2.square(mouseToParticle)
-                    // if (squaredDistance > 0)
-                    // {
-                    //     var velocityProjection = v2.inner(particle.velocity, mouseToParticle) / squaredDistance;
-                    //     v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                    //         mouseToParticle, -velocityProjection / particle.mass);    
-                    // }
-                    
-
                 }
 
                 
