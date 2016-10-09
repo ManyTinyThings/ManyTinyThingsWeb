@@ -2995,7 +2995,7 @@ function resetSimulation(simulation)
 
     simulation.mouse = {
         isActive: false,
-        worldPosition: v2(0, 0),
+        worldPosition: v2(1e5, 1e5),
         leftButton:
         {
             down: false,
@@ -3702,21 +3702,24 @@ var updateSimulation = function()
                 var repelToolEnabled = (simulation.mouse.mode === MouseMode.repel);
                 var repelFactor = repelToolEnabled * params.repelStrength * simulation.boxBounds.width;
 
-                // for (var particleIndex = 0; particleIndex < particles.length; particleIndex++) {
-                //     var particle = particles[particleIndex];
-                //     v2.subtract(mouseToParticle, particle.position, simulation.mouse.worldPosition);
-                //     var distanceSquared = v2.square(mouseToParticle);
+                for (var particleIndex = 0; particleIndex < particles.length; particleIndex++) {
+                    var particle = particles[particleIndex];
+                    v2.subtract(mouseToParticle, particle.position, simulation.mouse.worldPosition);
+                    var distanceSquared = v2.square(mouseToParticle);
 
-                //     // ! Attract tool
-                //     // NOTE: constant force
-                //     v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                //         mouseToParticle, attractFactor / Math.sqrt(distanceSquared) / particle.mass);
+                    if (distanceSquared > 0)
+                    {
+                        // ! Attract tool
+                        // NOTE: constant force
+                        v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                            mouseToParticle, attractFactor / Math.sqrt(distanceSquared) / particle.mass);
 
-                //     // ! Repel tool
-                //     // NOTE: 1/r force
-                //     v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                //         mouseToParticle, repelFactor / distanceSquared / particle.mass);
-                // }
+                        // ! Repel tool
+                        // NOTE: 1/r force
+                        v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                            mouseToParticle, repelFactor / distanceSquared / particle.mass);
+                    }
+                }
 
                 // TODO: not really happy with the .isRemoved and the handling of the selectedParticles
                 // TODO: use a dummyparticle as activeParticle to avoid this branch?
