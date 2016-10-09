@@ -1,5 +1,5 @@
 ---
-sequenceTitle: BilliardsIntro
+sequenceTitle: Billiards
 title: Impulse
 ---
 

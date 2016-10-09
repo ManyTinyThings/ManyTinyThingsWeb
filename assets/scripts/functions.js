@@ -50,7 +50,10 @@ var NavigationInfo = new function ()
     }
 
     this.sequences = {};
-
+    allPages.sort(function(a, b)
+    {
+        return (a.url > b.url) - (a.url < b.url);
+    });
     for (var page of allPages) {
         var baseUrl = parentUrl(page.url)
         var sequence = this.sequences[baseUrl];
@@ -63,7 +66,7 @@ var NavigationInfo = new function ()
             }
             this.sequences[baseUrl] = sequence;
         }
-        sequence.panelUrls.push(page.url);
+        sequence.panelUrls.push(removeTrailingSlash(page.url));
     }
 
     var currentUrl = removeTrailingSlash(window.location.pathname);
@@ -190,18 +193,21 @@ document.addEventListener("DOMContentLoaded", function() {
 
     var isFirstPanel = (current.panelIndex === 0);
     var isLastPanel = (current.panelIndex === (current.sequence.panelUrls.length - 1));
-    if (!isFirstPanel)
+    var prevUrl;
+    if (isFirstPanel)
     {
-        var prevUrl = current.sequence.panelUrls[current.panelIndex - 1];
-        document.getElementById("leftNavigationArea").innerHTML = `<a href=${prevUrl}>«</a>`;
+        prevUrl = parentUrl(current.sequence.baseUrl);
     }
+    else
+    {
+        prevUrl = current.sequence.panelUrls[current.panelIndex - 1];
+    }
+    document.getElementById("leftNavigationArea").innerHTML = `<a href=${prevUrl}>«</a>`;
 
     var nextUrl;
     if (isLastPanel)
     {
-        var parentBaseUrl = parentUrl(current.sequence.baseUrl);
-        var parentSequence = NavigationInfo.sequences[parentBaseUrl];
-        nextUrl = arrayLast(parentSequence.panelUrls);
+        nextUrl = parentUrl(current.sequence.baseUrl);
     }
     else
     {
@@ -222,7 +228,10 @@ document.addEventListener("DOMContentLoaded", function() {
         while (url !== "/")
         {
             var sequence = NavigationInfo.sequences[url];
-            title = `<a href="${arrayLast(sequence.panelUrls)}">${sequence.title}</a> ⟩ ${title}`; 
+            if (sequence)
+            {
+                title = `<a href="${parentUrl(current.sequence.baseUrl)}">${sequence.title}</a> ⟩ ${title}`; 
+            }
             url = parentUrl(url);
         }
 
@@ -3693,21 +3702,21 @@ var updateSimulation = function()
                 var repelToolEnabled = (simulation.mouse.mode === MouseMode.repel);
                 var repelFactor = repelToolEnabled * params.repelStrength * simulation.boxBounds.width;
 
-                for (var particleIndex = 0; particleIndex < particles.length; particleIndex++) {
-                    var particle = particles[particleIndex];
-                    v2.subtract(mouseToParticle, particle.position, simulation.mouse.worldPosition);
-                    var distanceSquared = v2.square(mouseToParticle);
+                // for (var particleIndex = 0; particleIndex < particles.length; particleIndex++) {
+                //     var particle = particles[particleIndex];
+                //     v2.subtract(mouseToParticle, particle.position, simulation.mouse.worldPosition);
+                //     var distanceSquared = v2.square(mouseToParticle);
 
-                    // ! Attract tool
-                    // NOTE: constant force
-                    v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                        mouseToParticle, attractFactor / Math.sqrt(distanceSquared) / particle.mass);
+                //     // ! Attract tool
+                //     // NOTE: constant force
+                //     v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                //         mouseToParticle, attractFactor / Math.sqrt(distanceSquared) / particle.mass);
 
-                    // ! Repel tool
-                    // NOTE: 1/r force
-                    v2.scaleAndAdd(particle.acceleration, particle.acceleration,
-                        mouseToParticle, repelFactor / distanceSquared / particle.mass);
-                }
+                //     // ! Repel tool
+                //     // NOTE: 1/r force
+                //     v2.scaleAndAdd(particle.acceleration, particle.acceleration,
+                //         mouseToParticle, repelFactor / distanceSquared / particle.mass);
+                // }
 
                 // TODO: not really happy with the .isRemoved and the handling of the selectedParticles
                 // TODO: use a dummyparticle as activeParticle to avoid this branch?
@@ -3722,6 +3731,7 @@ var updateSimulation = function()
                     {
                         v2.scaleAndAdd(activeParticle.acceleration,
                             activeParticle.acceleration, mouseToParticle, - params.impulseStrength / dt);
+                        doImpulseNow = false;
                     }
 
                     // ! Move tool

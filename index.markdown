@@ -148,7 +148,7 @@ What are the _macroscopic_ consequences of being made up of many _microscopic_ t
 
 The explanations will include simulations of many tiny things, as you can see above. Not only are these simulations running in real time, they are also _interactive_. Try clicking, holding and dragging in the simulations above and see what happens.
 
-If you are ready, [let's start](/billiards/billiards)!
+If you are ready, [let's start](/billiards/1_impulse)!
 
 
 <!-- {% include sequences.html %} -->
